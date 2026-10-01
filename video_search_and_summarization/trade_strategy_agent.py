@@ -38,10 +38,18 @@ class VSSTradeStrategyAgent:
         Formulates a comprehensive TradeIdeaSpec based on VSS video captions,
         reasoning notes, and spoken subtitles.
         """
-        all_text = (
-            completion.summary + " " +
-            " ".join([c.content + " " + c.reasoning_description for c in completion.chunk_captions])
-        )
+        text_parts = [completion.summary]
+        for c in completion.chunk_captions:
+            text_parts.append(c.content)
+            text_parts.append(c.reasoning_description)
+        for ev in completion.key_events:
+            text_parts.append(ev.action_or_concept)
+            text_parts.append(ev.chart_evidence)
+            text_parts.append(ev.spoken_rationale)
+        if video_metadata:
+            text_parts.append(str(video_metadata))
+
+        all_text = " ".join(text_parts)
         lower = all_text.lower()
 
         # 1. Asset & Timeframe Identification
