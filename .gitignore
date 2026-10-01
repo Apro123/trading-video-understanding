@@ -1,6 +1,6 @@
 # Ignore media and generated frames
 *.mp4
-sample_frames/
+sample_frames*/
 frames/
 outputs/
 *.log
