@@ -12,3 +12,4 @@ __pycache__/
 .venv/
 .DS_Store
 outputs_clip_*/
+outputs_vss*/
