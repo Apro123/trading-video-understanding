@@ -1,19 +1,42 @@
 """
 Cosmos-3 Nano Unified Multimodal & Text Reasoning Engine.
 Supports:
-1. Multimodal video reasoning over sampled chart frames.
-2. Direct text LLM reasoning (for dynamic subtitle augmentation and strategy synthesis).
-3. Live VRAM monitoring tracking peak GPU memory usage on GB10 / DGX Spark.
+1. Robust frame extraction via FFmpeg pipe (supports AV1, VP9, H.264, etc.).
+2. Multimodal video reasoning over sampled chart frames.
+3. Direct text LLM reasoning (for dynamic subtitle augmentation and strategy synthesis).
+4. Live VRAM monitoring tracking peak GPU memory usage on GB10 / DGX Spark.
 """
 
 import os
-import cv2
+import io
 import json
+import subprocess
 import torch
+import numpy as np
 from PIL import Image
 from typing import List, Dict, Any, Optional
 
 DEFAULT_COSMOS3_PATH = "/mnt/edrive/huggingface/hub/models--nvidia--Cosmos3-Nano/snapshots/e59a53c25979a090fa8706c9acc0c254a6e89b92"
+
+def extract_frame_ffmpeg(video_path: str, ts: float, max_size: tuple = (1280, 720)) -> Optional[Image.Image]:
+    """Extracts a single frame from video at timestamp ts via FFmpeg pipe."""
+    try:
+        cmd = [
+            "ffmpeg", "-ss", f"{ts:.2f}",
+            "-i", video_path,
+            "-vframes", "1",
+            "-f", "image2pipe",
+            "-vcodec", "png",
+            "-"
+        ]
+        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=10)
+        if proc.returncode == 0 and len(proc.stdout) > 0:
+            img = Image.open(io.BytesIO(proc.stdout)).convert("RGB")
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            return img
+    except Exception as e:
+        print(f"[FFmpeg Warning] Frame extraction failed at {ts}s: {e}")
+    return None
 
 class CosmosTradingReasoner:
     def __init__(
@@ -68,7 +91,7 @@ class CosmosTradingReasoner:
         self.model.eval()
         self._is_loaded = True
         vram = self.get_vram_stats()
-        print(f"[CosmosTradingReasoner] Cosmos 3 Nano loaded on {self.device}. VRAM: {vram['peak_allocated_gb']} GB allocated.")
+        print(f"[CosmosTradingReasoner] Cosmos 3 Nano loaded on {self.device}. Peak VRAM: {vram['peak_allocated_gb']} GB allocated.")
 
     def extract_segment_frames(
         self,
@@ -78,26 +101,23 @@ class CosmosTradingReasoner:
         num_frames: int = 4,
         max_size: tuple = (1280, 720)
     ) -> List[Image.Image]:
-        """Extracts evenly spaced frames from video between start_s and end_s."""
-        cap = cv2.VideoCapture(video_path)
-        fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
-        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        
+        """Extracts evenly spaced frames from video between start_s and end_s using FFmpeg pipe."""
         duration = max(0.5, end_s - start_s)
         step = duration / max(1, num_frames)
         timestamps = [start_s + i * step for i in range(num_frames)]
 
         frames = []
         for ts in timestamps:
-            frame_idx = min(int(ts * fps), max(0, total_frames - 1))
-            cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
-            ret, frame = cap.read()
-            if ret:
-                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                img = Image.fromarray(rgb)
-                img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            img = extract_frame_ffmpeg(video_path, ts, max_size=max_size)
+            if img is not None:
                 frames.append(img)
-        cap.release()
+
+        # Fallback if no frames extracted
+        if not frames:
+            img = extract_frame_ffmpeg(video_path, 0.5, max_size=max_size)
+            if img:
+                frames.append(img)
+
         return frames
 
     def reason_over_segment(
@@ -114,7 +134,13 @@ class CosmosTradingReasoner:
         self.load_model()
         frames = self.extract_segment_frames(video_path, start_s, end_s, num_frames=4)
         if not frames:
-            return {"error": "No frames extracted", "cosmos_reasoning": ""}
+            return {
+                "segment_id": segment_id,
+                "start_s": start_s,
+                "end_s": end_s,
+                "spoken_text": spoken_text,
+                "cosmos_reasoning": "No visual frames could be extracted for this segment."
+            }
 
         system_prompt = (
             "You are NVIDIA Cosmos 3 Nano, an expert multimodal foundation model specializing in "
@@ -209,4 +235,4 @@ Analyze the chart video frames and spoken words:
         return self.processor.batch_decode(trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0].strip()
 
 if __name__ == "__main__":
-    print("[CosmosTradingReasoner] Module loaded.")
+    print("[CosmosTradingReasoner] Module ready.")

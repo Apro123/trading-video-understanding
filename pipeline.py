@@ -3,7 +3,7 @@ Master End-to-End Pipeline for Trading Video Understanding with NVIDIA Cosmos 3 
 Executes inside the Docker container on the NVIDIA DGX Spark GPU system.
 Features:
 - Dynamic subtitle timestamp subtraction (0:00 origin)
-- Generic multimodal chart reasoning across arbitrary video clips
+- Generic multimodal chart reasoning across arbitrary video clips (AV1, VP9, H.264)
 - Cosmos-3 Nano dual-role visual perception & text LLM strategy synthesis
 - Precise peak VRAM tracking on NVIDIA GB10 GPU
 """
@@ -15,11 +15,11 @@ import json
 import time
 import subprocess
 import torch
-import cv2
+import numpy as np
 
 from subtitle_parser import parse_subtitles
 from ocr_extractor import TradingChartOCRExtractor
-from cosmos_reasoner import CosmosTradingReasoner, DEFAULT_COSMOS3_PATH
+from cosmos_reasoner import CosmosTradingReasoner, extract_frame_ffmpeg, DEFAULT_COSMOS3_PATH
 from subtitle_augmenter import SubtitleAugmenter
 from strategy_synthesizer import StrategySynthesizer
 
@@ -30,6 +30,16 @@ def get_system_vram_usage() -> float:
         out = subprocess.check_output(cmd, shell=True).decode("utf-8").strip()
         return round(float(out.split("\n")[0]) / 1024.0, 3)
     except Exception:
+        return 0.0
+
+def get_video_duration(video_path: str) -> float:
+    """Gets video duration in seconds via ffprobe."""
+    try:
+        cmd = ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", video_path]
+        out = subprocess.check_output(cmd).decode("utf-8").strip()
+        return float(out)
+    except Exception as e:
+        print(f"[Warning] Could not get duration via ffprobe: {e}")
         return 0.0
 
 def run_pipeline(
@@ -56,13 +66,12 @@ def run_pipeline(
     if not os.path.exists(subtitles_path):
         raise FileNotFoundError(f"Subtitles file not found: {subtitles_path}")
 
-    cap = cv2.VideoCapture(video_path)
-    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    video_duration = total_frames / fps if fps > 0 else 0.0
-    ret, initial_frame = cap.read()
-    cap.release()
-    print(f"Video Duration: {video_duration:.2f}s ({fps:.1f} fps, {total_frames} frames)")
+    video_duration = get_video_duration(video_path)
+    print(f"Video Duration: {video_duration:.2f}s (verified via FFprobe)")
+
+    # Extract initial anchor frame via FFmpeg
+    initial_frame_pil = extract_frame_ffmpeg(video_path, min(5.0, max(0.5, video_duration / 4.0)))
+    initial_frame = np.array(initial_frame_pil) if initial_frame_pil is not None else None
 
     # Automatically parse subtitles with 0:00 start offset
     subtitle_entries = parse_subtitles(subtitles_path, clip_duration_s=video_duration)
@@ -81,7 +90,7 @@ def run_pipeline(
         "visible_price_levels": [],
         "visible_dates": []
     }
-    if ret and initial_frame is not None:
+    if initial_frame is not None:
         try:
             ocr_extractor = TradingChartOCRExtractor(use_gpu=True)
             chart_meta = ocr_extractor.extract_chart_metadata(initial_frame)
