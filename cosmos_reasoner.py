@@ -1,8 +1,9 @@
 """
-Cosmos-3 Nano Multimodal Video Reasoning Engine for Trading Analysis.
-Loads NVIDIA Cosmos 3 Nano (via Cosmos3OmniForConditionalGeneration & AutoProcessor)
-to perform temporal reasoning over trading chart video clips and align visual
-chart events with spoken subtitles.
+Cosmos-3 Nano Unified Multimodal & Text Reasoning Engine.
+Supports:
+1. Multimodal video reasoning over sampled chart frames.
+2. Direct text LLM reasoning (for dynamic subtitle augmentation and strategy synthesis).
+3. Live VRAM monitoring tracking peak GPU memory usage on GB10 / DGX Spark.
 """
 
 import os
@@ -27,6 +28,26 @@ class CosmosTradingReasoner:
         self.model = None
         self.processor = None
         self._is_loaded = False
+        
+        if torch.cuda.is_available():
+            torch.cuda.reset_peak_memory_stats()
+
+    def get_vram_stats(self) -> Dict[str, float]:
+        """Returns current and peak GPU VRAM usage in Gigabytes."""
+        if not torch.cuda.is_available():
+            return {"allocated_gb": 0.0, "reserved_gb": 0.0, "peak_allocated_gb": 0.0, "peak_reserved_gb": 0.0}
+
+        alloc = torch.cuda.memory_allocated() / (1024 ** 3)
+        res = torch.cuda.memory_reserved() / (1024 ** 3)
+        peak_alloc = torch.cuda.max_memory_allocated() / (1024 ** 3)
+        peak_res = torch.cuda.max_memory_reserved() / (1024 ** 3)
+
+        return {
+            "current_allocated_gb": round(alloc, 3),
+            "current_reserved_gb": round(res, 3),
+            "peak_allocated_gb": round(peak_alloc, 3),
+            "peak_reserved_gb": round(peak_res, 3)
+        }
 
     def load_model(self):
         """Loads Cosmos-3 Nano on GPU."""
@@ -46,7 +67,8 @@ class CosmosTradingReasoner:
         )
         self.model.eval()
         self._is_loaded = True
-        print(f"[CosmosTradingReasoner] Cosmos 3 Nano successfully loaded on {self.device}.")
+        vram = self.get_vram_stats()
+        print(f"[CosmosTradingReasoner] Cosmos 3 Nano loaded on {self.device}. VRAM: {vram['peak_allocated_gb']} GB allocated.")
 
     def extract_segment_frames(
         self,
@@ -67,7 +89,7 @@ class CosmosTradingReasoner:
 
         frames = []
         for ts in timestamps:
-            frame_idx = min(int(ts * fps), total_frames - 1)
+            frame_idx = min(int(ts * fps), max(0, total_frames - 1))
             cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
             ret, frame = cap.read()
             if ret:
@@ -87,29 +109,27 @@ class CosmosTradingReasoner:
         segment_id: int = 0
     ) -> Dict[str, Any]:
         """
-        Runs Cosmos 3 Nano multimodal reasoning on a specific temporal segment of the trading clip.
+        Multimodal video reasoning: examines frames and spoken words for a segment.
         """
         self.load_model()
         frames = self.extract_segment_frames(video_path, start_s, end_s, num_frames=4)
         if not frames:
-            return {"error": "No frames extracted"}
+            return {"error": "No frames extracted", "cosmos_reasoning": ""}
 
         system_prompt = (
             "You are NVIDIA Cosmos 3 Nano, an expert multimodal foundation model specializing in "
-            "technical financial chart analysis, market structure reasoning, and video understanding. "
-            "Your task is to analyze video frames from a trading tutorial and disambiguate vague spoken language "
-            "by connecting it to exact visual chart elements: candlestick patterns, swing highs, swing lows, "
-            "break of structure (BOS), support/resistance levels, trendlines, and buy zones."
+            "technical financial chart analysis, indicators (RSI, MA, MACD), market structure, "
+            "and video understanding. Analyze the provided video frames alongside the spoken words."
         )
 
         user_prompt = f"""Video segment time: {start_s:.1f}s to {end_s:.1f}s.
 Spoken transcript: "{spoken_text}"
 
-Analyze these chart frames and the spoken words to provide:
-1. VISUAL_FOCUS: What specific candle, price level, drawing tool, or chart area is being pointed to or drawn?
-2. MARKET_STRUCTURE: What is the current trend state (Bearish, Bullish, Consolidation, Reversal)? Identify any swing high, swing low, or breakout.
-3. SPOKEN_DISAMBIGUATION: What does the speaker specifically mean when saying words like "here", "this candle", "1927", "break above", or "buy zone"?
-4. TRADING_RULE: What actionable trading rule or strategy guideline is demonstrated in this moment?"""
+Analyze the chart video frames and spoken words:
+1. VISUAL_FOCUS: What indicators, candlesticks, cursor movements, drawings, or levels are shown?
+2. TECHNICAL_CONCEPT: What trading concept is shown (e.g. RSI Divergence, Overbought/Oversold, Break of Structure, Swing Points, Support/Resistance)?
+3. DISAMBIGUATION: Explain what the speaker specifically means by words like 'here', 'this indicator', '70', '30', or 'reversal'.
+4. ACTIONABLE_RULE: What is the core rule or lesson communicated?"""
 
         messages = [
             {"role": "system", "content": system_prompt},
@@ -128,7 +148,7 @@ Analyze these chart frames and the spoken words to provide:
         with torch.no_grad():
             gen_ids = self.model.generate(
                 **inputs,
-                max_new_tokens=384,
+                max_new_tokens=350,
                 temperature=0.2,
                 do_sample=True,
                 repetition_penalty=1.05
@@ -144,6 +164,49 @@ Analyze these chart frames and the spoken words to provide:
             "spoken_text": spoken_text,
             "cosmos_reasoning": raw_reasoning
         }
+
+    def generate_text_reasoning(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        max_new_tokens: int = 512,
+        temperature: float = 0.2
+    ) -> str:
+        """
+        Uses Cosmos 3 Nano as a pure text LLM for downstream synthesis and structured reasoning.
+        """
+        self.load_model()
+        if system_prompt is None:
+            system_prompt = (
+                "You are an expert quantitative trading analyst and LLM reasoning engine. "
+                "Synthesize financial trading lessons and technical chart observations into "
+                "clear, precise, actionable trading rules."
+            )
+
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt}
+                ]
+            }
+        ]
+
+        text = self.processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        inputs = self.processor(text=[text], padding=True, return_tensors="pt").to(self.device)
+
+        with torch.no_grad():
+            gen_ids = self.model.generate(
+                **inputs,
+                max_new_tokens=max_new_tokens,
+                temperature=temperature,
+                do_sample=True if temperature > 0 else False,
+                repetition_penalty=1.05
+            )
+
+        trimmed = [out[len(inp):] for inp, out in zip(inputs.input_ids, gen_ids)]
+        return self.processor.batch_decode(trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0].strip()
 
 if __name__ == "__main__":
     print("[CosmosTradingReasoner] Module loaded.")

@@ -1,6 +1,11 @@
 """
 Master End-to-End Pipeline for Trading Video Understanding with NVIDIA Cosmos 3 Nano.
 Executes inside the Docker container on the NVIDIA DGX Spark GPU system.
+Features:
+- Dynamic subtitle timestamp subtraction (0:00 origin)
+- Generic multimodal chart reasoning across arbitrary video clips
+- Cosmos-3 Nano dual-role visual perception & text LLM strategy synthesis
+- Precise peak VRAM tracking on NVIDIA GB10 GPU
 """
 
 import os
@@ -8,6 +13,9 @@ import sys
 import argparse
 import json
 import time
+import subprocess
+import torch
+import cv2
 
 from subtitle_parser import parse_subtitles
 from ocr_extractor import TradingChartOCRExtractor
@@ -15,75 +23,97 @@ from cosmos_reasoner import CosmosTradingReasoner, DEFAULT_COSMOS3_PATH
 from subtitle_augmenter import SubtitleAugmenter
 from strategy_synthesizer import StrategySynthesizer
 
+def get_system_vram_usage() -> float:
+    """Queries nvidia-smi for total used GPU memory in GB."""
+    try:
+        cmd = "nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits"
+        out = subprocess.check_output(cmd, shell=True).decode("utf-8").strip()
+        return round(float(out.split("\n")[0]) / 1024.0, 3)
+    except Exception:
+        return 0.0
+
 def run_pipeline(
     video_path: str = "/workspace/trading_lesson.clip.mp4",
     subtitles_path: str = "/workspace/subtitles_clip",
     output_dir: str = "/workspace/outputs",
     model_path: str = DEFAULT_COSMOS3_PATH,
     skip_model: bool = False,
-    num_samples: int = -1
+    num_samples: int = 3
 ):
     print("=" * 75)
-    print("📈 NVIDIA COSMOS 3 NANO: TRADING VIDEO UNDERSTANDING PIPELINE")
+    print("📈 DYNAMIC TRADING VIDEO UNDERSTANDING PIPELINE (COSMOS-3 NANO)")
     print("=" * 75)
     start_total_time = time.time()
-
     os.makedirs(output_dir, exist_ok=True)
 
-    # STAGE 1: Parse Subtitles
-    print("\n>>> STAGE 1: Parsing Subtitle Transcript and Aligning Temporal Offsets")
+    if torch.cuda.is_available():
+        torch.cuda.reset_peak_memory_stats()
+
+    # STAGE 1: Video Inspection & Subtitle Parsing
+    print(f"\n>>> STAGE 1: Inspecting Video and Normalizing Subtitles")
+    if not os.path.exists(video_path):
+        raise FileNotFoundError(f"Video file not found: {video_path}")
     if not os.path.exists(subtitles_path):
         raise FileNotFoundError(f"Subtitles file not found: {subtitles_path}")
-    subtitle_entries = parse_subtitles(subtitles_path, clip_start_str="18:39", clip_end_str="21:16")
-    print(f"Parsed {len(subtitle_entries)} subtitle intervals across 157 seconds of footage.")
-    for s in subtitle_entries[:3]:
-        print(f"  [{s['orig_timestamp_str']} -> {s['clip_timestamp_str']}] {s['text'][:60]}...")
 
-    # STAGE 2: OCR Chart UI Anchoring
-    print("\n>>> STAGE 2: Extracting Chart Metadata via EasyOCR (Ticker, Timeframe, Axis)")
-    import cv2
     cap = cv2.VideoCapture(video_path)
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    video_duration = total_frames / fps if fps > 0 else 0.0
     ret, initial_frame = cap.read()
     cap.release()
+    print(f"Video Duration: {video_duration:.2f}s ({fps:.1f} fps, {total_frames} frames)")
 
+    # Automatically parse subtitles with 0:00 start offset
+    subtitle_entries = parse_subtitles(subtitles_path, clip_duration_s=video_duration)
+    print(f"Parsed {len(subtitle_entries)} subtitle intervals.")
+    if subtitle_entries:
+        print(f"  First Anchor: [{subtitle_entries[0]['orig_timestamp_str']} -> {subtitle_entries[0]['clip_timestamp_str']}] '{subtitle_entries[0]['text'][:50]}...'")
+        print(f"  Last Anchor:  [{subtitle_entries[-1]['orig_timestamp_str']} -> {subtitle_entries[-1]['clip_timestamp_str']}] '{subtitle_entries[-1]['text'][:50]}...'")
+
+    # STAGE 2: OCR Chart UI Anchoring
+    print("\n>>> STAGE 2: Generic Chart Metadata Extraction via EasyOCR")
     chart_meta = {
-        "ticker": "NVDA",
-        "asset_name": "NVIDIA Corporation",
-        "timeframe": "1W",
-        "candle_style": "Heikin Ashi",
-        "exchange": "NASDAQ",
-        "visible_prices": [104.70, 97.40, 75.61, 19.27, 26.23, 140.00],
-        "visible_dates": ["Jan 30 2023", "Mon 26 Sep '22", "Mon 24 Apr '23", "Mon 04 Dec '23"]
+        "detected_header_lines": [],
+        "ticker_candidates": [],
+        "timeframe_candidates": [],
+        "indicators_detected": [],
+        "visible_price_levels": [],
+        "visible_dates": []
     }
     if ret and initial_frame is not None:
         try:
             ocr_extractor = TradingChartOCRExtractor(use_gpu=True)
-            extracted_meta = ocr_extractor.extract_chart_metadata(initial_frame)
-            if extracted_meta.get("ticker"):
-                chart_meta["ticker"] = extracted_meta["ticker"]
-            if extracted_meta.get("timeframe"):
-                chart_meta["timeframe"] = extracted_meta["timeframe"]
-            if extracted_meta.get("candle_style"):
-                chart_meta["candle_style"] = extracted_meta["candle_style"]
-            print(f"Confirmed Chart Metadata: {chart_meta['ticker']} · {chart_meta['timeframe']} · {chart_meta['candle_style']}")
+            chart_meta = ocr_extractor.extract_chart_metadata(initial_frame)
+            print(f"OCR Detected Indicators: {chart_meta['indicators_detected']}")
+            print(f"OCR Detected Tickers:    {chart_meta['ticker_candidates']}")
+            print(f"OCR Detected Timeframes: {chart_meta['timeframe_candidates']}")
         except Exception as e:
-            print(f"[Pipeline Warning] OCR extraction note: {e}. Using calibrated anchors.")
+            print(f"[Pipeline Warning] OCR extraction note: {e}")
 
-    # STAGE 3: Multimodal Video Reasoning with NVIDIA Cosmos 3 Nano
-    print("\n>>> STAGE 3: Multimodal Video Reasoning via NVIDIA Cosmos 3 Nano (GB10 GPU)")
+    # STAGE 3: Multimodal Video Reasoning via Cosmos-3 Nano
+    print("\n>>> STAGE 3: Multimodal Video Reasoning with NVIDIA Cosmos-3 Nano")
     cosmos_results = []
+    reasoner = None
+
     if not skip_model:
         try:
             reasoner = CosmosTradingReasoner(model_path=model_path)
-            # Select key segments representing each phase of the lesson
-            target_indices = [2, 3, 8, 10, 16, 17] if num_samples > 0 else list(range(len(subtitle_entries)))
-            if num_samples > 0:
-                target_indices = target_indices[:num_samples]
+            reasoner.load_model()
 
-            print(f"Running Cosmos-3 Nano inference on {len(target_indices)} key video segments...")
+            # Select evenly spaced milestone segments across the video
+            n_entries = len(subtitle_entries)
+            if num_samples > 0 and n_entries > 0:
+                step = max(1, n_entries // num_samples)
+                target_indices = [min(i * step, n_entries - 1) for i in range(num_samples)]
+                target_indices = sorted(list(set(target_indices)))
+            else:
+                target_indices = list(range(n_entries))
+
+            print(f"Running Cosmos-3 Nano multimodal inference on {len(target_indices)} key video intervals...")
             for idx in target_indices:
                 sub = subtitle_entries[idx]
-                print(f"  -> Processing Segment #{idx} [{sub['clip_timestamp_str']}] (Duration: {sub['duration_s']:.1f}s)...")
+                print(f"  -> Processing Interval #{idx} [{sub['clip_timestamp_str']}] ({sub['duration_s']:.1f}s): \"{sub['text'][:45]}...\"")
                 res = reasoner.reason_over_segment(
                     video_path=video_path,
                     start_s=sub["clip_timestamp_s"],
@@ -92,42 +122,55 @@ def run_pipeline(
                     segment_id=sub["index"]
                 )
                 cosmos_results.append(res)
-                print(f"     Cosmos output: {res['cosmos_reasoning'][:120]}...")
+                summary_snippet = res['cosmos_reasoning'].replace('\n', ' ')[:90]
+                print(f"     Cosmos Output: {summary_snippet}...")
 
         except Exception as e:
-            print(f"[Pipeline Warning] Cosmos-3 Nano execution encountered: {e}")
-            print("Falling back to pre-calibrated multimodal reasoning fusion.")
+            print(f"[Pipeline Warning] Cosmos-3 Nano inference encountered: {e}")
     else:
-        print("[Pipeline] Skipping Cosmos-3 inference as requested.")
+        print("[Pipeline] Skipping model inference as requested.")
 
-    # STAGE 4: Subtitle Augmentation & Semantic Fusion
+    # STAGE 4: Dynamic Subtitle Augmentation
     print("\n>>> STAGE 4: Fusing Visual Observations with Spoken Subtitles")
-    augmenter = SubtitleAugmenter()
+    augmenter = SubtitleAugmenter(reasoner=reasoner)
     augmented_timeline = augmenter.augment(
         subtitles=subtitle_entries,
         cosmos_outputs=cosmos_results,
         chart_metadata=chart_meta
     )
-    print(f"Successfully generated {len(augmented_timeline)} augmented subtitle moments.")
+    print(f"Successfully synthesized {len(augmented_timeline)} augmented timeline records.")
+
+    # Record Peak VRAM Usage
+    vram_stats = reasoner.get_vram_stats() if reasoner else {
+        "current_allocated_gb": 0.0,
+        "current_reserved_gb": 0.0,
+        "peak_allocated_gb": round(torch.cuda.max_memory_allocated() / (1024**3), 3) if torch.cuda.is_available() else 0.0,
+        "peak_reserved_gb": round(torch.cuda.max_memory_reserved() / (1024**3), 3) if torch.cuda.is_available() else 0.0
+    }
+    vram_stats["system_total_used_gb"] = get_system_vram_usage()
 
     # STAGE 5: Synthesis into LLM-Ready Formats
     print("\n>>> STAGE 5: Synthesizing Trading Strategy & Generating Artifacts")
-    synthesizer = StrategySynthesizer(output_dir=output_dir)
+    synthesizer = StrategySynthesizer(output_dir=output_dir, reasoner=reasoner)
     generated_files = synthesizer.generate_outputs(
         augmented_timeline=augmented_timeline,
-        chart_metadata=chart_meta
+        chart_metadata=chart_meta,
+        vram_stats=vram_stats
     )
 
     elapsed = time.time() - start_total_time
     print("\n" + "=" * 75)
-    print(f"✅ TRADING VIDEO UNDERSTANDING PIPELINE COMPLETE ({elapsed:.1f}s)")
+    print(f"✅ PIPELINE EXECUTION COMPLETE ({elapsed:.1f}s)")
+    print(f"📊 PEAK GPU VRAM ALLOCATED: {vram_stats['peak_allocated_gb']} GB")
+    print(f"📊 PEAK GPU VRAM RESERVED:  {vram_stats['peak_reserved_gb']} GB")
+    print(f"📊 TOTAL SYSTEM GPU USAGE:  {vram_stats['system_total_used_gb']} GB")
     print(f"1. Augmented Subtitles (JSON): {generated_files['json']}")
     print(f"2. Augmented Subtitles (Markdown): {generated_files['markdown']}")
     print(f"3. Trading Strategy Spec (JSON): {generated_files['spec']}")
     print(f"4. POC Evaluation Summary (Markdown): {generated_files['summary']}")
     print("=" * 75)
 
-    return generated_files
+    return generated_files, vram_stats
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Trading Video Understanding Pipeline")
@@ -136,7 +179,7 @@ if __name__ == "__main__":
     parser.add_argument("--output_dir", default="/workspace/outputs", help="Directory for output artifacts")
     parser.add_argument("--model_path", default=DEFAULT_COSMOS3_PATH, help="Path to Cosmos 3 Nano snapshot")
     parser.add_argument("--skip_model", action="store_true", help="Skip model inference")
-    parser.add_argument("--num_samples", type=int, default=4, help="Number of key segments to run through Cosmos")
+    parser.add_argument("--num_samples", type=int, default=3, help="Number of key video segments to sample")
 
     args = parser.parse_args()
     run_pipeline(
