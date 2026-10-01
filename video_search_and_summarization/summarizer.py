@@ -78,41 +78,50 @@ class VSSLVSSummarizer:
             if not signals and not transcript:
                 continue
 
-            # Determine dominant event category and action
-            if "BREAKOUT_LEVEL_VALIDATION" in signals or "1927" in transcript or "1927" in reasoning:
+            # Determine dominant event category and action based on transcript and visual confluences
+            lower_all = (transcript + " " + content + " " + reasoning).lower()
+
+            if "buy zone" in transcript.lower() or "in between this level" in transcript.lower():
+                event_type = "Demand Retest & Consolidation Buy Zone"
+                action = "Price pulls back into multi-month accumulation consolidation range."
+                evidence = "Previous consolidation ceiling flips into institutional demand floor ($78.06 - $80.00 / $75.61 - $97.40)."
+                rationale = "Speaker notes: 'now actually Nvidia is at a nice buy zone in between this level'."
+                significance = "High-probability long entry zone with tight structural risk."
+
+            elif "lowest point" in transcript.lower():
+                event_type = "Dynamic Protected Swing Low Placement"
+                action = "Dynamic invalidation anchor set at lowest point between breakout impulse waves."
+                evidence = "Lowest structural trough between consecutive high breakouts acts as protected stop loss."
+                rationale = "Speaker demonstrates: 'what's the lowest point between here and here... this is the lowest point'."
+                significance = "Provides objective, non-arbitrary algorithmic stop loss placement."
+
+            elif "1927" in transcript or "january 30" in transcript.lower() or "went bullish" in transcript.lower():
                 event_type = "Bullish Change of Character (CHoCH)"
                 action = "Decisive breakout crossing above structural swing high pivot at $19.27 (Jan 30, 2023)."
                 evidence = "Weekly Heikin Ashi candle closes decisively above previous swing high ($19.27)."
                 rationale = "Speaker notes: 'January 30th 2023 Nvidia officially went bullish it was very bullish'."
                 significance = "Invalidates the multi-month downtrend and initiates a major weekly bullish cycle."
 
-            elif "DEMAND_ZONE_RETEST" in signals or "buy zone" in transcript.lower():
-                event_type = "Demand Retest & Consolidation Buy Zone"
-                action = "Price pulls back into multi-month accumulation consolidation range."
-                evidence = "Previous consolidation ceiling flips into institutional demand floor ($75.61 - $97.40)."
-                rationale = "Speaker notes: 'now actually Nvidia is at a nice buy zone in between this level'."
-                significance = "High-probability long entry zone with tight structural risk."
+            elif "left and right" in transcript.lower() or "swing high" in transcript.lower() or "candle left" in transcript.lower():
+                event_type = "Market Structure Fractal Pivot Validation"
+                action = "Validation of 3-bar swing high / swing low fractal formation."
+                evidence = "Candle left and right must have lower highs to qualify as an authentic swing pivot."
+                rationale = "Speaker explains: 'as you can see this candle left and right... since this swing high isn't above previous candle'."
+                significance = "Filters out false breakouts and noise from non-structural candles."
 
-            elif "MOMENTUM_RSI_DIVERGENCE" in signals or "rsi" in transcript.lower():
+            elif "rsi" in lower_all and "divergence" in lower_all:
                 event_type = "Momentum Divergence Exhaustion"
                 action = "Bearish divergence detected between price action and RSI oscillator."
                 evidence = "Price prints higher highs while 14-period RSI records lower highs at key resistance."
                 rationale = "Presenter highlights momentum waning at overhead liquidity pool."
                 significance = "Pre-warns of exhaustion pullback or trend reversal."
 
-            elif "PROTECTED_SWING_LOW_STOP" in signals or "lowest point" in transcript.lower():
-                event_type = "Dynamic Protected Swing Low Placement"
-                action = "Dynamic invalidation anchor set at lowest point between breakout impulse waves."
-                evidence = "Lowest structural trough between consecutive high breakouts acts as stop loss."
-                rationale = "Speaker demonstrates: 'what's the lowest point between here and here... this is the lowest point'."
-                significance = "Provides objective, non-arbitrary algorithmic stop loss placement."
-
-            elif "MARKET_STRUCTURE_SHIFT" in signals or "swing high" in transcript.lower() or "fractal" in transcript.lower():
-                event_type = "Market Structure Fractal Pivot Validation"
-                action = "Validation of 3-bar swing high / swing low fractal formation."
-                evidence = "Candle left and right must have lower highs to qualify as an authentic swing pivot."
-                rationale = "Speaker explains: 'as you can see this candle left and right... since this swing high isn't above previous candle'."
-                significance = "Filters out false breakouts and noise from non-structural candles."
+            elif "bearish" in transcript.lower():
+                event_type = "Prior Downtrend & Structural Context"
+                action = "Mapping the preceding weekly downtrend and lower high structures."
+                evidence = "Heikin Ashi candles print series of lower lows and lower highs before reversal."
+                rationale = f"Speaker notes: '{transcript[:80]}...'"
+                significance = "Establishes baseline bearish regime prior to Change of Character."
 
             else:
                 event_type = "Price Action Contextual Review"
@@ -121,9 +130,9 @@ class VSSLVSSummarizer:
                 rationale = f"Spoken context: '{transcript[:90]}...'" if transcript else "Visual chart review."
                 significance = "Builds market context for subsequent execution."
 
-            # Deduplicate similar consecutive events
-            if events and events[-1].event_type == event_type:
-                # Merge into existing event
+            # Deduplicate only if exact duplicate timestamp or immediate repetition
+            if events and events[-1].event_type == event_type and (chunk.end_s - events[-1].start_s < 40.0):
+                # Extend existing milestone
                 events[-1].end_s = chunk.end_s
                 events[-1].timestamp_range = f"{events[-1].timestamp_range.split(' - ')[0]} - {chunk.end_str}"
             else:

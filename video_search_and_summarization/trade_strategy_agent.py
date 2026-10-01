@@ -64,10 +64,12 @@ class VSSTradeStrategyAgent:
 
         # 2. Directional Bias & Core Thesis
         bias = "Bullish"
-        if "bearish" in lower and "went bullish" not in lower:
-            bias = "Bearish"
-        elif "rsi" in lower and "divergence" in lower and "went bullish" not in lower:
+        if "rsi" in lower and "divergence" in lower and "went bullish" not in lower:
             bias = "Bearish Reversal"
+        elif any(w in lower for w in ["buy zone", "went bullish", "1927", "choch", "bullish signal", "bullish trend"]):
+            bias = "Bullish"
+        elif "bearish" in lower:
+            bias = "Bearish"
 
         # 3. Step-by-Step Execution Rules
         rules: List[TradingRule] = []
