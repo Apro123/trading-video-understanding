@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NVIDIA VSS Trading Video Intelligence & Semantic Search</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0e17;
+      --bg-secondary: #121927;
+      --bg-card: #182236;
+      --bg-card-hover: #1f2c45;
+      --border: #23314d;
+      --border-accent: #00d26a;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent-green: #10b981;
+      --accent-green-bg: rgba(16, 185, 129, 0.15);
+      --accent-cyan: #06b6d4;
+      --accent-cyan-bg: rgba(6, 182, 212, 0.15);
+      --accent-amber: #f59e0b;
+      --accent-amber-bg: rgba(245, 158, 11, 0.15);
+      --accent-purple: #8b5cf6;
+      --accent-purple-bg: rgba(139, 92, 246, 0.15);
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Top Navigation Header */
+    header {
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .logo-badge {
+      background: linear-gradient(135deg, #10b981, #06b6d4);
+      color: #000;
+      font-weight: 800;
+      font-size: 0.95rem;
+      padding: 0.35rem 0.65rem;
+      border-radius: 6px;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .brand-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .system-status {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      font-size: 0.8rem;
+      font-family: var(--font-mono);
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 0.3rem 0.7rem;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background-color: var(--accent-green);
+      box-shadow: 0 0 8px var(--accent-green);
+    }
+
+    /* Container */
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 1.5rem 2rem;
+    }
+
+    /* Video Selector Bar */
+    .section-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+    }
+
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .video-card {
+      background-color: var(--bg-secondary);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .video-card:hover {
+      border-color: #3b82f6;
+      background-color: var(--bg-card);
+      transform: translateY(-2px);
+    }
+
+    .video-card.active {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+      background-color: rgba(16, 185, 129, 0.04);
+    }
+
+    .video-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .video-card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.35;
+    }
+
+    .video-tag {
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
+    .tag-green {
+      background: var(--accent-green-bg);
+      color: var(--accent-green);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .tag-cyan {
+      background: var(--accent-cyan-bg);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+    }
+
+    .tag-amber {
+      background: var(--accent-amber-bg);
+      color: var(--accent-amber);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .video-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      margin-bottom: 0.85rem;
+    }
+
+    .video-card-desc {
+      font-size: 0.825rem;
+      color: var(--text-dim);
+      line-height: 1.4;
+    }
+
+    /* Main Workspace Layout */
+    .workspace {
+      display: grid;
+      grid-template-columns: 580px 1fr;
+      gap: 2rem;
+      align-items: flex-start;
+    }
+
+    @media (max-width: 1200px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Left Panel: Video Player */
+    .player-panel {
+      position: sticky;
+      top: 5rem;
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      background-color: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      aspect-ratio: 16 / 9;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border);
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .player-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .time-display {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--accent-cyan);
+    }
+
+    .speed-selector {
+      display: flex;
+      gap: 0.35rem;
+    }
+
+    .speed-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .speed-btn:hover, .speed-btn.active {
+      color: #fff;
+      background-color: var(--border);
+      border-color: var(--accent-cyan);
+    }
+
+    .player-meta-box {
+      background-color: var(--bg-card);
+      border-radius: 8px;
+      padding: 1rem;
+      font-size: 0.85rem;
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.35rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .meta-row:last-child {
+      border-bottom: none;
+    }
+
+    .meta-label {
+      color: var(--text-dim);
+    }
+
+    .meta-val {
+      font-family: var(--font-mono);
+      color: var(--text-main);
+      font-weight: 500;
+    }
+
+    /* Right Panel: Tabs */
+    .tab-header {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.5rem;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 0.75rem 1.25rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.15s;
+    }
+
+    .tab-btn:hover {
+      color: #fff;
+    }
+
+    .tab-btn.active {
+      color: var(--accent-green);
+      border-bottom-color: var(--accent-green);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Search Tab */
+    .search-box {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .search-input-group {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .search-input {
+      flex: 1;
+      background-color: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.85rem 1.15rem;
+      color: #fff;
+      font-size: 0.95rem;
+      font-family: var(--font-sans);
+      outline: none;
+      transition: border 0.15s;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+    }
+
+    .search-btn {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0 1.5rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .search-btn:hover {
+      opacity: 0.9;
+    }
+
+    .chips-label {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-bottom: 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .query-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .chip {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      padding: 0.3rem 0.65rem;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .chip:hover {
+      color: #fff;
+      border-color: var(--accent-cyan);
+      background-color: var(--bg-card-hover);
+    }
+
+    /* Search Results */
+    .results-count {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-family: var(--font-mono);
+    }
+
+    .results-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .result-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      transition: all 0.2s;
+    }
+
+    .result-card:hover {
+      border-color: #3b82f6;
+      background-color: var(--bg-card);
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .timestamp-badge {
+      background: var(--accent-cyan-bg);
+      color: var(--accent-cyan);
+      border: 1px solid rgba(6, 182, 212, 0.4);
+      padding: 0.3rem 0.65rem;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .timestamp-badge:hover {
+      background-color: var(--accent-cyan);
+      color: #000;
+    }
+
+    .score-badge {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--accent-green);
+      background: var(--accent-green-bg);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .result-transcript {
+      font-size: 0.9rem;
+      color: var(--text-main);
+      margin-bottom: 0.6rem;
+      line-height: 1.45;
+    }
+
+    .highlight {
+      background-color: rgba(245, 158, 11, 0.3);
+      color: #fef08a;
+      padding: 0.1rem 0.25rem;
+      border-radius: 3px;
+      font-weight: 500;
+    }
+
+    .result-signals {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+    }
+
+    .signal-pill {
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      background: rgba(139, 92, 246, 0.15);
+      color: #c4b5fd;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+    }
+
+    /* Strategy Spec Tab */
+    .spec-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .spec-grid-header {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+
+    .spec-stat-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .spec-stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-dim);
+      margin-bottom: 0.35rem;
+    }
+
+    .spec-stat-val {
+      font-size: 1.25rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: #fff;
+    }
+
+    .bias-bullish {
+      color: var(--accent-green) !important;
+    }
+
+    .bias-bearish {
+      color: #ef4444 !important;
+    }
+
+    .spec-section-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+
+    .spec-section-heading {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .spec-body-text {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    .rule-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+    }
+
+    .rule-table th, .rule-table td {
+      border: 1px solid var(--border);
+      padding: 0.75rem 0.85rem;
+      text-align: left;
+    }
+
+    .rule-table th {
+      background-color: var(--bg-card);
+      color: var(--text-dim);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+    }
+
+    .rule-code {
+      font-family: var(--font-mono);
+      background: rgba(0, 0, 0, 0.4);
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      color: var(--accent-cyan);
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background-color: var(--bg-card);
+      border: 1px solid var(--accent-green);
+      color: #fff;
+      padding: 0.85rem 1.5rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      display: none;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="logo-badge">VSS</div>
+      <div>
+        <div class="brand-title">NVIDIA Video Search & Summarization (VSS)</div>
+        <div class="brand-subtitle">Cosmos 3 Nano VLM + Nemotron 3.5 Lightning | Algorithmic Trading Intelligence</div>
+      </div>
+    </div>
+    <div class="system-status">
+      <div class="status-pill">
+        <div class="status-dot"></div>
+        <span>Cosmos 3 Nano: Active</span>
+      </div>
+      <div class="status-pill">
+        <div class="status-dot"></div>
+        <span>Nemotron 3.5 Reasoner: Online</span>
+      </div>
+      <div class="status-pill">
+        <span style="color: var(--accent-cyan);" id="active-video-badge">Selected: NVDA (1W)</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Video Selection -->
+    <div class="section-title">Select Video Trading Masterclass</div>
+    <div class="video-grid" id="video-grid">
+      <!-- Populated via JS -->
+    </div>
+
+    <!-- Main Workspace -->
+    <div class="workspace">
+      <!-- Left: Player & Video Info -->
+      <div class="player-panel">
+        <div class="video-wrapper">
+          <video id="video-player" controls preload="metadata">
+            <source id="video-source" src="/api/videos/stream/video_1" type="video/mp4">
+            <track id="video-track" label="English" kind="subtitles" srclang="en" src="/api/videos/subtitles/video_1" default>
+            Your browser does not support HTML5 video.
+          </video>
+        </div>
+
+        <div class="player-controls">
+          <div class="time-display" id="time-display">00:00:00 / 00:00:00</div>
+          <div class="speed-selector">
+            <button class="speed-btn" onclick="setSpeed(0.75)">0.75x</button>
+            <button class="speed-btn active" onclick="setSpeed(1.0)">1x</button>
+            <button class="speed-btn" onclick="setSpeed(1.25)">1.25x</button>
+            <button class="speed-btn" onclick="setSpeed(1.5)">1.5x</button>
+            <button class="speed-btn" onclick="setSpeed(2.0)">2x</button>
+          </div>
+        </div>
+
+        <div class="player-meta-box">
+          <div class="meta-row">
+            <span class="meta-label">Selected Asset:</span>
+            <span class="meta-val" id="meta-asset">NVDA</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Chart Timeframe:</span>
+            <span class="meta-val" id="meta-tf">1W (Weekly)</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Duration:</span>
+            <span class="meta-val" id="meta-duration">39m 29s</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">VSS Index Chunks:</span>
+            <span class="meta-val" id="meta-chunks">79 Indexed</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Format:</span>
+            <span class="meta-val" style="color: var(--accent-green);">1080p Video-Only (Non-Premium)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Tabs -->
+      <div class="content-panel">
+        <div class="tab-header">
+          <button class="tab-btn active" onclick="switchTab('search')">🔍 Semantic Video Search</button>
+          <button class="tab-btn" onclick="switchTab('spec')">🎯 Trade Strategy Spec</button>
+          <button class="tab-btn" onclick="switchTab('milestones')">⏱ Chronological Milestones</button>
+        </div>
+
+        <!-- TAB 1: Semantic Search -->
+        <div class="tab-content active" id="tab-search">
+          <div class="search-box">
+            <div class="search-input-group">
+              <input type="text" id="search-input" class="search-input" placeholder="Search trading concepts, levels, chart setups, or indicator divergence..." onkeydown="if(event.key==='Enter') executeSearch()">
+              <button class="search-btn" onclick="executeSearch()">Search Video</button>
+            </div>
+            <div class="chips-label">Quick Concept Searches:</div>
+            <div class="query-chips" id="query-chips">
+              <span class="chip" onclick="quickSearch('RSI divergence overbought')">RSI divergence overbought</span>
+              <span class="chip" onclick="quickSearch('Weekly breakout above resistance')">Weekly breakout above resistance</span>
+              <span class="chip" onclick="quickSearch('Retest of consolidation buy zone')">Retest of consolidation buy zone</span>
+              <span class="chip" onclick="quickSearch('Stop loss below swing low')">Stop loss below swing low</span>
+              <span class="chip" onclick="quickSearch('Bullish market structure continuation')">Bullish market structure</span>
+              <span class="chip" onclick="quickSearch('Candlestick reversal engulfing pattern')">Candlestick reversal engulfing</span>
+            </div>
+          </div>
+
+          <div class="results-count" id="results-count">Showing indexed results</div>
+          <div class="results-list" id="results-list">
+            <!-- Search items loaded dynamically -->
+          </div>
+        </div>
+
+        <!-- TAB 2: Trade Strategy Spec -->
+        <div class="tab-content" id="tab-spec">
+          <div class="spec-container" id="spec-container">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <!-- TAB 3: Milestones & Summary -->
+        <div class="tab-content" id="tab-milestones">
+          <div class="spec-container" id="milestones-container">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Copied to clipboard!</div>
+
+  <script>
+    let currentVideoId = "video_1";
+    let videoList = [];
+    let currentVideoData = null;
+
+    const player = document.getElementById("video-player");
+    const videoSource = document.getElementById("video-source");
+    const videoTrack = document.getElementById("video-track");
+    const timeDisplay = document.getElementById("time-display");
+
+    // Format seconds to HH:MM:SS or MM:SS
+    function formatTime(s) {
+      if (isNaN(s)) return "00:00";
+      const total = Math.floor(s);
+      const h = Math.floor(total / 3600);
+      const m = Math.floor((total % 3600) / 60);
+      const sec = total % 60;
+      if (h > 0) {
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+      }
+      return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+    }
+
+    player.addEventListener("timeupdate", () => {
+      timeDisplay.textContent = `${formatTime(player.currentTime)} / ${formatTime(player.duration)}`;
+    });
+
+    function setSpeed(speed) {
+      player.playbackRate = speed;
+      document.querySelectorAll(".speed-btn").forEach(b => {
+        b.classList.toggle("active", parseFloat(b.textContent) === speed);
+      });
+    }
+
+    function seekTo(seconds) {
+      player.currentTime = parseFloat(seconds);
+      player.play();
+      player.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+
+      const targetBtn = Array.from(document.querySelectorAll(".tab-btn")).find(b => b.onclick.toString().includes(tabId));
+      if (targetBtn) targetBtn.classList.add("active");
+
+      const targetContent = document.getElementById(`tab-${tabId}`);
+      if (targetContent) targetContent.classList.add("active");
+    }
+
+    async function loadVideos() {
+      try {
+        const res = await fetch("/api/videos");
+        videoList = await res.json();
+        renderVideoCards();
+        selectVideo(videoList[0].video_id);
+      } catch (err) {
+        console.error("Failed to load videos:", err);
+      }
+    }
+
+    function renderVideoCards() {
+      const container = document.getElementById("video-grid");
+      container.innerHTML = "";
+
+      videoList.forEach(v => {
+        const card = document.createElement("div");
+        card.className = `video-card ${v.video_id === currentVideoId ? 'active' : ''}`;
+        card.id = `card-${v.video_id}`;
+        card.onclick = () => selectVideo(v.video_id);
+
+        card.innerHTML = `
+          <div>
+            <div class="video-card-header">
+              <div class="video-card-title">${v.title}</div>
+              <span class="video-tag ${v.asset === 'NVDA' ? 'tag-green' : 'tag-cyan'}">${v.asset}</span>
+            </div>
+            <div class="video-card-meta">
+              <span>⏱ ${v.duration_str}</span>
+              <span>•</span>
+              <span>📊 ${v.timeframe}</span>
+              <span>•</span>
+              <span style="color: var(--accent-green);">✓ ${v.indexed_chunks} Chunks Indexed</span>
+            </div>
+            <div class="video-card-desc">${v.description}</div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function selectVideo(videoId) {
+      currentVideoId = videoId;
+      document.querySelectorAll(".video-card").forEach(c => c.classList.remove("active"));
+      const activeCard = document.getElementById(`card-${videoId}`);
+      if (activeCard) activeCard.classList.add("active");
+
+      const vid = videoList.find(v => v.video_id === videoId);
+      if (vid) {
+        document.getElementById("active-video-badge").textContent = `Selected: ${vid.asset} (${vid.timeframe})`;
+        document.getElementById("meta-asset").textContent = vid.asset;
+        document.getElementById("meta-tf").textContent = vid.timeframe;
+        document.getElementById("meta-duration").textContent = vid.duration_str;
+        document.getElementById("meta-chunks").textContent = `${vid.indexed_chunks} Indexed Chunks`;
+
+        // Update video player
+        videoSource.src = `/api/videos/stream/${videoId}`;
+        videoTrack.src = `/api/videos/subtitles/${videoId}`;
+        player.load();
+
+        // Update quick chips based on video context
+        updateQuickChips(videoId);
+
+        // Load data
+        await loadVideoDetails(videoId);
+        // Run initial search
+        quickSearch(videoId === "video_1" ? "breakout" : "RSI divergence");
+      }
+    }
+
+    function updateQuickChips(videoId) {
+      const container = document.getElementById("query-chips");
+      if (videoId === "video_1") {
+        container.innerHTML = `
+          <span class="chip" onclick="quickSearch('Weekly breakout above resistance')">Weekly breakout above resistance</span>
+          <span class="chip" onclick="quickSearch('Retest of consolidation buy zone')">Retest of consolidation buy zone</span>
+          <span class="chip" onclick="quickSearch('Stop loss below swing low')">Stop loss below swing low</span>
+          <span class="chip" onclick="quickSearch('Bullish market structure continuation')">Bullish market structure</span>
+          <span class="chip" onclick="quickSearch('Heikin Ashi weekly candles')">Heikin Ashi candles</span>
+        `;
+      } else {
+        container.innerHTML = `
+          <span class="chip" onclick="quickSearch('RSI divergence overbought')">RSI divergence overbought</span>
+          <span class="chip" onclick="quickSearch('Momentum indicator not reversal')">Momentum vs reversal</span>
+          <span class="chip" onclick="quickSearch('Candlestick reversal engulfing pattern')">Candlestick reversal engulfing</span>
+          <span class="chip" onclick="quickSearch('Support and resistance retest')">Support & resistance retest</span>
+          <span class="chip" onclick="quickSearch('AUDCAD daily higher highs')">AUDCAD daily structure</span>
+        `;
+      }
+    }
+
+    async function loadVideoDetails(videoId) {
+      try {
+        const res = await fetch(`/api/videos/status/${videoId}`);
+        const data = await res.json();
+        currentVideoData = data;
+        renderStrategySpec(data.trade_spec);
+        renderMilestones(data.summary);
+      } catch (err) {
+        console.error("Failed to load video details:", err);
+      }
+    }
+
+    function renderStrategySpec(spec) {
+      const container = document.getElementById("spec-container");
+      if (!spec) {
+        container.innerHTML = `<div style="color: var(--text-dim);">No strategy spec generated yet.</div>`;
+        return;
+      }
+
+      const isBullish = spec.directional_bias && spec.directional_bias.toLowerCase().includes("bull");
+      const biasClass = isBullish ? "bias-bullish" : "bias-bearish";
+
+      let rulesHtml = "";
+      if (spec.step_by_step_rules && spec.step_by_step_rules.length > 0) {
+        rulesHtml = `
+          <div class="spec-section-card">
+            <div class="spec-section-heading">⚡ Formal Algorithmic Rule Engine</div>
+            <table class="rule-table">
+              <thead>
+                <tr>
+                  <th style="width: 70px;">Rule #</th>
+                  <th style="width: 180px;">Rule Name</th>
+                  <th>Condition Logic</th>
+                  <th>Execution Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${spec.step_by_step_rules.map(r => `
+                  <tr>
+                    <td><strong style="color: var(--accent-cyan);">Rule ${r.rule_id}</strong></td>
+                    <td><strong>${r.name}</strong></td>
+                    <td><span class="rule-code">${escapeHtml(r.condition)}</span></td>
+                    <td>${escapeHtml(r.action)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      container.innerHTML = `
+        <div class="spec-grid-header">
+          <div class="spec-stat-card">
+            <div class="spec-stat-label">Asset Under Trade</div>
+            <div class="spec-stat-val" style="color: var(--accent-cyan);">${spec.asset || 'N/A'}</div>
+          </div>
+          <div class="spec-stat-card">
+            <div class="spec-stat-label">Chart Timeframe</div>
+            <div class="spec-stat-val">${spec.timeframe || 'N/A'}</div>
+          </div>
+          <div class="spec-stat-card">
+            <div class="spec-stat-label">Directional Bias</div>
+            <div class="spec-stat-val ${biasClass}">${(spec.directional_bias || 'NEUTRAL').toUpperCase()}</div>
+          </div>
+          <div class="spec-stat-card">
+            <div class="spec-stat-label">Risk-to-Reward</div>
+            <div class="spec-stat-val" style="color: var(--accent-amber);">${spec.risk_reward_ratio || '1:2'}</div>
+          </div>
+        </div>
+
+        <div class="spec-section-card">
+          <div class="spec-section-heading">💡 Core Strategy Thesis & Trader Alpha</div>
+          <div class="spec-body-text">${escapeHtml(spec.core_thesis || '')}</div>
+        </div>
+
+        <div class="spec-section-card">
+          <div class="spec-section-heading">🎯 Trade Entry, Stops & Invalidation Targets</div>
+          <div class="spec-body-text" style="display: flex; flex-direction: column; gap: 0.6rem;">
+            <div><strong style="color: var(--accent-green);">Entry Trigger:</strong> ${escapeHtml(spec.entry_trigger || '')}</div>
+            <div><strong style="color: #ef4444;">Invalidation Stop Loss:</strong> ${escapeHtml(spec.invalidation_stop || '')}</div>
+            <div><strong style="color: var(--accent-amber);">Take Profit Targets:</strong> ${(spec.take_profit_targets || []).join(' | ')}</div>
+          </div>
+        </div>
+
+        ${rulesHtml}
+      `;
+    }
+
+    function renderMilestones(summary) {
+      const container = document.getElementById("milestones-container");
+      if (!summary) {
+        container.innerHTML = `<div style="color: var(--text-dim);">No summary generated yet.</div>`;
+        return;
+      }
+
+      const events = summary.key_events || [];
+
+      container.innerHTML = `
+        <div class="spec-section-card">
+          <div class="spec-section-heading">Executive Video Summary</div>
+          <div class="spec-body-text">${escapeHtml(summary.summary || '')}</div>
+        </div>
+
+        <div class="spec-section-heading" style="margin-top: 1rem;">Chronological Milestone Events (${events.length})</div>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          ${events.map(ev => `
+            <div class="result-card">
+              <div class="result-header">
+                <span class="timestamp-badge" onclick="seekTo(${ev.start_s})">▶ ${ev.timestamp_range}</span>
+                <span class="video-tag tag-cyan">${escapeHtml(ev.event_type || 'Event')}</span>
+              </div>
+              <div style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.4rem; color: #fff;">
+                ${escapeHtml(ev.action_or_concept)}
+              </div>
+              ${ev.chart_evidence ? `<div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;"><strong style="color: var(--accent-cyan);">Chart Evidence:</strong> ${escapeHtml(ev.chart_evidence)}</div>` : ''}
+              ${ev.spoken_rationale ? `<div style="font-size: 0.85rem; color: var(--text-dim); font-style: italic;">"${escapeHtml(ev.spoken_rationale)}"</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function quickSearch(query) {
+      document.getElementById("search-input").value = query;
+      executeSearch();
+    }
+
+    async function executeSearch() {
+      const query = document.getElementById("search-input").value.trim();
+      if (!query) return;
+
+      const resultsContainer = document.getElementById("results-list");
+      resultsContainer.innerHTML = `<div style="color: var(--text-muted); font-family: var(--font-mono);">Searching indexed chunks...</div>`;
+
+      try {
+        const res = await fetch("/api/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            video_id: currentVideoId,
+            query: query,
+            top_k: 8
+          })
+        });
+
+        const data = await res.json();
+        renderSearchResults(data, query);
+      } catch (err) {
+        resultsContainer.innerHTML = `<div style="color: #ef4444;">Search failed: ${err.message}</div>`;
+      }
+    }
+
+    function renderSearchResults(data, query) {
+      const container = document.getElementById("results-list");
+      const countEl = document.getElementById("results-count");
+
+      if (!data || !data.results || data.results.length === 0) {
+        countEl.textContent = `0 results found for "${query}"`;
+        container.innerHTML = `<div style="color: var(--text-dim); padding: 1rem 0;">No matching intervals found for "${escapeHtml(query)}". Try different keywords or indicators.</div>`;
+        return;
+      }
+
+      countEl.textContent = `Found ${data.results.length} relevant intervals across ${data.total_chunks} chunks`;
+
+      const terms = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+
+      container.innerHTML = data.results.map(r => {
+        let highlighted = escapeHtml(r.matched_transcript || "");
+        terms.forEach(term => {
+          const regex = new RegExp(`(${term})`, "gi");
+          highlighted = highlighted.replace(regex, `<span class="highlight">$1</span>`);
+        });
+
+        const scorePercent = Math.round(r.score * 100);
+
+        return `
+          <div class="result-card">
+            <div class="result-header">
+              <span class="timestamp-badge" onclick="seekTo(${r.start_s})">
+                ▶ ${r.timestamp_range}
+              </span>
+              <span class="score-badge">Relevance: ${scorePercent}%</span>
+            </div>
+            <div class="result-transcript">"${highlighted}"</div>
+            ${r.reasoning ? `<div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 0.35rem;"><strong style="color: var(--accent-cyan);">VLM Visual Grounding:</strong> ${escapeHtml(r.reasoning)}</div>` : ''}
+            <div class="result-signals">
+              <span class="signal-pill">${escapeHtml(r.trade_context || 'Market Structure')}</span>
+              <button class="speed-btn" style="margin-left: auto; padding: 0.2rem 0.6rem; color: var(--accent-cyan); border-color: rgba(6, 182, 212, 0.4);" onclick="seekTo(${r.start_s})">Jump to Timestamp</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // Initialize on load
+    window.addEventListener("DOMContentLoaded", loadVideos);
+  </script>
+</body>
+</html>

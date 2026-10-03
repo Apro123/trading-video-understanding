@@ -19,8 +19,9 @@ DEICTIC_KEYWORDS = [
 ]
 
 def time_str_to_seconds(t_str: str) -> float:
-    """Converts MM:SS or HH:MM:SS to total seconds."""
-    parts = t_str.strip().split(":")
+    """Converts MM:SS, HH:MM:SS, or timestamps with fractional seconds to total seconds."""
+    t_clean = t_str.strip().replace(",", ".")
+    parts = t_clean.split(":")
     if len(parts) == 2:
         return int(parts[0]) * 60 + float(parts[1])
     elif len(parts) == 3:
@@ -28,15 +29,19 @@ def time_str_to_seconds(t_str: str) -> float:
     raise ValueError(f"Invalid timestamp format: {t_str}")
 
 def seconds_to_time_str(secs: float) -> str:
-    """Converts seconds to MM:SS format."""
-    m = int(secs) // 60
-    s = int(secs) % 60
+    """Converts seconds to MM:SS or HH:MM:SS format."""
+    secs_int = int(secs)
+    h = secs_int // 3600
+    m = (secs_int % 3600) // 60
+    s = secs_int % 60
+    if h > 0:
+        return f"{h:02d}:{m:02d}:{s:02d}"
     return f"{m:02d}:{s:02d}"
 
 class SubtitleSyncManager:
     """
     Manages parsing, timestamp normalization, and temporal chunk synchronization
-    for arbitrary trading clips and subtitle transcripts.
+    for arbitrary trading clips, full Video videos, WebVTT, and SRT transcripts.
     """
 
     def __init__(self, subtitle_file: str, clip_duration_s: Optional[float] = None):
@@ -47,62 +52,83 @@ class SubtitleSyncManager:
         self.load_and_normalize()
 
     def load_and_normalize(self) -> List[SubtitleEntry]:
-        """Parses the raw subtitle file and normalizes timestamps relative to 0:00."""
+        """Parses the raw subtitle file (WebVTT, SRT, or legacy format) and normalizes timestamps."""
         if not os.path.exists(self.subtitle_file):
             raise FileNotFoundError(f"Subtitle file not found: {self.subtitle_file}")
 
-        with open(self.subtitle_file, "r", encoding="utf-8") as f:
-            lines = [line.strip() for line in f if line.strip()]
+        with open(self.subtitle_file, "r", encoding="utf-8", errors="replace") as f:
+            content = f.read()
 
-        raw_blocks: List[Tuple[str, str]] = []
-        i = 0
-        while i < len(lines):
-            line = lines[i]
-            # Detect timestamp lines like "18:40" or "01:18:40"
-            if ":" in line and all(p.isdigit() for p in line.split(":")):
-                ts_str = line
-                text_lines = []
-                i += 1
-                while i < len(lines) and not (":" in lines[i] and all(p.isdigit() for p in lines[i].split(":"))):
-                    text_lines.append(lines[i])
+        raw_blocks: List[Tuple[float, float, str, str]] = []
+
+        # 1. Check for WebVTT or SRT "-->" timestamp arrows
+        vtt_pattern = re.compile(
+            r"((?:\d{1,2}:)?\d{2}:\d{2}[\.,]\d{1,3})\s*-->\s*((?:\d{1,2}:)?\d{2}:\d{2}[\.,]\d{1,3})[^\n]*\n([\s\S]*?)(?=\n\s*(?:(?:\d{1,2}:)?\d{2}:\d{2}[\.,]\d{1,3}\s*-->|\Z))",
+            re.MULTILINE
+        )
+        matches = list(vtt_pattern.finditer(content))
+        if matches:
+            prev_clean = ""
+            for m in matches:
+                start_s = time_str_to_seconds(m.group(1))
+                end_s = time_str_to_seconds(m.group(2))
+                raw_text = m.group(3)
+                clean_text = re.sub(r"<[^>]+>", "", raw_text)
+                clean_text = " ".join([l.strip() for l in clean_text.splitlines() if l.strip()])
+                if clean_text and clean_text != prev_clean:
+                    raw_blocks.append((start_s, end_s, seconds_to_time_str(start_s), clean_text))
+                    prev_clean = clean_text
+
+        # 2. Fallback to legacy format: "18:40 \n text"
+        if not raw_blocks:
+            lines = [line.strip() for line in content.splitlines() if line.strip()]
+            i = 0
+            while i < len(lines):
+                line = lines[i]
+                if ":" in line and all(p.replace(".", "").isdigit() for p in line.split(":")):
+                    ts_str = line
+                    text_lines = []
                     i += 1
-                raw_blocks.append((ts_str, " ".join(text_lines)))
-            else:
-                i += 1
+                    while i < len(lines) and not (":" in lines[i] and all(p.replace(".", "").isdigit() for p in lines[i].split(":"))):
+                        text_lines.append(lines[i])
+                        i += 1
+                    try:
+                        start_s = time_str_to_seconds(ts_str)
+                        raw_blocks.append((start_s, start_s + 5.0, ts_str, " ".join(text_lines)))
+                    except Exception:
+                        pass
+                else:
+                    i += 1
 
         if not raw_blocks:
             return []
 
-        # First timestamp is the anchor origin (e.g. 18:40 or 39:46)
-        self._origin_offset_s = time_str_to_seconds(raw_blocks[0][0])
+        # If clip starts with an offset (e.g. 18:40) and clip_duration_s is shorter than total offset,
+        # normalize to 0:00. If it is a full video or starts near 0, offset is 0.0.
+        first_start = raw_blocks[0][0]
+        if self.clip_duration_s and self.clip_duration_s < first_start:
+            self._origin_offset_s = first_start
+        elif first_start > 60.0 and self.clip_duration_s is None:
+            # If the first subtitle starts past 1 minute and no clip duration is specified,
+            # this indicates an isolated clip excerpt anchored at original video time.
+            self._origin_offset_s = first_start
+        else:
+            self._origin_offset_s = 0.0
 
         parsed_entries = []
-        for idx, (ts_str, text) in enumerate(raw_blocks):
-            orig_s = time_str_to_seconds(ts_str)
-            clip_s = max(0.0, orig_s - self._origin_offset_s)
+        for idx, (start_s, end_s, orig_ts_str, text) in enumerate(raw_blocks):
+            clip_start_s = max(0.0, start_s - self._origin_offset_s)
+            clip_end_s = max(clip_start_s + 1.0, end_s - self._origin_offset_s)
             parsed_entries.append({
                 "index": idx,
-                "orig_timestamp_str": ts_str,
-                "orig_timestamp_s": orig_s,
-                "clip_timestamp_s": clip_s,
-                "clip_timestamp_str": seconds_to_time_str(clip_s),
-                "clip_end_s": clip_s + 5.0,  # placeholder, updated below
-                "duration_s": 5.0,
+                "orig_timestamp_str": orig_ts_str,
+                "orig_timestamp_s": start_s,
+                "clip_timestamp_s": clip_start_s,
+                "clip_timestamp_str": seconds_to_time_str(clip_start_s),
+                "clip_end_s": clip_end_s,
+                "duration_s": max(0.5, clip_end_s - clip_start_s),
                 "text": text
             })
-
-        # Calculate accurate end times and durations
-        for idx in range(len(parsed_entries)):
-            if idx + 1 < len(parsed_entries):
-                parsed_entries[idx]["clip_end_s"] = parsed_entries[idx + 1]["clip_timestamp_s"]
-            else:
-                if self.clip_duration_s is not None and self.clip_duration_s > parsed_entries[idx]["clip_timestamp_s"]:
-                    parsed_entries[idx]["clip_end_s"] = self.clip_duration_s
-                else:
-                    parsed_entries[idx]["clip_end_s"] = parsed_entries[idx]["clip_timestamp_s"] + 8.0
-
-            dur = max(1.0, parsed_entries[idx]["clip_end_s"] - parsed_entries[idx]["clip_timestamp_s"])
-            parsed_entries[idx]["duration_s"] = dur
 
         self.entries = [SubtitleEntry(**item) for item in parsed_entries]
         return self.entries
