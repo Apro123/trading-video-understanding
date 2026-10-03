@@ -5,11 +5,13 @@ https://github.com/NVIDIA-AI-Blueprints/video-search-and-summarization
 
 Translates multimodal video observations and long video summaries into formal,
 machine-executable algorithmic trading rules and structured trade idea specifications.
+Uses Nemotron 3.5 Lightning reasoning when available, with clean generic fallback.
 """
 
 import os
 import re
 import json
+import logging
 from typing import List, Dict, Any, Optional
 
 try:
@@ -17,17 +19,23 @@ try:
         TradeIdeaSpec,
         TradingRule,
         CompletionResponse,
-        VlmCaptionResponse
+        VlmCaptionResponse,
+        VideoChunk
     )
     from .vlm_reasoner import VSSVLMReasoner
+    from .nemotron_reasoner import NemotronReasoner
 except (ImportError, ValueError):
     from schemas import (
         TradeIdeaSpec,
         TradingRule,
         CompletionResponse,
-        VlmCaptionResponse
+        VlmCaptionResponse,
+        VideoChunk
     )
     from vlm_reasoner import VSSVLMReasoner
+    from nemotron_reasoner import NemotronReasoner
+
+logger = logging.getLogger(__name__)
 
 class VSSTradeStrategyAgent:
     """
@@ -35,18 +43,47 @@ class VSSTradeStrategyAgent:
     from VSS multimodal video captions and summaries.
     """
 
-    def __init__(self, reasoner: Optional[VSSVLMReasoner] = None):
+    def __init__(
+        self,
+        reasoner: Optional[VSSVLMReasoner] = None,
+        nemotron: Optional[NemotronReasoner] = None
+    ):
         self.reasoner = reasoner
+        self.nemotron = nemotron or NemotronReasoner()
 
     def synthesize_trade_idea(
         self,
         completion: CompletionResponse,
+        chunks: Optional[List[VideoChunk]] = None,
         video_metadata: Optional[Dict[str, Any]] = None
     ) -> TradeIdeaSpec:
         """
         Formulates a comprehensive TradeIdeaSpec based on VSS video captions,
         reasoning notes, and spoken subtitles.
+        Prioritizes Nemotron 3.5 reasoning, with generic algorithmic fallback.
         """
+        # 1. Attempt LLM Reasoning via Nemotron 3.5 Lightning
+        if self.nemotron and self.nemotron.is_available() and chunks:
+            try:
+                spec = self.nemotron.synthesize_trade_idea(
+                    chunks=chunks,
+                    chunk_captions=completion.chunk_captions,
+                    key_events=completion.key_events
+                )
+                if spec is not None:
+                    return spec
+            except Exception as e:
+                logger.warning(f"Nemotron trade idea synthesis failed: {e}. Using generic fallback.")
+
+        # 2. Generic Rule-Based Algorithmic Fallback (Zero hardcoded tickers or prices)
+        return self._generic_rule_based_synthesis(completion, video_metadata)
+
+    def _generic_rule_based_synthesis(
+        self,
+        completion: CompletionResponse,
+        video_metadata: Optional[Dict[str, Any]] = None
+    ) -> TradeIdeaSpec:
+        """Completely generic synthesis without clip-specific keywords or hardcoded values."""
         text_parts = [completion.summary]
         for c in completion.chunk_captions:
             text_parts.append(c.content)
@@ -61,149 +98,127 @@ class VSSTradeStrategyAgent:
         all_text = " ".join(text_parts)
         lower = all_text.lower()
 
-        # 1. Asset & Timeframe Identification
-        asset = "Unknown Asset"
-        timeframe = "Weekly (1W)"
-        if "nvidia" in lower or "nvda" in lower:
-            asset = "NVDA (NVIDIA Corporation)"
-            timeframe = "1W (Weekly Heikin Ashi)"
-        elif "aud/cad" in lower or "audcad" in lower:
-            asset = "AUD/CAD (Australian Dollar / Canadian Dollar)"
-            timeframe = "4H / Daily"
+        # Dynamic Asset Extraction (look for uppercase tickers or currency pairs)
+        asset = "Market Asset Under Analysis"
+        ticker_matches = re.findall(r'\b([A-Z]{2,6}(?:/[A-Z]{2,6})?)\b', all_text)
+        exclude_tokens = {
+            "VSS", "VLM", "LVS", "CHoCH", "BOS", "FVG", "RSI", "MACD", "SMA", "EMA",
+            "GPU", "CPU", "AI", "TP1", "TP2", "TP", "SL", "TV", "HTF", "LTF", "RR",
+            "USD", "CAD", "EUR", "GBP", "JPY", "AUD", "NZD", "CHF"
+        }
+        for tm in ticker_matches:
+            if tm not in exclude_tokens and len(tm) >= 3:
+                asset = tm
+                break
 
-        # 2. Directional Bias & Core Thesis
-        bias = "Bullish"
-        if "rsi" in lower and "divergence" in lower and "went bullish" not in lower:
+        # Dynamic Timeframe Extraction
+        timeframe = "Chart Timeframe"
+        if "weekly" in lower or "1w" in lower:
+            timeframe = "Weekly (1W)"
+        elif "daily" in lower or "1d" in lower:
+            timeframe = "Daily (1D)"
+        elif "4h" in lower:
+            timeframe = "4-Hour (4H)"
+        elif "1h" in lower:
+            timeframe = "1-Hour (1H)"
+        elif "15m" in lower:
+            timeframe = "15-Minute (15M)"
+
+        if "heikin ashi" in lower:
+            timeframe += " Heikin Ashi"
+
+        # Dynamic Directional Bias
+        bullish_score = sum(1 for w in ["bullish", "buy zone", "demand", "breakout", "higher high"] if w in lower)
+        bearish_score = sum(1 for w in ["bearish", "sell zone", "supply", "breakdown", "lower low", "divergence"] if w in lower)
+
+        if bearish_score > bullish_score and "divergence" in lower:
             bias = "Bearish Reversal"
-        elif any(w in lower for w in ["buy zone", "went bullish", "1927", "choch", "bullish signal", "bullish trend"]):
+        elif bullish_score >= bearish_score and bullish_score > 0:
             bias = "Bullish"
-        elif "bearish" in lower:
+        elif bearish_score > bullish_score:
             bias = "Bearish"
+        else:
+            bias = "Neutral"
 
-        # 3. Step-by-Step Execution Rules
+        # Dynamic Rules Formulation
         rules: List[TradingRule] = []
 
-        if "1927" in lower or "january 30" in lower or "went bullish" in lower:
-            core_thesis = (
-                "Trend reversal confirmed via Change of Character (CHoCH) above the $19.27 swing high, "
-                "followed by a pullback into an accumulation consolidation buy zone."
-            )
-            entry_trigger = (
-                "Enter long when price pulls back into the previous consolidation breakout range ($75.61 - $97.40) "
-                "with bullish Heikin Ashi continuation candle confirmation."
-            )
-            invalidation_stop = (
-                "Place protective stop loss strictly below the lowest swing low pivot preceding the $19.27 breakout candle."
-            )
-            targets = [
-                "TP1: Previous major structural swing high ($140.00+)",
-                "TP2: Uncharted Fibonacci extension / all-time high continuation"
-            ]
-            rr = "3.2:1"
-            indicators = [
-                "Weekly Heikin Ashi Candlesticks",
-                "Fractal Swing High / Low Pivots (3-Bar Pattern)",
-                "Horizontal Volume Consolidation Boundaries"
-            ]
+        if bias == "Bearish Reversal" or ("rsi" in lower and "divergence" in lower):
+            core_thesis = "Momentum exhaustion reversal identified via oscillator divergence against price extremes at key overhead structure."
+            entry_trigger = "Enter short upon confirmed close below the reversal trigger candle at key overhead structure."
+            invalidation_stop = "Place stop loss beyond the recent extreme swing high pivot."
+            targets = ["TP1: Immediate structural liquidity support", "TP2: Baseline demand zone"]
+            rr = "2.5:1"
+            indicators = ["Momentum Oscillator (RSI/MACD)", "Key Overhead Resistance / Supply Level", "Candlestick Exhaustion Patterns"]
             confluences = [
-                "Decisive breakout close above $19.27 pivot on January 30, 2023",
-                "Valid 3-bar fractal swing high with lower highs on adjacent left/right candles",
-                "Consolidation resistance flip into institutional demand buy zone",
-                "Dynamic protected swing low invalidation anchor"
+                "Oscillator printing lower highs while price prints higher highs",
+                "Rejection wick at structural resistance",
+                "Breakdown of immediate candle low confirming reversal"
             ]
 
             rules.append(TradingRule(
                 rule_id=1,
-                name="Fractal Swing High Confirmation",
-                description="A valid swing pivot requires strictly lower candle highs on both left and right sides.",
-                condition="High[t] > High[t-1] and High[t] > High[t+1]",
-                action="Mark horizontal price line as structural pivot reference."
+                name="Momentum Divergence Confirmation",
+                description="Verify divergence between price highs and oscillator indicator peaks.",
+                condition="Price_High[t] > Price_High[t-n] and Indicator_High[t] < Indicator_High[t-n]",
+                action="Flag high-probability momentum exhaustion zone."
             ))
             rules.append(TradingRule(
                 rule_id=2,
-                name="Bullish Change of Character (CHoCH)",
-                description="Decisive close above previous valid swing high signals institutional trend change.",
-                condition="Close > Previous_Swing_High ($19.27)",
-                action="Shift directional bias from Bearish to Bullish."
+                name="Resistance Level Test",
+                description="Price must test recognized overhead structural supply level.",
+                condition="Price tests major horizontal resistance",
+                action="Prepare execution trigger on confirmation."
             ))
             rules.append(TradingRule(
                 rule_id=3,
-                name="Dynamic Swing Low Anchor",
-                description="The lowest price achieved between previous high and new breakout establishes the new protected stop.",
-                condition="Stop_Loss = min(Price) between Breakout_High[n-1] and Breakout_High[n]",
-                action="Anchor invalidation stop loss below this trough."
-            ))
-            rules.append(TradingRule(
-                rule_id=4,
-                name="Consolidation Demand Retest Entry",
-                description="Enter upon price returning to test previous multi-month consolidation ceiling.",
-                condition="Price in Range(Buy_Zone_Low, Buy_Zone_High) and Bullish_Reversal_Candle",
-                action="Execute Long Entry with pre-calculated position sizing."
-            ))
-
-        elif "rsi" in lower and "divergence" in lower:
-            core_thesis = (
-                "Exploit momentum exhaustion where price prints equal or higher highs while the 14-period RSI prints lower highs at key resistance."
-            )
-            entry_trigger = (
-                "Enter short when price closes below the breakdown trigger candle at overhead resistance following confirmed RSI divergence."
-            )
-            invalidation_stop = (
-                "Place stop loss 0.5% above the overhead resistance swing high."
-            )
-            targets = [
-                "TP1: Retest of preceding structural demand zone",
-                "TP2: Major liquidity pool low"
-            ]
-            rr = "2.8:1"
-            indicators = [
-                "Relative Strength Index (RSI 14-Period)",
-                "Horizontal Resistance / Overhead Liquidity Zone",
-                "Candlestick Exhaustion Upper Wicks"
-            ]
-            confluences = [
-                "Bearish divergence in RSI overbought territory (>70)",
-                "Rejection candle at key horizontal supply level",
-                "Market structure shift confirmation"
-            ]
-
-            rules.append(TradingRule(
-                rule_id=1,
-                name="RSI Bearish Divergence Detection",
-                description="Price higher high accompanied by RSI lower high.",
-                condition="Price_High[t] > Price_High[t-n] and RSI_High[t] < RSI_High[t-n]",
-                action="Flag potential momentum reversal zone."
-            ))
-            rules.append(TradingRule(
-                rule_id=2,
-                name="Resistance Confluence Confirmation",
-                description="Divergence must align with overhead structural resistance.",
-                condition="Price near Major_Resistance_Level",
-                action="Await execution trigger candle."
-            ))
-            rules.append(TradingRule(
-                rule_id=3,
-                name="Short Execution & Invalidation",
-                description="Close below trigger candle confirms reversal; stop placed above recent high.",
+                name="Short Entry & Stop Loss Execution",
+                description="Enter short on confirmation with protective stop placed above extreme swing high.",
                 condition="Close < Trigger_Candle_Low",
-                action="Execute Short Position with Stop above Swing High."
+                action="Execute short position and set invalidation stop above swing high."
             ))
 
         else:
-            core_thesis = "Systematic market structure mapping and trend-following trade execution."
-            entry_trigger = "Enter on confirmed structural breakout or demand retest."
-            invalidation_stop = "Stop loss anchored below the preceding swing low."
-            targets = ["TP1: 2.0x Risk", "TP2: 3.0x Risk"]
+            core_thesis = "Systematic market structure trend progression confirmed via structural pivot breakout and demand retest."
+            entry_trigger = "Enter on confirmed structural breakout above resistance or upon pullback retest into the prior consolidation demand zone."
+            invalidation_stop = "Place protective stop loss anchored strictly below the lowest structural swing low pivot."
+            targets = ["TP1: Preceding major structural swing high", "TP2: Extension / continuation target (2:1 minimum R:R)"]
             rr = "2.5:1"
-            indicators = ["Price Action Candlesticks", "Key Horizontal Levels"]
-            confluences = ["Structural trend alignment", "Volume expansion on breakout"]
+            indicators = ["Price Action Candlesticks", "Fractal Swing High / Low Pivots", "Consolidation Support Boundaries"]
+            confluences = [
+                "Decisive candle close breaking above prior structural swing high",
+                "Valid multi-bar fractal swing pivot formation",
+                "Previous consolidation resistance acting as dynamic demand support",
+                "Protected swing low anchor defining objective risk boundary"
+            ]
 
             rules.append(TradingRule(
                 rule_id=1,
-                name="Trend Alignment Rule",
-                description="Trade strictly in direction of prevailing structural momentum.",
-                condition="Price above key moving average or making higher swing highs",
-                action="Seek long entries on pullbacks."
+                name="Structural Pivot Validation",
+                description="Identify and validate key swing high or low structural reference levels.",
+                condition="High[t] > High[t-1] and High[t] > High[t+1]",
+                action="Mark horizontal price coordinate as structural reference pivot."
+            ))
+            rules.append(TradingRule(
+                rule_id=2,
+                name="Trend Reversal / Breakout Confirmation",
+                description="Decisive close beyond previous structural pivot confirms Change of Character or continuation.",
+                condition="Close > Previous_Swing_High",
+                action="Confirm directional market structure bias."
+            ))
+            rules.append(TradingRule(
+                rule_id=3,
+                name="Pullback Retest Entry",
+                description="Enter upon price retesting the breakout level or consolidation support zone.",
+                condition="Price retests support zone with reversal candlestick confirmation",
+                action="Execute long entry with calculated position sizing."
+            ))
+            rules.append(TradingRule(
+                rule_id=4,
+                name="Protected Invalidation Stop",
+                description="Anchor stop loss below the lowest structural trough between breakout impulses.",
+                condition="Stop_Loss = min(Price) between breakout impulses",
+                action="Set protected stop loss to limit downside risk."
             ))
 
         return TradeIdeaSpec(
@@ -248,20 +263,26 @@ class VSSTradeStrategyAgent:
         md.append("---")
         md.append("")
         md.append("## 🔍 Technical Indicators & Structural Confluences")
-        md.append("### Indicators:")
-        for ind in spec.technical_indicators:
-            md.append(f"- `{ind}`")
         md.append("")
-        md.append("### Confluences:")
+        md.append("### Technical Indicators:")
+        for ind in spec.technical_indicators:
+            md.append(f"- {ind}")
+        md.append("")
+        md.append("### Structural Confluences:")
         for conf in spec.structural_confluences:
             md.append(f"- {conf}")
         md.append("")
         md.append("---")
         md.append("")
-        md.append("## 📋 Algorithmic Execution Rules")
-        md.append("| Rule # | Rule Name | Description | Logic / Condition | Action |")
+        md.append("## 📋 Formal Algorithmic Rule Engine")
+        md.append("")
+        md.append("| Rule # | Rule Name | Description | Condition Logic | Action |")
         md.append("|---|---|---|---|---|")
         for r in spec.step_by_step_rules:
-            md.append(f"| **Rule {r.rule_id}** | `{r.name}` | {r.description} | `{r.condition}` | {r.action} |")
+            desc = r.description.replace("|", "/")
+            cond = r.condition.replace("|", "/")
+            act = r.action.replace("|", "/")
+            md.append(f"| Rule {r.rule_id} | **{r.name}** | {desc} | `{cond}` | {act} |")
+        md.append("")
 
         return "\n".join(md)

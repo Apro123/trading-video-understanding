@@ -35,7 +35,10 @@ def cmd_summarize(args):
         chunk_duration_s=args.chunk_duration,
         chunk_overlap_s=args.chunk_overlap,
         frames_per_chunk=args.frames_per_chunk,
-        device=args.device
+        device=args.device,
+        llm_base_url=args.llm_base_url,
+        llm_model=args.llm_model,
+        skip_llm=args.skip_llm
     )
 
 def cmd_search(args):
@@ -75,7 +78,10 @@ def cmd_trade_idea(args):
         output_dir=args.output_dir,
         model_path=args.model_path,
         skip_model=args.skip_model,
-        device=args.device
+        device=args.device,
+        llm_base_url=args.llm_base_url,
+        llm_model=args.llm_model,
+        skip_llm=args.skip_llm
     )
     spec = res.trade_spec
     print("\n" + "=" * 60)
@@ -91,7 +97,7 @@ def cmd_serve(args):
     """Starts the VSS FastAPI microservice via uvicorn."""
     import uvicorn
     print(f"Starting NVIDIA VSS Trading Microservice on {args.host}:{args.port}...")
-    uvicorn.run("video_search_and_summarization.server:app", host=args.host, port=args.port, reload=args.reload)
+    uvicorn.run("server:app", host=args.host, port=args.port, reload=args.reload)
 
 def main():
     parser = argparse.ArgumentParser(description="NVIDIA VSS Trading CLI")
@@ -108,6 +114,9 @@ def main():
     p_sum.add_argument("--chunk_overlap", type=float, default=3.0, help="Overlap duration in seconds")
     p_sum.add_argument("--frames_per_chunk", type=int, default=4, help="Frames sampled per chunk")
     p_sum.add_argument("--device", default="cuda", help="cuda or cpu")
+    p_sum.add_argument("--llm_base_url", default=None, help="Base URL for Nemotron reasoning LLM")
+    p_sum.add_argument("--llm_model", default="nemotron-3.5-lightning", help="Model name for Nemotron reasoning LLM")
+    p_sum.add_argument("--skip_llm", action="store_true", help="Skip LLM reasoning and use algorithmic fallback")
     p_sum.set_defaults(func=cmd_summarize)
 
     # Search sub-command
@@ -125,6 +134,9 @@ def main():
     p_idea.add_argument("--model_path", default=DEFAULT_COSMOS3_PATH, help="Cosmos 3 Nano snapshot path")
     p_idea.add_argument("--skip_model", action="store_true", help="Deterministic fallback without GPU model")
     p_idea.add_argument("--device", default="cuda", help="cuda or cpu")
+    p_idea.add_argument("--llm_base_url", default=None, help="Base URL for Nemotron reasoning LLM")
+    p_idea.add_argument("--llm_model", default="nemotron-3.5-lightning", help="Model name for Nemotron reasoning LLM")
+    p_idea.add_argument("--skip_llm", action="store_true", help="Skip LLM reasoning and use algorithmic fallback")
     p_idea.set_defaults(func=cmd_trade_idea)
 
     # Serve sub-command

@@ -14,6 +14,10 @@ DEFAULT_COSMOS3_PATH = os.environ.get(
     "/mnt/edrive/huggingface/hub/models--nvidia--Cosmos3-Nano/snapshots/e59a53c25979a090fa8706c9acc0c254a6e89b92"
 )
 
+# Nemotron 3.5 Lightning reasoning endpoint on NVIDIA DGX Spark
+DEFAULT_LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "http://localhost:8000/v1")
+DEFAULT_LLM_MODEL = os.environ.get("LLM_MODEL", "nemotron-3.5-lightning")
+
 DEFAULT_OUTPUT_DIR = os.environ.get("VSS_OUTPUT_DIR", "/workspace/outputs_vss")
 
 @dataclass
@@ -61,6 +65,9 @@ class VSSSummarizationConfig:
     ])
     max_summary_tokens: int = 1536
     extract_trade_spec: bool = True
+    llm_base_url: str = DEFAULT_LLM_BASE_URL
+    llm_model: str = DEFAULT_LLM_MODEL
+    enable_llm_reasoning: bool = True
 
 @dataclass
 class VSSPipelineConfig:
@@ -70,5 +77,7 @@ class VSSPipelineConfig:
     search: VSSSearchConfig = field(default_factory=VSSSearchConfig)
     summarization: VSSSummarizationConfig = field(default_factory=VSSSummarizationConfig)
     output_dir: str = DEFAULT_OUTPUT_DIR
+    llm_base_url: str = DEFAULT_LLM_BASE_URL
+    llm_model: str = DEFAULT_LLM_MODEL
     api_port: int = int(os.environ.get("VSS_PORT", "38111"))
     api_host: str = os.environ.get("VSS_HOST", "0.0.0.0")

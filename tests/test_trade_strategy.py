@@ -12,7 +12,7 @@ def test_trade_strategy_agent_synthesis():
     agent = VSSTradeStrategyAgent()
 
     chunks = [
-        VideoChunk(chunk_id=0, start_s=0.0, end_s=20.0, duration_s=20.0, start_str="00:00", end_str="00:20", synchronized_transcript="Nvidia went bullish January 30 2023 broke above 1927"),
+        VideoChunk(chunk_id=0, start_s=0.0, end_s=20.0, duration_s=20.0, start_str="00:00", end_str="00:20", synchronized_transcript="NVDA went bullish January 30 2023 broke above 1927"),
         VideoChunk(chunk_id=1, start_s=20.0, end_s=40.0, duration_s=20.0, start_str="00:20", end_str="00:40", synchronized_transcript="pulling back into this nice buy zone consolidation")
     ]
     captions = [

@@ -5,10 +5,12 @@ https://github.com/NVIDIA-AI-Blueprints/video-search-and-summarization
 
 Aggregates dense VLM chunk captions, resolves deictic references with chart observations,
 and builds chronological trading milestone event tables and executive summaries.
+Leverages Nemotron 3.5 Lightning for zero-shot reasoning when available, with robust generic fallback.
 """
 
 import os
 import json
+import logging
 from typing import List, Dict, Any, Optional
 
 try:
@@ -20,6 +22,7 @@ try:
         TradeIdeaSpec
     )
     from .vlm_reasoner import VSSVLMReasoner
+    from .nemotron_reasoner import NemotronReasoner
 except (ImportError, ValueError):
     from schemas import (
         VideoChunk,
@@ -29,6 +32,9 @@ except (ImportError, ValueError):
         TradeIdeaSpec
     )
     from vlm_reasoner import VSSVLMReasoner
+    from nemotron_reasoner import NemotronReasoner
+
+logger = logging.getLogger(__name__)
 
 class VSSLVSSummarizer:
     """
@@ -36,8 +42,13 @@ class VSSLVSSummarizer:
     into an executive narrative summary and chronological milestone events.
     """
 
-    def __init__(self, reasoner: Optional[VSSVLMReasoner] = None):
+    def __init__(
+        self,
+        reasoner: Optional[VSSVLMReasoner] = None,
+        nemotron: Optional[NemotronReasoner] = None
+    ):
         self.reasoner = reasoner
+        self.nemotron = nemotron or NemotronReasoner()
 
     def summarize(
         self,
@@ -50,25 +61,43 @@ class VSSLVSSummarizer:
         Synthesizes an end-to-end VSS CompletionResponse containing
         an executive summary, structured key events, and chunk captions.
         """
-        events = self._extract_key_events(chunks, captions)
-        narrative_summary = self._build_narrative_summary(chunks, captions, events, trade_spec)
+        events: Optional[List[TradingEvent]] = None
+        narrative_summary: Optional[str] = None
+
+        # 1. Attempt LLM Reasoning via Nemotron 3.5 Lightning
+        if self.nemotron and self.nemotron.is_available() and chunks:
+            try:
+                events = self.nemotron.synthesize_milestone_events(chunks, captions)
+                if events:
+                    narrative_summary = self.nemotron.synthesize_narrative_summary(
+                        chunks, captions, events, trade_spec
+                    )
+            except Exception as e:
+                logger.warning(f"Nemotron LVS summarization failed: {e}. Using generic fallback.")
+
+        # 2. Generic Rule-Based Algorithmic Fallback (Zero hardcoded text or clip assumptions)
+        if not events:
+            events = self._extract_key_events_generic(chunks, captions)
+        if not narrative_summary:
+            narrative_summary = self._build_narrative_summary_generic(chunks, captions, events, trade_spec)
 
         return CompletionResponse(
             video_id=video_id,
-            model="nvidia/Cosmos3-Nano",
+            model="nvidia/Nemotron-3.5-Lightning + nvidia/Cosmos3-Nano" if (self.nemotron and self.nemotron.is_available()) else "nvidia/Cosmos3-Nano",
             summary=narrative_summary,
             key_events=events,
             chunk_captions=captions,
             trade_idea=trade_spec
         )
 
-    def _extract_key_events(
+    def _extract_key_events_generic(
         self,
         chunks: List[VideoChunk],
         captions: List[VlmCaptionResponse]
     ) -> List[TradingEvent]:
         """
-        Deduplicates and synthesizes sequential video intervals into discrete trading milestones.
+        Deduplicates and synthesizes sequential video intervals into discrete trading milestones
+        using purely dynamic data from chunks and captions (zero hardcoded values).
         """
         caption_map = {c.chunk_id: c for c in captions}
         events: List[TradingEvent] = []
@@ -79,70 +108,47 @@ class VSSLVSSummarizer:
             if not cap:
                 continue
 
-            signals = cap.detected_trade_signals
-            transcript = chunk.synchronized_transcript
-            reasoning = cap.reasoning_description
-            content = cap.content
+            signals = cap.detected_trade_signals or []
+            transcript = chunk.synchronized_transcript or ""
+            reasoning = cap.reasoning_description or ""
+            content = cap.content or ""
 
-            # Skip empty intervals without signals or meaningful content
-            if not signals and not transcript:
-                continue
-
-            # Determine dominant event category and action based on transcript and visual confluences
-            lower_all = (transcript + " " + content + " " + reasoning).lower()
-
-            if "buy zone" in transcript.lower() or "in between this level" in transcript.lower():
-                event_type = "Demand Retest & Consolidation Buy Zone"
-                action = "Price pulls back into multi-month accumulation consolidation range."
-                evidence = "Previous consolidation ceiling flips into institutional demand floor ($78.06 - $80.00 / $75.61 - $97.40)."
-                rationale = "Speaker notes: 'now actually Nvidia is at a nice buy zone in between this level'."
-                significance = "High-probability long entry zone with tight structural risk."
-
-            elif "lowest point" in transcript.lower():
-                event_type = "Dynamic Protected Swing Low Placement"
-                action = "Dynamic invalidation anchor set at lowest point between breakout impulse waves."
-                evidence = "Lowest structural trough between consecutive high breakouts acts as protected stop loss."
-                rationale = "Speaker demonstrates: 'what's the lowest point between here and here... this is the lowest point'."
-                significance = "Provides objective, non-arbitrary algorithmic stop loss placement."
-
-            elif "1927" in transcript or "january 30" in transcript.lower() or "went bullish" in transcript.lower():
-                event_type = "Bullish Change of Character (CHoCH)"
-                action = "Decisive breakout crossing above structural swing high pivot at $19.27 (Jan 30, 2023)."
-                evidence = "Weekly Heikin Ashi candle closes decisively above previous swing high ($19.27)."
-                rationale = "Speaker notes: 'January 30th 2023 Nvidia officially went bullish it was very bullish'."
-                significance = "Invalidates the multi-month downtrend and initiates a major weekly bullish cycle."
-
-            elif "left and right" in transcript.lower() or "swing high" in transcript.lower() or "candle left" in transcript.lower():
-                event_type = "Market Structure Fractal Pivot Validation"
-                action = "Validation of 3-bar swing high / swing low fractal formation."
-                evidence = "Candle left and right must have lower highs to qualify as an authentic swing pivot."
-                rationale = "Speaker explains: 'as you can see this candle left and right... since this swing high isn't above previous candle'."
-                significance = "Filters out false breakouts and noise from non-structural candles."
-
-            elif "rsi" in lower_all and "divergence" in lower_all:
-                event_type = "Momentum Divergence Exhaustion"
-                action = "Bearish divergence detected between price action and RSI oscillator."
-                evidence = "Price prints higher highs while 14-period RSI records lower highs at key resistance."
-                rationale = "Presenter highlights momentum waning at overhead liquidity pool."
-                significance = "Pre-warns of exhaustion pullback or trend reversal."
-
-            elif "bearish" in transcript.lower():
-                event_type = "Prior Downtrend & Structural Context"
-                action = "Mapping the preceding weekly downtrend and lower high structures."
-                evidence = "Heikin Ashi candles print series of lower lows and lower highs before reversal."
-                rationale = f"Speaker notes: '{transcript[:80]}...'"
-                significance = "Establishes baseline bearish regime prior to Change of Character."
-
+            # Determine dominant event category dynamically from detected signals or text
+            if "BREAKOUT_LEVEL_VALIDATION" in signals or "BULLISH_TREND_REVERSAL" in signals:
+                event_type = "Structural Breakout & Trend Reversal"
+                action = "Price closes decisively beyond structural swing pivot, confirming trend shift."
+                significance = "Validates directional momentum shift and initiates new trend regime."
+            elif "DEMAND_ZONE_RETEST" in signals:
+                event_type = "Consolidation Demand Zone Retest"
+                action = "Pullback retests prior consolidation boundary acting as institutional demand support."
+                significance = "Provides high-probability entry location with tightly defined risk."
+            elif "SUPPLY_ZONE_RETEST" in signals:
+                event_type = "Overhead Supply Zone Rejection"
+                action = "Price tests recognized resistance boundary displaying rejection characteristics."
+                significance = "Signals potential exhaustion or short entry location."
+            elif "MOMENTUM_RSI_DIVERGENCE" in signals:
+                event_type = "Momentum Oscillator Divergence"
+                action = "Oscillator peaks diverge from price extremes, signaling waning momentum."
+                significance = "Warns of impending reversal or deep retracement."
+            elif "PROTECTED_SWING_STOP" in signals:
+                event_type = "Protected Invalidation Stop Placement"
+                action = "Objective invalidation anchor placed beyond structural swing pivot trough."
+                significance = "Protects capital by anchoring stop loss at structural failure level."
+            elif "MARKET_STRUCTURE_SHIFT" in signals:
+                event_type = "Market Structure Pivot Mapping"
+                action = "Validation of fractal swing highs and lows across candlestick series."
+                significance = "Filters market noise and defines objective price reference coordinates."
             else:
-                event_type = "Price Action Contextual Review"
-                action = content[:120] if content else "Technical chart examination"
-                evidence = reasoning[:140] if reasoning else "Price bars aligned with trendline."
-                rationale = f"Spoken context: '{transcript[:90]}...'" if transcript else "Visual chart review."
-                significance = "Builds market context for subsequent execution."
+                event_type = "Price Action Contextual Evaluation"
+                action = content[:120] if content else "Sequential price action examination."
+                significance = "Builds overall market context for subsequent execution."
 
-            # Deduplicate only if exact duplicate timestamp or immediate repetition
-            if events and events[-1].event_type == event_type and (chunk.end_s - events[-1].start_s < 40.0):
-                # Extend existing milestone
+            # Dynamic evidence and rationale from actual chunk content
+            evidence = reasoning[:160] if reasoning else (content[:160] if content else "Candlestick price action review.")
+            rationale = f"Presenter: \"{transcript[:120]}...\"" if transcript else "Visual chart examination without dialogue."
+
+            # Deduplicate or extend milestone if consecutive chunks share event type
+            if events and events[-1].event_type == event_type and (chunk.end_s - events[-1].start_s < 45.0):
                 events[-1].end_s = chunk.end_s
                 events[-1].timestamp_range = f"{events[-1].timestamp_range.split(' - ')[0]} - {chunk.end_str}"
             else:
@@ -161,24 +167,23 @@ class VSSLVSSummarizer:
 
         return events
 
-    def _build_narrative_summary(
+    def _build_narrative_summary_generic(
         self,
         chunks: List[VideoChunk],
         captions: List[VlmCaptionResponse],
         events: List[TradingEvent],
         trade_spec: Optional[TradeIdeaSpec]
     ) -> str:
-        """Constructs an executive narrative summary integrating visual and spoken context."""
+        """Constructs a generic executive narrative summary integrating visual and spoken context."""
         total_dur = chunks[-1].end_s if chunks else 0.0
         n_chunks = len(chunks)
-        n_events = len(events)
 
         lines = []
         lines.append(f"### Executive Summary: Trading Video Understanding ({n_chunks} Segments, {total_dur:.1f}s Total Duration)")
         lines.append("")
         lines.append("This video segment presents a comprehensive technical breakdown of market structure, trend identification, and trade execution rules.")
 
-        if trade_spec and trade_spec.asset != "Unknown":
+        if trade_spec and trade_spec.asset:
             lines.append(f"- **Asset Under Analysis:** `{trade_spec.asset}` ({trade_spec.timeframe})")
             lines.append(f"- **Primary Directional Bias:** **{trade_spec.directional_bias.upper()}**")
             lines.append(f"- **Core Thesis:** {trade_spec.core_thesis}")

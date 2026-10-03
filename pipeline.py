@@ -23,6 +23,8 @@ from typing import Dict, Any, Optional
 try:
     from .config import (
         DEFAULT_COSMOS3_PATH,
+        DEFAULT_LLM_BASE_URL,
+        DEFAULT_LLM_MODEL,
         DEFAULT_OUTPUT_DIR,
         VSSPipelineConfig,
         VSSChunkConfig,
@@ -40,12 +42,15 @@ try:
     from .subtitle_sync import SubtitleSyncManager
     from .chunk_engine import VideoChunkManager, get_video_duration_ffprobe
     from .vlm_reasoner import VSSVLMReasoner
+    from .nemotron_reasoner import NemotronReasoner
     from .search_engine import VSSSearchIndex
     from .summarizer import VSSLVSSummarizer
     from .trade_strategy_agent import VSSTradeStrategyAgent
 except (ImportError, ValueError):
     from config import (
         DEFAULT_COSMOS3_PATH,
+        DEFAULT_LLM_BASE_URL,
+        DEFAULT_LLM_MODEL,
         DEFAULT_OUTPUT_DIR,
         VSSPipelineConfig,
         VSSChunkConfig,
@@ -63,6 +68,7 @@ except (ImportError, ValueError):
     from subtitle_sync import SubtitleSyncManager
     from chunk_engine import VideoChunkManager, get_video_duration_ffprobe
     from vlm_reasoner import VSSVLMReasoner
+    from nemotron_reasoner import NemotronReasoner
     from search_engine import VSSSearchIndex
     from summarizer import VSSLVSSummarizer
     from trade_strategy_agent import VSSTradeStrategyAgent
@@ -76,13 +82,19 @@ def run_vss_pipeline(
     chunk_duration_s: float = 20.0,
     chunk_overlap_s: float = 3.0,
     frames_per_chunk: int = 4,
-    device: str = "cuda"
+    device: str = "cuda",
+    llm_base_url: str = DEFAULT_LLM_BASE_URL,
+    llm_model: str = DEFAULT_LLM_MODEL,
+    skip_llm: bool = False
 ) -> VSSPipelineResult:
     """
     Executes the end-to-end NVIDIA VSS pipeline on a trading video clip and subtitle file.
     """
     start_total_time = time.time()
     os.makedirs(output_dir, exist_ok=True)
+
+    nemotron = None if skip_llm else NemotronReasoner(base_url=llm_base_url, model_name=llm_model)
+    llm_status = "Disabled" if skip_llm else (f"{nemotron.base_url} (Active)" if (nemotron and nemotron.is_available()) else f"{llm_base_url} (Offline / Fallback)")
 
     print("=" * 80)
     print("🚀 NVIDIA AI BLUEPRINT: VIDEO SEARCH & SUMMARIZATION (VSS) TRADING PIPELINE")
@@ -91,6 +103,7 @@ def run_vss_pipeline(
     print(f"Input Subtitles:  {subtitles_path}")
     print(f"Output Directory: {output_dir}")
     print(f"VLM Model:        {model_path} ({'CPU/Fallback' if skip_model else 'GPU Cosmos-3 Nano'})")
+    print(f"LLM Reasoner:     {llm_status} [{llm_model}]")
     print("-" * 80)
 
     # -------------------------------------------------------------
@@ -174,8 +187,8 @@ def run_vss_pipeline(
     # STAGE 5: Long Video Summarization (LVS) & Milestone Events
     # -------------------------------------------------------------
     print("\n>>> [STAGE 5/6] Synthesizing Long Video Summary (LVS) & Milestone Events")
-    summarizer = VSSLVSSummarizer(reasoner=reasoner)
-    trade_agent = VSSTradeStrategyAgent(reasoner=reasoner)
+    summarizer = VSSLVSSummarizer(reasoner=reasoner, nemotron=nemotron)
+    trade_agent = VSSTradeStrategyAgent(reasoner=reasoner, nemotron=nemotron)
 
     # Initial completion synthesis
     temp_completion = CompletionResponse(
@@ -183,7 +196,7 @@ def run_vss_pipeline(
         summary="",
         chunk_captions=chunk_captions
     )
-    trade_spec = trade_agent.synthesize_trade_idea(temp_completion)
+    trade_spec = trade_agent.synthesize_trade_idea(temp_completion, chunks=chunks)
     completion = summarizer.summarize(chunks, chunk_captions, trade_spec=trade_spec, video_id=os.path.basename(video_path))
     print(f"✓ Formulated {len(completion.key_events)} chronological milestone events.")
 
@@ -291,6 +304,9 @@ if __name__ == "__main__":
     parser.add_argument("--chunk_overlap", type=float, default=3.0, help="Overlap duration in seconds")
     parser.add_argument("--frames_per_chunk", type=int, default=4, help="Frames sampled per chunk")
     parser.add_argument("--device", default="cuda", help="Execution device (cuda or cpu)")
+    parser.add_argument("--llm_base_url", default=DEFAULT_LLM_BASE_URL, help="Base URL for Nemotron reasoning LLM")
+    parser.add_argument("--llm_model", default=DEFAULT_LLM_MODEL, help="Model name for Nemotron reasoning LLM")
+    parser.add_argument("--skip_llm", action="store_true", help="Skip LLM reasoning and use algorithmic fallback")
 
     args = parser.parse_args()
     run_vss_pipeline(
@@ -302,5 +318,8 @@ if __name__ == "__main__":
         chunk_duration_s=args.chunk_duration,
         chunk_overlap_s=args.chunk_overlap,
         frames_per_chunk=args.frames_per_chunk,
-        device=args.device
+        device=args.device,
+        llm_base_url=args.llm_base_url,
+        llm_model=args.llm_model,
+        skip_llm=args.skip_llm
     )

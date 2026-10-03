@@ -29,19 +29,24 @@ Synchronized Spoken Subtitles:
 {transcript}
 
 Task Instructions:
-1. Examine the visual charts across the sampled frames:
-   - Asset/Ticker name, timeframe (e.g., Weekly, Daily, Heikin Ashi), current trend/structure.
-   - Exact numerical price levels, dates, and chart annotations (e.g., breakout levels, swing pivots, horizontal zones).
-   - Technical indicators (RSI, Moving Averages, MACD, Volume) and any divergences.
-2. Ground all deictic or ambiguous spoken phrases ("here", "boom boom", "this candle", "broke above", "buy zone") to specific visual chart elements.
-3. Determine what trading action or concept the presenter is explaining (e.g. entry trigger, stop loss invalidation, target, market structure shift).
+1. Examine the visual charts across the sampled frames thoroughly:
+   - Asset/Ticker Symbol: Read symbol from top-left header, chart label, or watchlist.
+   - Timeframe & Candle Type: Note chart timeframe (e.g. Weekly, Daily, 4H, 15m) and candlestick type (Heikin Ashi or Japanese candlesticks).
+   - Numerical Price Scale (Y-axis): Read exact numerical price coordinates for swing highs, swing lows, breakout levels, horizontal lines, and consolidation ranges.
+   - Timeline Scale (X-axis): Read dates, months, or years corresponding to highlighted candles.
+   - Market Structure & Price Action: Identify higher highs/lows, lower highs/lows, swing pivots (e.g. 3-candle fractal patterns), breakout candles, rejection wicks, consolidation channels.
+   - Technical Indicators & Oscillators: Read sub-window indicators (RSI, Moving Averages, MACD, Volume) and note any momentum divergences (e.g. price printing higher highs while RSI prints lower highs).
+2. Deictic Reference Grounding:
+   - Ground all informal, ambiguous, or deictic spoken references ("here", "boom boom", "this candle", "this level", "broke above", "buy zone", "lowest point") directly to the specific visual chart coordinates, price values, dates, or drawn shapes on screen.
+3. Determine Trade Setup & Concepts:
+   - Identify what technical trading concept or action is being taught or executed: Market Structure Shift / CHoCH, Breakout Confirmation, Invalidation Stop Loss Placement, Retest Demand/Supply Zone, Entry Trigger, Profit Targets.
 
 Provide your response strictly with reasoning and answer tags:
 <think>
-[Detailed visual observations, candlestick analysis, indicator states, price levels, and deictic grounding]
+Detailed visual analysis of asset, timeframe, Y-axis price levels, dates, candle patterns, indicators, and grounding of spoken words to visual elements.
 </think>
 <answer>
-[Dense visual caption summarizing the market structure, price action, and trading ideas in this segment]
+Dense visual caption summarizing the market structure, price action, and actionable trading ideas in this segment.
 </answer>"""
 
 VSS_TEXT_STRATEGY_PROMPT = """You are the NVIDIA VSS Algorithmic Strategy Synthesizer.
@@ -212,6 +217,10 @@ class VSSVLMReasoner:
             reasoning_content = "Extracted candlestick patterns, chart drawings, and aligned transcript."
             answer_content = raw_output
 
+        # Clean prompt echo if model echoed the template instruction
+        if "Detailed visual analysis" in reasoning_content or "Detailed visual observations" in reasoning_content or reasoning_content.strip().startswith("[Detailed"):
+            reasoning_content = answer_content
+
         # Extract detected signals
         signals = self._detect_trade_signals(chunk, reasoning_content + " " + answer_content)
 
@@ -279,18 +288,22 @@ class VSSVLMReasoner:
         """Detects trading signal categories from text and chunk context."""
         lower = (chunk.synchronized_transcript + " " + text).lower()
         signals = []
-        if any(w in lower for w in ["broke above", "breakout", "1927", "19.27", "crossing above"]):
+        if any(w in lower for w in ["broke above", "breakout", "crossing above", "breached resistance"]):
             signals.append("BREAKOUT_LEVEL_VALIDATION")
-        if any(w in lower for w in ["bullish", "went bullish", "trend reversal", "choch"]):
+        if any(w in lower for w in ["bullish", "went bullish", "trend reversal", "choch", "change of character"]):
             signals.append("BULLISH_TREND_REVERSAL")
-        if any(w in lower for w in ["bearish", "lower low", "swing high", "fractal"]):
+        if any(w in lower for w in ["bearish", "breakdown", "lower low", "broke below"]):
+            signals.append("BEARISH_TREND_REVERSAL")
+        if any(w in lower for w in ["swing high", "swing low", "fractal", "pivot", "market structure"]):
             signals.append("MARKET_STRUCTURE_SHIFT")
-        if any(w in lower for w in ["buy zone", "consolidation", "retest", "pullback", "support"]):
+        if any(w in lower for w in ["buy zone", "consolidation", "retest", "pullback", "support", "demand"]):
             signals.append("DEMAND_ZONE_RETEST")
-        if any(w in lower for w in ["rsi", "divergence", "overbought", "oversold"]):
+        if any(w in lower for w in ["sell zone", "supply", "resistance", "liquidity pool"]):
+            signals.append("SUPPLY_ZONE_RETEST")
+        if any(w in lower for w in ["rsi", "divergence", "overbought", "oversold", "oscillator"]):
             signals.append("MOMENTUM_RSI_DIVERGENCE")
-        if any(w in lower for w in ["stop loss", "invalidation", "lowest point", "swing low"]):
-            signals.append("PROTECTED_SWING_LOW_STOP")
+        if any(w in lower for w in ["stop loss", "invalidation", "lowest point", "protected swing", "stop"]):
+            signals.append("PROTECTED_SWING_STOP")
         return signals
 
     def _generate_fallback_chunk_analysis(self, chunk: VideoChunk, frames: List[Image.Image]) -> str:
@@ -299,27 +312,28 @@ class VSSVLMReasoner:
         lower = transcript.lower()
 
         observations = []
-        signals = []
+        signals = self._detect_trade_signals(chunk, transcript)
 
-        if "nvidia" in lower or "1927" in lower or "january 30" in lower:
-            observations.append("Visual candlestick chart displays NVDA weekly Heikin Ashi candles transitioning from a multi-month downtrend to bullish reversal.")
-            observations.append("Presenter highlights the breakout candle of January 30, 2023 crossing above the structural swing high pivot at $19.27.")
-            signals.append("Bullish Change of Character (CHoCH) above $19.27 confirmed.")
-        elif "buy zone" in lower or "consolidation" in lower or "lowest point" in lower:
-            observations.append("Chart highlights an accumulation consolidation block where resistance flips into a high-probability demand buy zone.")
-            observations.append("Trader dynamically anchors the protected swing low stop at the lowest pullback level between consecutive breakout impulses.")
-            signals.append("Demand zone retest and dynamic trailing swing low stop established.")
-        elif "rsi" in lower or "divergence" in lower:
-            observations.append("Sub-window oscillator tracks RSI (14-period) displaying clear bearish divergence against price higher highs.")
-            observations.append("Price tests key horizontal overhead resistance with exhaustion wicks.")
-            signals.append("RSI Bearish Divergence reversal setup.")
-        else:
-            observations.append(f"Visual price action between {chunk.start_str} and {chunk.end_str} shows active chart examination.")
-            if transcript:
-                observations.append(f"Speaker notes: '{transcript[:100]}...'.")
+        observations.append(f"Visual candlestick chart analysis between {chunk.start_str} and {chunk.end_str}.")
+        if "bullish" in lower:
+            observations.append("Price action demonstrates bullish momentum and upside structural progression.")
+        elif "bearish" in lower:
+            observations.append("Price action demonstrates bearish momentum and downside structural progression.")
+
+        if "breakout" in lower or "broke" in lower:
+            observations.append("Chart highlights price breaking beyond structural reference pivot levels.")
+        if "buy zone" in lower or "demand" in lower or "support" in lower:
+            observations.append("Chart highlights consolidation zone acting as support for pullback retest.")
+        if "divergence" in lower or "rsi" in lower:
+            observations.append("Sub-window oscillator exhibits momentum divergence against price extremes.")
+        if "stop" in lower or "lowest" in lower or "invalidation" in lower:
+            observations.append("Structural invalidation anchor established at key swing pivot level.")
+
+        if transcript:
+            observations.append(f"Speaker notes: '{transcript[:100]}...'.")
 
         reasoning = " ".join(observations)
-        caption = " ".join(signals) if signals else f"Technical chart evaluation during interval {chunk.start_str} - {chunk.end_str}."
+        caption = f"Market structure review ({', '.join(signals) if signals else 'Price Action Evaluation'}) during interval {chunk.start_str} - {chunk.end_str}."
 
         return f"<think>\n{reasoning}\n</think>\n<answer>\n{caption}\n</answer>"
 
@@ -328,28 +342,28 @@ class VSSVLMReasoner:
         all_text = " ".join([c.content + " " + c.reasoning_description for c in chunk_captions]).lower()
 
         if "rsi" in all_text and "divergence" in all_text:
-            return """**Strategy Name:** RSI Momentum Divergence Reversal Strategy
-**Core Methodology:** Exploit momentum exhaustion where price makes equal/higher highs while the RSI indicator prints lower highs at key structural resistance.
+            return """**Strategy Name:** Momentum Divergence Reversal Strategy
+**Core Methodology:** Exploit momentum exhaustion where price reaches extreme levels while the momentum oscillator prints divergence at key structural boundaries.
 
 **Key Technical Indicators & Confluences:**
-- RSI (14-Period): Severe divergence in overbought territory (>70).
-- Overhead Supply / Resistance: Horizontal level rejection with upper wicks.
-- Market Structure: Invalidation of immediate swing low to trigger reversal.
+- Momentum Oscillator: Divergence against price swing highs/lows.
+- Overhead Structure: Key horizontal support or resistance level test.
+- Candlestick Action: Reversal candle confirmation.
 
 **Step-by-Step Execution Rules:**
-1. **Entry Trigger:** Enter short upon confirmed close below the trigger candle low following RSI divergence.
-2. **Invalidation/Stop Loss:** Place protective stop 0.5% above the most recent swing high.
-3. **Take Profit Targets:** TP1 at previous demand zone; TP2 at major liquidity low (Minimum 2.5:1 R:R)."""
+1. **Entry Trigger:** Enter upon confirmed close of reversal trigger candle following divergence.
+2. **Invalidation/Stop Loss:** Place protective stop beyond the most recent extreme pivot.
+3. **Take Profit Targets:** Target opposite structural liquidity pool with minimum 2:1 Risk-to-Reward ratio."""
 
-        return """**Strategy Name:** Market Structure Breakout & Demand Zone Retest
-**Core Methodology:** Multi-timeframe trend mapping using fractal swing highs/lows, confirming Change of Character (CHoCH) breakouts and entering long on pullbacks into institutional demand zones.
+        return """**Strategy Name:** Market Structure Breakout & Zone Retest
+**Core Methodology:** Multi-timeframe trend mapping using fractal swing pivots, confirming structural breakouts and entering on pullbacks into institutional demand/supply zones.
 
 **Key Technical Indicators & Confluences:**
-- Candlestick Action: Decisive breakout close above previous valid swing high (e.g., $19.27 on NVDA weekly).
-- Swing Pivots: Valid 3-bar fractal swing high confirmation (left and right lower highs).
-- Demand Retest: Multi-month consolidation resistance flipped into institutional buy zone.
+- Candlestick Action: Decisive breakout close above previous structural swing pivot.
+- Swing Pivots: Valid fractal swing high/low confirmation.
+- Zone Retest: Consolidation boundary retested as support/resistance.
 
 **Step-by-Step Execution Rules:**
-1. **Entry Trigger:** Enter long when price pulls back into the previous consolidation breakout level with bullish confirmation.
-2. **Invalidation/Stop Loss:** Protective stop placed strictly below the lowest swing low preceding the breakout.
-3. **Take Profit Targets:** Target next major weekly structural resistance (Minimum 3:1 Risk-to-Reward ratio)."""
+1. **Entry Trigger:** Enter upon price pulling back to test the previous consolidation level with candlestick confirmation.
+2. **Invalidation/Stop Loss:** Protective stop placed beyond the structural pivot trough.
+3. **Take Profit Targets:** Target next major structural resistance/liquidity zone with favorable Risk-to-Reward ratio."""
