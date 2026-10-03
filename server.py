@@ -19,17 +19,30 @@ from typing import Dict, Any, Optional
 from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse
 
-from .config import DEFAULT_COSMOS3_PATH, DEFAULT_OUTPUT_DIR, VSSVLMConfig
-from .schemas import (
-    SummarizationQuery,
-    CompletionResponse,
-    SearchQuery,
-    SearchResponse,
-    TradeIdeaSpec
-)
-from .pipeline import run_vss_pipeline
-from .search_engine import VSSSearchIndex
-from .vlm_reasoner import VSSVLMReasoner
+try:
+    from .config import DEFAULT_COSMOS3_PATH, DEFAULT_OUTPUT_DIR, VSSVLMConfig
+    from .schemas import (
+        SummarizationQuery,
+        CompletionResponse,
+        SearchQuery,
+        SearchResponse,
+        TradeIdeaSpec
+    )
+    from .pipeline import run_vss_pipeline
+    from .search_engine import VSSSearchIndex
+    from .vlm_reasoner import VSSVLMReasoner
+except (ImportError, ValueError):
+    from config import DEFAULT_COSMOS3_PATH, DEFAULT_OUTPUT_DIR, VSSVLMConfig
+    from schemas import (
+        SummarizationQuery,
+        CompletionResponse,
+        SearchQuery,
+        SearchResponse,
+        TradeIdeaSpec
+    )
+    from pipeline import run_vss_pipeline
+    from search_engine import VSSSearchIndex
+    from vlm_reasoner import VSSVLMReasoner
 
 from contextlib import asynccontextmanager
 

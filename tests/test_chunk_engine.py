@@ -1,13 +1,20 @@
 import pytest
 from unittest.mock import MagicMock
 
-from video_search_and_summarization.chunk_engine import VideoChunkManager
-from video_search_and_summarization.subtitle_sync import SubtitleSyncManager
-from video_search_and_summarization.schemas import SubtitleEntry
+try:
+    from chunk_engine import VideoChunkManager
+    from subtitle_sync import SubtitleSyncManager
+    from schemas import SubtitleEntry
+    MODULE_PREFIX = "chunk_engine"
+except ImportError:
+    from video_search_and_summarization.chunk_engine import VideoChunkManager
+    from video_search_and_summarization.subtitle_sync import SubtitleSyncManager
+    from video_search_and_summarization.schemas import SubtitleEntry
+    MODULE_PREFIX = "video_search_and_summarization.chunk_engine"
 
 def test_chunk_generation_boundaries(monkeypatch):
     monkeypatch.setattr(
-        "video_search_and_summarization.chunk_engine.get_video_duration_ffprobe",
+        f"{MODULE_PREFIX}.get_video_duration_ffprobe",
         lambda path: 60.0
     )
 

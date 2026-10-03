@@ -12,13 +12,22 @@ import re
 import json
 from typing import List, Dict, Any, Optional
 
-from .schemas import (
-    TradeIdeaSpec,
-    TradingRule,
-    CompletionResponse,
-    VlmCaptionResponse
-)
-from .vlm_reasoner import VSSVLMReasoner
+try:
+    from .schemas import (
+        TradeIdeaSpec,
+        TradingRule,
+        CompletionResponse,
+        VlmCaptionResponse
+    )
+    from .vlm_reasoner import VSSVLMReasoner
+except (ImportError, ValueError):
+    from schemas import (
+        TradeIdeaSpec,
+        TradingRule,
+        CompletionResponse,
+        VlmCaptionResponse
+    )
+    from vlm_reasoner import VSSVLMReasoner
 
 class VSSTradeStrategyAgent:
     """

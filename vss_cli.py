@@ -15,9 +15,14 @@ import sys
 import json
 import argparse
 
-from .config import DEFAULT_COSMOS3_PATH, DEFAULT_OUTPUT_DIR
-from .pipeline import run_vss_pipeline
-from .search_engine import VSSSearchIndex
+try:
+    from .config import DEFAULT_COSMOS3_PATH, DEFAULT_OUTPUT_DIR
+    from .pipeline import run_vss_pipeline
+    from .search_engine import VSSSearchIndex
+except (ImportError, ValueError):
+    from config import DEFAULT_COSMOS3_PATH, DEFAULT_OUTPUT_DIR
+    from pipeline import run_vss_pipeline
+    from search_engine import VSSSearchIndex
 
 def cmd_summarize(args):
     """Executes VSS summarization and outputs artifacts."""

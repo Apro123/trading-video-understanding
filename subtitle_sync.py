@@ -7,7 +7,10 @@ temporal interval overlap matching, and deictic token detection.
 import os
 import re
 from typing import List, Dict, Any, Optional, Tuple
-from .schemas import SubtitleEntry
+try:
+    from .schemas import SubtitleEntry
+except (ImportError, ValueError):
+    from schemas import SubtitleEntry
 
 DEICTIC_KEYWORDS = [
     "here", "this candle", "this level", "this point", "boom boom",

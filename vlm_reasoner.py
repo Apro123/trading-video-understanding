@@ -13,8 +13,12 @@ import subprocess
 from typing import List, Dict, Any, Optional, Tuple
 from PIL import Image
 
-from .config import DEFAULT_COSMOS3_PATH, VSSVLMConfig
-from .schemas import VideoChunk, VlmCaptionResponse
+try:
+    from .config import DEFAULT_COSMOS3_PATH, VSSVLMConfig
+    from .schemas import VideoChunk, VlmCaptionResponse
+except (ImportError, ValueError):
+    from config import DEFAULT_COSMOS3_PATH, VSSVLMConfig
+    from schemas import VideoChunk, VlmCaptionResponse
 
 # VSS Reasoning Prompt Template for Trading Video Understanding
 VSS_CHUNK_REASONING_PROMPT = """You are the NVIDIA Video Search and Summarization (VSS) Trading AI Agent analyzing a technical trading video clip.

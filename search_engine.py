@@ -13,13 +13,22 @@ import math
 import json
 from typing import List, Dict, Any, Optional, Tuple
 
-from .schemas import (
-    VideoChunk,
-    VlmCaptionResponse,
-    SearchQuery,
-    SearchResultItem,
-    SearchResponse
-)
+try:
+    from .schemas import (
+        VideoChunk,
+        VlmCaptionResponse,
+        SearchQuery,
+        SearchResultItem,
+        SearchResponse
+    )
+except (ImportError, ValueError):
+    from schemas import (
+        VideoChunk,
+        VlmCaptionResponse,
+        SearchQuery,
+        SearchResultItem,
+        SearchResponse
+    )
 
 class VSSSearchIndex:
     """

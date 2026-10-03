@@ -2,11 +2,18 @@ import pytest
 import os
 import tempfile
 
-from video_search_and_summarization.subtitle_sync import (
-    SubtitleSyncManager,
-    time_str_to_seconds,
-    seconds_to_time_str
-)
+try:
+    from subtitle_sync import (
+        SubtitleSyncManager,
+        time_str_to_seconds,
+        seconds_to_time_str
+    )
+except ImportError:
+    from video_search_and_summarization.subtitle_sync import (
+        SubtitleSyncManager,
+        time_str_to_seconds,
+        seconds_to_time_str
+    )
 
 SAMPLE_SUBTITLE = """18:40
 first subtitle block describing boom boom

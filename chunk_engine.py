@@ -10,8 +10,12 @@ import subprocess
 from typing import List, Optional, Tuple
 from PIL import Image
 
-from .schemas import VideoChunk
-from .subtitle_sync import SubtitleSyncManager, seconds_to_time_str
+try:
+    from .schemas import VideoChunk
+    from .subtitle_sync import SubtitleSyncManager, seconds_to_time_str
+except (ImportError, ValueError):
+    from schemas import VideoChunk
+    from subtitle_sync import SubtitleSyncManager, seconds_to_time_str
 
 def get_video_duration_ffprobe(video_path: str) -> float:
     """Retrieves exact video duration in seconds via ffprobe."""

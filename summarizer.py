@@ -11,14 +11,24 @@ import os
 import json
 from typing import List, Dict, Any, Optional
 
-from .schemas import (
-    VideoChunk,
-    VlmCaptionResponse,
-    TradingEvent,
-    CompletionResponse,
-    TradeIdeaSpec
-)
-from .vlm_reasoner import VSSVLMReasoner
+try:
+    from .schemas import (
+        VideoChunk,
+        VlmCaptionResponse,
+        TradingEvent,
+        CompletionResponse,
+        TradeIdeaSpec
+    )
+    from .vlm_reasoner import VSSVLMReasoner
+except (ImportError, ValueError):
+    from schemas import (
+        VideoChunk,
+        VlmCaptionResponse,
+        TradingEvent,
+        CompletionResponse,
+        TradeIdeaSpec
+    )
+    from vlm_reasoner import VSSVLMReasoner
 
 class VSSLVSSummarizer:
     """

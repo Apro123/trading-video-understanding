@@ -1,6 +1,10 @@
 import pytest
-from video_search_and_summarization.search_engine import VSSSearchIndex
-from video_search_and_summarization.schemas import VideoChunk, VlmCaptionResponse
+try:
+    from search_engine import VSSSearchIndex
+    from schemas import VideoChunk, VlmCaptionResponse
+except ImportError:
+    from video_search_and_summarization.search_engine import VSSSearchIndex
+    from video_search_and_summarization.schemas import VideoChunk, VlmCaptionResponse
 
 def test_search_engine_indexing_and_retrieval():
     index = VSSSearchIndex(video_id="nvda_test")

@@ -1,78 +1,100 @@
-# 📈 Trading Video Understanding with NVIDIA Cosmos 3 Nano (POC)
+# 🎬 NVIDIA Video Search and Summarization (VSS) Trading Pipeline
 
-Proof-of-Concept (POC) determining how to extract deep technical trading strategy reasoning from Video trading videos using **NVIDIA Cosmos 3 Nano** multimodal foundation models.
+Implementation of the **NVIDIA AI Blueprint for Video Search and Summarization (VSS)** tailored specifically for extracting actionable trading ideas, market structure rules, and execution plans from technical trading video clips and synchronized subtitles.
 
-The pipeline is **100% generic, autonomous, and model-driven**, supporting arbitrary video formats (AV1, VP9, H.264), dynamic subtitle timestamp normalization to `0:00`, dual-mode visual perception & text LLM reasoning, and peak GPU VRAM tracking on the NVIDIA DGX Spark (NVIDIA GB10 GPU).
-
----
-
-## 🎯 Problem Statement
-Financial chart tutorials frequently suffer from severe ambiguity in audio transcripts alone:
-- Presenters use heavily deictic language: *"as you can see here"*, *"this candle left and right"*, *"boom boom"*, *"at this particular point is 1927"*, *"nice buy zone in between this level"*.
-- Without visual perception, an LLM cannot identify:
-  1. The asset (`NVDA · 1W · NASDAQ · Heikin Ashi` or `OANDA AUD/CAD`).
-  2. The exact breakout levels ($19.27 on Jan 30, 2023).
-  3. The structural swing points (Fractal 3-bar pivot validation).
-  4. The multi-month accumulation buy zone ($75.61 - $97.40).
-  5. Indicator divergences (price making higher highs while RSI makes lower highs).
+Reference architecture based on:  
+[NVIDIA-AI-Blueprints/video-search-and-summarization](https://github.com/NVIDIA-AI-Blueprints/video-search-and-summarization)
 
 ---
 
-## 🏗️ Architecture Overview
+## 💡 Overview & Problem Statement
 
-The system operates across a 5-stage multimodal perception and reasoning pipeline:
+Financial chart tutorials and trading webinars rely heavily on informal, ambiguous verbal phrases:
+- Presenters say: *"as you can see here"*, *"this candle left and right"*, *"boom boom"*, *"at this particular point is 1927"*, *"nice buy zone in between this level"*.
+- Without visual perception, an LLM cannot ground these statements into actionable trading parameters.
+
+The **NVIDIA VSS Trading Pipeline** replaces ad-hoc scripts with the official **NVIDIA VSS Blueprint reference architecture**, enhanced to natively support:
+1. **Arbitrary video codecs** (AV1, VP9, H.264) via streaming FFmpeg pipes.
+2. **Dynamic clip and subtitle synchronization** (automatically detecting the clip's offset, e.g. `18:40` or `39:46`, and anchoring it to `0:00`).
+3. **Multimodal chart reasoning** with **NVIDIA Cosmos 3 Nano** (`Cosmos3OmniForConditionalGeneration` in BF16) on GPU.
+4. **Hybrid semantic search** over indexed video intervals (dense vector embeddings + lexical BM25).
+5. **Long Video Summarization (LVS)** aggregating chunk-level observations into chronological trading milestone events.
+6. **Algorithmic trade idea synthesis** generating formal execution rules (entry triggers, invalidation stops, profit targets, and confluences).
+
+---
+
+## 🏗️ Architecture
 
 ```mermaid
 flowchart TD
-    A["Raw Trading Video (Arbitrary Codec: AV1, VP9, H.264)<br/>+ Audio Subtitles"] --> B["Stage 1: Subtitle Parser & Normalization<br/>(Auto 0:00 Anchor from 1st Timestamp)"]
-    A --> C["Stage 2: OCR Chart UI Anchoring<br/>(Tickers, Timeframes, Indicators, Price/Date Axes)"]
-    A --> D["Stage 3: NVIDIA Cosmos 3 Nano<br/>Multimodal Video Reasoning via FFmpeg Pipe"]
-    B --> E["Stage 4: Semantic Fusion & Subtitle Augmentation<br/>(Deictic Word Resolution)"]
-    C --> E
-    D --> E
-    E --> F["Stage 5: Cosmos-3 Nano Text LLM Strategy Synthesis"]
-    F --> G["augmented_subtitles.json"]
-    F --> H["augmented_subtitles.md"]
-    F --> I["trading_strategy_spec.json"]
-    F --> J["trading_strategy_summary.md"]
+    subgraph Ingestion ["Stage 1 & 2: Ingestion & Temporal Chunking"]
+        A["Raw Trading Clip (AV1, VP9, H.264)<br/>+ Subtitle Transcript"] --> B["Dynamic Subtitle Normalizer<br/>(Auto 0:00 Origin Anchor)"]
+        A --> C["Video Chunk Manager<br/>(Temporal Slicing & Keyframe Extraction)"]
+        B --> D["Chunk-to-Subtitle Sync Engine"]
+        C --> D
+    end
+
+    subgraph Perception ["Stage 3: NVIDIA Cosmos 3 Nano Reasoner"]
+        D --> E["VSS Multimodal VLM Inference<br/>(Candlesticks, Breakout Levels, Indicators)"]
+        E --> F["Structured Chunk Captions<br/>(&lt;think&gt; Reasoning + &lt;answer&gt; Captions)"]
+    end
+
+    subgraph Search ["Stage 4: Semantic Search Engine"]
+        F --> G["VSS Search Indexer<br/>(Dense Embeddings + Lexical BM25)"]
+        G --> H["Natural Language Search Tool<br/>(Query Triggers, Stops, Indicators)"]
+    end
+
+    subgraph Summarization ["Stage 5 & 6: LVS & Trade Strategy Agent"]
+        F --> I["Long Video Summarizer (LVS)<br/>(Hierarchical Aggregation & Event Deduplication)"]
+        I --> J["VSS Trade Strategy Agent<br/>(Entry Triggers, Stops, Profit Targets)"]
+        J --> K["Structured Output Artifacts"]
+    end
 ```
 
-1. **Stage 1 (Temporal Alignment):** Parses subtitle timestamp blocks and automatically subtracts the first timestamp (`39:46` or `18:40`), anchoring the clip to `00:00`. Uses `ffprobe` to determine exact video duration.
-2. **Stage 2 (Visual Grounding):** Extracts OCR text and technical indicator labels (RSI, MA, MACD), potential ticker symbols, and numerical levels using EasyOCR.
-3. **Stage 3 (Cosmos-3 Nano Video Reasoning):** Extracts frames via an in-memory FFmpeg streaming pipe (natively supporting AV1, VP9, H.264) and runs NVIDIA Cosmos 3 Nano (`Cosmos3OmniForConditionalGeneration` in BF16) on GPU to analyze candlestick trajectories, drawn trendlines, indicator states, and breakout zones.
-4. **Stage 4 (Multimodal Fusion):** Replaces ambiguous verbal words with explicit chart entities, exact numerical price levels, calendar dates, and structural concepts.
-5. **Stage 5 (Cosmos-3 Nano Text LLM Synthesis):** Prompts Cosmos 3 Nano as a text LLM to formulate formal algorithmic trading rules (entry triggers, invalidation stops, profit targets).
-6. **VRAM Monitoring:** Real-time tracking of peak GPU memory allocated and reserved.
+---
+
+## 📂 Repository Structure
+
+```
+├── config.py                 # Dataclasses and environment configurations
+├── schemas.py                # Pydantic schemas (VSS OpenAPI and data contracts)
+├── subtitle_sync.py          # Dynamic subtitle parsing, 0:00 anchoring, and window alignment
+├── chunk_engine.py           # FFmpeg-based video chunking and frame extraction
+├── vlm_reasoner.py           # Cosmos 3 Nano multimodal perception and reasoning engine
+├── search_engine.py          # Hybrid vector and keyword semantic search index
+├── summarizer.py             # Long Video Summarization (LVS) and milestone event aggregator
+├── trade_strategy_agent.py   # Algorithmic trade idea and execution rule synthesizer
+├── pipeline.py               # Master end-to-end VSS pipeline runner
+├── vss_cli.py                # Unified CLI (summarize, search, trade-idea, serve)
+├── server.py                 # FastAPI microservice implementing VSS REST endpoints
+├── README.md                 # Complete documentation and usage instructions
+└── tests/                    # Comprehensive unit test suite
+    ├── test_api_server.py
+    ├── test_chunk_engine.py
+    ├── test_search_engine.py
+    ├── test_subtitle_sync.py
+    └── test_trade_strategy.py
+```
 
 ---
 
-## 📊 Peak VRAM Usage Profiling (NVIDIA DGX Spark GB10)
+## 🚀 Running on NVIDIA DGX Spark GPU Server
 
-| Metric | Clip 1 (`trading_lesson.clip.mp4`) | Clip 2 (`trading_lesson_2.clip.mp4`) |
-|---|---|---|
-| **Peak VRAM Allocated** | **16.913 GB** | **17.041 GB** |
-| **Peak VRAM Reserved** | **17.076 GB** | **17.205 GB** |
-| **Total System VRAM** | 128.000 GB | 128.000 GB |
-| **Remaining VRAM Headroom** | **~110.8 GB** | **~110.8 GB** |
+The pipeline executes inside the Docker container on the NVIDIA DGX Spark GPU system (`ssh user@dgx-spark`).
 
----
-
-## 🚀 Running the Pipeline (Dockerized)
-
-Execute the pipeline on the NVIDIA DGX Spark GPU server (`ssh user@dgx-spark`):
-
-### 1. Run on Clip 1 (Market Structure & Demand Retest):
+### 1. Run on Clip 1 (NVDA Market Structure & Demand Retest):
 ```bash
 ssh user@dgx-spark "docker run --rm --gpus all \
   -v /workspace:/workspace \
   -v /mnt/edrive/huggingface:/mnt/edrive/huggingface:ro \
   -e HF_HOME=/mnt/edrive/huggingface \
   -e WANDB_MODE=offline \
-  trader-vids:latest /workspace/pipeline.py \
+  trader-vids:latest pipeline.py \
   --video /workspace/trading_lesson.clip.mp4 \
   --subtitles /workspace/subtitles_clip \
-  --output_dir /workspace/outputs_clip_1 \
-  --num_samples 3"
+  --output_dir /workspace/outputs_vss_clip_1 \
+  --chunk_duration 35.0 \
+  --chunk_overlap 5.0"
 ```
 
 ### 2. Run on Clip 2 (RSI Momentum Divergence & Resistance Reversal):
@@ -82,94 +104,7 @@ ssh user@dgx-spark "docker run --rm --gpus all \
   -v /mnt/edrive/huggingface:/mnt/edrive/huggingface:ro \
   -e HF_HOME=/mnt/edrive/huggingface \
   -e WANDB_MODE=offline \
-  trader-vids:latest /workspace/pipeline.py \
-  --video /workspace/trading_lesson_2.clip.mp4 \
-  --subtitles /workspace/subtitles_clip_2 \
-  --output_dir /workspace/outputs_clip_2 \
-  --num_samples 3"
-```
-
-### 3. Run on Any New Video:
-Drop your new video (`my_trading_video.mp4`) and subtitle file (`my_subtitles`) into `/workspace/` on the DGX Spark server and run:
-```bash
-ssh user@dgx-spark "docker run --rm --gpus all \
-  -v /workspace:/workspace \
-  -v /mnt/edrive/huggingface:/mnt/edrive/huggingface:ro \
-  -e HF_HOME=/mnt/edrive/huggingface \
-  -e WANDB_MODE=offline \
-  trader-vids:latest /workspace/pipeline.py \
-  --video /workspace/my_trading_video.mp4 \
-  --subtitles /workspace/my_subtitles \
-  --output_dir /workspace/outputs_my_video \
-  --num_samples 3"
-```
-
-### Optional Command-Line Arguments:
-- `--video <path>`: Path to the input MP4 video file (default: `/workspace/trading_lesson.clip.mp4`).
-- `--subtitles <path>`: Path to the subtitle transcript file (default: `/workspace/subtitles_clip`).
-- `--output_dir <path>`: Output directory for JSON & Markdown artifacts (default: `/workspace/outputs`).
-- `--model_path <path>`: Local directory containing the Cosmos 3 Nano model snapshot.
-- `--num_samples <int>`: Number of milestone video intervals to sample through Cosmos multimodal reasoning (default: `3`).
-- `--skip_model`: Skips model loading for rapid offline pipeline testing.
-
----
-
-## 📂 Output Artifacts
-Each pipeline run populates the specified output directory with:
-- `augmented_subtitles.json`: Full structured JSON containing timestamped records, visual observations, resolved deictic references, and peak VRAM stats.
-- `augmented_subtitles.md`: Side-by-side comparative table mapping raw spoken text to visual chart state and trading rules.
-- `trading_strategy_spec.json`: Formatted algorithmic trading rules (entry triggers, invalidation stops, profit targets) synthesized by Cosmos-3 Nano.
-- `trading_strategy_summary.md`: Executive POC evaluation and hardware profiling report.
-
----
-
-## 🌟 NVIDIA AI Blueprint Architecture (`video_search_and_summarization/`)
-
-In addition to the custom POC pipeline, this repository contains a complete implementation of the official [NVIDIA AI Blueprint for Video Search and Summarization (VSS)](https://github.com/NVIDIA-AI-Blueprints/video-search-and-summarization) located in [`video_search_and_summarization/`](video_search_and_summarization/).
-
-### Key Capabilities of the VSS Blueprint Implementation:
-1. **Dynamic Subtitle Synchronization (`subtitle_sync.py`):**
-   - Automatically normalizes clip start time to `0:00` from arbitrary video origins (e.g. `18:40` or `39:46`).
-   - Slices and aligns spoken transcripts to video chunks.
-2. **Video Chunking & Keyframe Extraction (`chunk_engine.py`):**
-   - Segmenting video into temporal windows with configurable overlap.
-   - Extracts frames via in-memory FFmpeg pipes supporting AV1, VP9, and H.264.
-3. **NVIDIA Cosmos 3 Nano Multimodal Reasoner (`vlm_reasoner.py`):**
-   - Generates structured chunk captions with `<think>` visual reasoning and `<answer>` trade conclusions.
-   - Real-time GPU VRAM profiling on NVIDIA GB10 / NVIDIA DGX Spark.
-4. **VSS Semantic Video Search (`search_engine.py`):**
-   - Hybrid vector embeddings + lexical BM25 search over video intervals.
-   - Query trade triggers, stops, and indicators using natural language.
-5. **Long Video Summarization - LVS (`summarizer.py`):**
-   - Aggregates chunk captions into an executive summary and chronological milestone events table.
-6. **Trade Strategy Synthesis Agent (`trade_strategy_agent.py`):**
-   - Synthesizes formal algorithmic trade rules (`TradeIdeaSpec`).
-7. **FastAPI Microservice & Unified CLI (`server.py`, `vss_cli.py`):**
-   - REST endpoints (`/v1/ready`, `/v1/summarize`, `/v1/search`, `/v1/trade_idea`, `/models`).
-   - CLI commands (`vss summarize`, `vss search`, `vss trade-idea`, `vss serve`).
-
-### Running the VSS Blueprint Pipeline on NVIDIA DGX Spark:
-```bash
-# Clip 1 (NVDA Breakout & Demand Retest):
-ssh user@dgx-spark "docker run --rm --gpus all \
-  -v /workspace:/workspace \
-  -v /mnt/edrive/huggingface:/mnt/edrive/huggingface:ro \
-  -e HF_HOME=/mnt/edrive/huggingface \
-  -e WANDB_MODE=offline \
-  trader-vids:latest -m video_search_and_summarization.pipeline \
-  --video /workspace/trading_lesson.clip.mp4 \
-  --subtitles /workspace/subtitles_clip \
-  --output_dir /workspace/outputs_vss_clip_1 \
-  --chunk_duration 35.0 \
-  --chunk_overlap 5.0"
-
-# Clip 2 (RSI Divergence & Resistance Reversal):
-ssh user@dgx-spark "docker run --rm --gpus all \
-  -v /workspace:/workspace \
-  -v /mnt/edrive/huggingface:/mnt/edrive/huggingface:ro \
-  -e HF_HOME=/mnt/edrive/huggingface \
-  -e WANDB_MODE=offline \
-  trader-vids:latest -m video_search_and_summarization.pipeline \
+  trader-vids:latest pipeline.py \
   --video /workspace/trading_lesson_2.clip.mp4 \
   --subtitles /workspace/subtitles_clip_2 \
   --output_dir /workspace/outputs_vss_clip_2 \
@@ -177,4 +112,74 @@ ssh user@dgx-spark "docker run --rm --gpus all \
   --chunk_overlap 5.0"
 ```
 
-For complete blueprint documentation, see [video_search_and_summarization/README.md](video_search_and_summarization/README.md).
+### 3. Run on Any New Video:
+```bash
+ssh user@dgx-spark "docker run --rm --gpus all \
+  -v /workspace:/workspace \
+  -v /mnt/edrive/huggingface:/mnt/edrive/huggingface:ro \
+  -e HF_HOME=/mnt/edrive/huggingface \
+  -e WANDB_MODE=offline \
+  trader-vids:latest pipeline.py \
+  --video /workspace/my_video.mp4 \
+  --subtitles /workspace/my_subtitles \
+  --output_dir /workspace/outputs_vss_my_video"
+```
+
+---
+
+## 🧪 Running Unit Tests
+
+Run the full pytest suite locally or in Docker:
+
+```bash
+pytest tests/ -v
+```
+
+---
+
+## 🔍 VSS Semantic Video Search
+
+After running the pipeline, query the video index directly with natural language:
+
+```bash
+# Query breakout levels
+python3 vss_cli.py search \
+  --index outputs_vss_clip_1/vss_search_index.json \
+  --query "Where does the price break above the swing high?"
+
+# Query entry triggers and buy zones
+python3 vss_cli.py search \
+  --index outputs_vss_clip_1/vss_search_index.json \
+  --query "Where is the consolidation demand buy zone?"
+```
+
+---
+
+## 🌐 VSS REST API Service
+
+Launch the FastAPI microservice adhering to the VSS OpenAPI contract:
+
+```bash
+python3 vss_cli.py serve --port 38111 --host 0.0.0.0
+```
+
+Available endpoints:
+- `GET /v1/ready`: Service readiness probe (HTTP 200).
+- `GET /v1/live`: Service liveness probe (HTTP 200).
+- `GET /v1/healthz`: Health status with real-time GPU VRAM profiling.
+- `GET /models`: Lists available models (`nvidia/Cosmos3-Nano`).
+- `POST /v1/summarize`: Executes long video summarization on a video clip and subtitle file.
+- `POST /v1/search`: Executes semantic search across video chunks.
+- `POST /v1/trade_idea`: Synthesizes formal trade rules and execution parameters.
+
+---
+
+## 📦 Output Artifacts
+
+Each pipeline run generates the following artifacts in the designated output directory:
+1. `trading_summary.json`: Standard VSS `CompletionResponse` containing the narrative summary, chronological milestone events, and chunk captions.
+2. `trading_summary.md`: Human-readable summary report with comparative milestone tables.
+3. `trading_strategy_spec.json`: Machine-readable algorithmic trading rules (entry triggers, invalidation stops, profit targets, indicators).
+4. `trading_strategy_spec.md`: Polished markdown trade plan for algorithmic execution.
+5. `vss_search_index.json`: Vector and keyword search index enabling instant query retrieval.
+6. `augmented_subtitles.json` & `augmented_subtitles.md`: Grounded timeline linking spoken subtitle blocks to visual chart confluences.

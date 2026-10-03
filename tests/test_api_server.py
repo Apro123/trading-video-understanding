@@ -1,6 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
-from video_search_and_summarization.server import app
+try:
+    from server import app
+except ImportError:
+    from video_search_and_summarization.server import app
 
 client = TestClient(app)
 

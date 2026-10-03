@@ -1,7 +1,12 @@
 import pytest
-from video_search_and_summarization.trade_strategy_agent import VSSTradeStrategyAgent
-from video_search_and_summarization.summarizer import VSSLVSSummarizer
-from video_search_and_summarization.schemas import VideoChunk, VlmCaptionResponse, CompletionResponse
+try:
+    from trade_strategy_agent import VSSTradeStrategyAgent
+    from summarizer import VSSLVSSummarizer
+    from schemas import VideoChunk, VlmCaptionResponse, CompletionResponse
+except ImportError:
+    from video_search_and_summarization.trade_strategy_agent import VSSTradeStrategyAgent
+    from video_search_and_summarization.summarizer import VSSLVSSummarizer
+    from video_search_and_summarization.schemas import VideoChunk, VlmCaptionResponse, CompletionResponse
 
 def test_trade_strategy_agent_synthesis():
     agent = VSSTradeStrategyAgent()
