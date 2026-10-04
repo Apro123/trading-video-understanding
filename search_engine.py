@@ -211,3 +211,24 @@ class VSSSearchIndex:
             "total_chunks": len(self.chunks_data),
             "chunks": serialized_chunks
         }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "VSSSearchIndex":
+        """Reconstructs a VSSSearchIndex from an index dictionary."""
+        video_id = data.get("video_id", "default_video")
+        idx = cls(video_id=video_id)
+        idx.chunks_data = data.get("chunks", [])
+        idx._total_docs = len(idx.chunks_data)
+        for d in idx.chunks_data:
+            searchable_text = f"{d.get('transcript', '')} {d.get('caption', '')} {d.get('reasoning', '')}"
+            d["tokens"] = idx._tokenize(searchable_text)
+            for t in set(d["tokens"]):
+                idx._doc_frequencies[t] = idx._doc_frequencies.get(t, 0) + 1
+        return idx
+
+    @classmethod
+    def from_file(cls, file_path: str) -> "VSSSearchIndex":
+        """Loads and reconstructs a VSSSearchIndex directly from a JSON index file."""
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return cls.from_dict(data)

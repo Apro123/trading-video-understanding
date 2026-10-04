@@ -24,6 +24,7 @@ try:
     )
     from .vlm_reasoner import VSSVLMReasoner
     from .nemotron_reasoner import NemotronReasoner
+    from .utils import extract_ticker_symbol, extract_timeframe, extract_directional_bias
 except (ImportError, ValueError):
     from schemas import (
         TradeIdeaSpec,
@@ -34,6 +35,7 @@ except (ImportError, ValueError):
     )
     from vlm_reasoner import VSSVLMReasoner
     from nemotron_reasoner import NemotronReasoner
+    from utils import extract_ticker_symbol, extract_timeframe, extract_directional_bias
 
 logger = logging.getLogger(__name__)
 
@@ -98,47 +100,10 @@ class VSSTradeStrategyAgent:
         all_text = " ".join(text_parts)
         lower = all_text.lower()
 
-        # Dynamic Asset Extraction (look for uppercase tickers or currency pairs)
-        asset = "Market Asset Under Analysis"
-        ticker_matches = re.findall(r'\b([A-Z]{2,6}(?:/[A-Z]{2,6})?)\b', all_text)
-        exclude_tokens = {
-            "VSS", "VLM", "LVS", "CHoCH", "BOS", "FVG", "RSI", "MACD", "SMA", "EMA",
-            "GPU", "CPU", "AI", "TP1", "TP2", "TP", "SL", "TV", "HTF", "LTF", "RR",
-            "USD", "CAD", "EUR", "GBP", "JPY", "AUD", "NZD", "CHF"
-        }
-        for tm in ticker_matches:
-            if tm not in exclude_tokens and len(tm) >= 3:
-                asset = tm
-                break
-
-        # Dynamic Timeframe Extraction
-        timeframe = "Chart Timeframe"
-        if "weekly" in lower or "1w" in lower:
-            timeframe = "Weekly (1W)"
-        elif "daily" in lower or "1d" in lower:
-            timeframe = "Daily (1D)"
-        elif "4h" in lower:
-            timeframe = "4-Hour (4H)"
-        elif "1h" in lower:
-            timeframe = "1-Hour (1H)"
-        elif "15m" in lower:
-            timeframe = "15-Minute (15M)"
-
-        if "heikin ashi" in lower:
-            timeframe += " Heikin Ashi"
-
-        # Dynamic Directional Bias
-        bullish_score = sum(1 for w in ["bullish", "buy zone", "demand", "breakout", "higher high"] if w in lower)
-        bearish_score = sum(1 for w in ["bearish", "sell zone", "supply", "breakdown", "lower low", "divergence"] if w in lower)
-
-        if bearish_score > bullish_score and "divergence" in lower:
-            bias = "Bearish Reversal"
-        elif bullish_score >= bearish_score and bullish_score > 0:
-            bias = "Bullish"
-        elif bearish_score > bullish_score:
-            bias = "Bearish"
-        else:
-            bias = "Neutral"
+        # Dynamic Asset, Timeframe, and Directional Bias Extraction
+        asset = extract_ticker_symbol(all_text, default="Market Asset Under Analysis")
+        timeframe = extract_timeframe(all_text, default="Chart Timeframe")
+        bias = extract_directional_bias(all_text, default="Neutral")
 
         # Dynamic Rules Formulation
         rules: List[TradingRule] = []

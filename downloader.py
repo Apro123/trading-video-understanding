@@ -16,6 +16,11 @@ from typing import Dict, Any, List, Optional
 
 logger = logging.getLogger(__name__)
 
+try:
+    from .utils import safe_load_json
+except (ImportError, ValueError):
+    from utils import safe_load_json
+
 VIDEOS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "videos")
 os.makedirs(VIDEOS_DIR, exist_ok=True)
 
@@ -117,12 +122,8 @@ def get_video_status(video_id: str) -> Dict[str, Any]:
 
     indexed_chunks = 0
     if has_index:
-        try:
-            with open(index_file, "r", encoding="utf-8") as f:
-                d = json.load(f)
-                indexed_chunks = d.get("total_chunks", len(d.get("chunks", [])))
-        except Exception:
-            pass
+        d = safe_load_json(index_file, default={})
+        indexed_chunks = d.get("total_chunks", len(d.get("chunks", [])))
 
     return {
         **meta,
@@ -141,12 +142,9 @@ def get_video_status(video_id: str) -> Dict[str, Any]:
 def get_video_chapters(video_id: str) -> List[Dict[str, Any]]:
     """Retrieves chapter metadata for a Video video, caching locally."""
     cache_path = os.path.join(VIDEOS_DIR, f"{video_id}_chapters.json")
-    if os.path.exists(cache_path):
-        try:
-            with open(cache_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            logger.warning(f"Error reading chapters cache: {e}")
+    cached = safe_load_json(cache_path)
+    if cached is not None:
+        return cached
 
     url = f"https://example.com/watch?v={video_id}"
     try:

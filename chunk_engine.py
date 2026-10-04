@@ -7,8 +7,11 @@ Extracts video frames via FFmpeg streaming pipes with native support for AV1, VP
 import os
 import io
 import subprocess
+import logging
 from typing import List, Optional, Tuple
 from PIL import Image
+
+logger = logging.getLogger(__name__)
 
 try:
     from .schemas import VideoChunk
@@ -31,7 +34,7 @@ def get_video_duration_ffprobe(video_path: str) -> float:
         out = subprocess.check_output(cmd, stderr=subprocess.DEVNULL).decode("utf-8").strip()
         return float(out)
     except Exception as e:
-        print(f"[ChunkEngine Warning] ffprobe failed to get duration: {e}. Fallback to 120s.")
+        logger.warning(f"ffprobe failed to get duration: {e}. Fallback to 120s.")
         return 120.0
 
 def extract_frame_ffmpeg(
@@ -68,7 +71,7 @@ def extract_frame_ffmpeg(
                 img = img.resize(new_size, Image.Resampling.LANCZOS)
             return img
     except Exception as e:
-        print(f"[ChunkEngine Warning] Frame extraction failed at {timestamp_s:.2f}s: {e}")
+        logger.warning(f"Frame extraction failed at {timestamp_s:.2f}s: {e}")
     return None
 
 class VideoChunkManager:

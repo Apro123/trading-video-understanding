@@ -30,6 +30,7 @@ try:
         TradingRule
     )
     from .config import DEFAULT_LLM_BASE_URL, DEFAULT_LLM_MODEL
+    from .utils import clean_json_markdown
 except (ImportError, ValueError):
     from schemas import (
         VideoChunk,
@@ -39,6 +40,7 @@ except (ImportError, ValueError):
         TradingRule
     )
     from config import DEFAULT_LLM_BASE_URL, DEFAULT_LLM_MODEL
+    from utils import clean_json_markdown
 
 logger = logging.getLogger(__name__)
 
@@ -49,15 +51,8 @@ SYSTEM_REASONING_PROMPT = (
     "Be direct, precise, and concise. Output ONLY valid JSON matching the requested schema."
 )
 
-def _clean_json_markdown(text: str) -> str:
-    """Strips markdown code fences and returns pure JSON text."""
-    text = text.strip()
-    match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', text, re.IGNORECASE)
-    if match:
-        text = match.group(1).strip()
-    # Strip illegal trailing commas in JSON objects and arrays
-    text = re.sub(r',\s*([\]}])', r'\1', text)
-    return text
+# Maintain backward-compatibility alias
+_clean_json_markdown = clean_json_markdown
 
 class NemotronReasoner:
     """

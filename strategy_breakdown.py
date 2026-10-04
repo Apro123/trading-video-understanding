@@ -25,7 +25,14 @@ try:
     )
     from .subtitle_sync import SubtitleSyncManager, seconds_to_time_str, time_str_to_seconds
     from .downloader import get_video_file_path, get_subtitle_file_path, get_video_chapters, KNOWN_VIDEOS
-    from .nemotron_reasoner import NemotronReasoner, _clean_json_markdown
+    from .nemotron_reasoner import NemotronReasoner
+    from .utils import (
+        clean_json_markdown,
+        extract_ticker_symbol,
+        extract_timeframe,
+        extract_directional_bias,
+        safe_load_json
+    )
 except (ImportError, ValueError):
     from schemas import (
         StrategySegment,
@@ -35,11 +42,258 @@ except (ImportError, ValueError):
     )
     from subtitle_sync import SubtitleSyncManager, seconds_to_time_str, time_str_to_seconds
     from downloader import get_video_file_path, get_subtitle_file_path, get_video_chapters, KNOWN_VIDEOS
-    from nemotron_reasoner import NemotronReasoner, _clean_json_markdown
+    from nemotron_reasoner import NemotronReasoner
+    from utils import (
+        clean_json_markdown,
+        extract_ticker_symbol,
+        extract_timeframe,
+        extract_directional_bias,
+        safe_load_json
+    )
 
 logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Structured strategy presets for algorithmic fallback synthesis
+STRATEGY_TEMPLATES: Dict[str, Dict[str, Any]] = {
+    "breakout": {
+        "name_fallback": "Consolidation Range Breakout Strategy",
+        "core_thesis": "Captures directional expansion momentum when price decisively breaks outside a defined multi-period consolidation boundary.",
+        "entry_trigger": "Enter upon decisive candle close breaking beyond the consolidation boundary.",
+        "invalidation_stop": "Anchor stop-loss inside the middle of the consolidation range or below the breakout candle.",
+        "targets": ["TP1: Measured move equal to consolidation range height", "TP2: Next higher timeframe structural resistance"],
+        "rr": "2.5:1",
+        "indicators": ["Consolidation Range High/Low", "Volume Expansion", "Candlestick Action"],
+        "confluences": [
+            "Decisive candle close outside horizontal boundary",
+            "Heikin Ashi or standard candle confirming momentum",
+            "Measured move target matching preceding impulse"
+        ],
+        "rules": [
+            {
+                "rule_id": 1,
+                "name": "Range Boundary Definition",
+                "description": "Mark the upper and lower boundaries of the consolidation zone.",
+                "condition": "Price forms at least two touches of support and resistance bounds.",
+                "action": "Wait for decisive breakout close."
+            },
+            {
+                "rule_id": 2,
+                "name": "Breakout Confirmation Entry",
+                "description": "Enter upon breakout candle close.",
+                "condition": "Close > Resistance or Close < Support.",
+                "action": "Execute market entry in direction of breakout."
+            }
+        ]
+    },
+    "divergence": {
+        "name_fallback": "RSI Momentum Divergence Strategy",
+        "core_thesis": "Exploits momentum exhaustion where price makes new extreme peaks while oscillator prints divergent lower peaks at key structural levels.",
+        "entry_trigger": "Enter upon confirmed reversal candle close after oscillator divergence confirms at key structural boundary.",
+        "invalidation_stop": "Place stop-loss beyond the most recent swing high or low pivot.",
+        "targets": ["TP1: Immediate structural liquidity support/resistance", "TP2: Baseline trend demand/supply zone"],
+        "rr": "2.5:1",
+        "indicators": ["RSI (14-Period)", "Horizontal Support & Resistance", "Candlestick Exhaustion Patterns"],
+        "confluences": [
+            "Price making higher highs while RSI prints lower highs (or vice versa)",
+            "Retest of major overhead resistance or support level",
+            "Reversal candlestick pattern confirmation"
+        ],
+        "rules": [
+            {
+                "rule_id": 1,
+                "name": "Oscillator Divergence Verification",
+                "description": "Identify divergence between price action peaks and oscillator indicator highs/lows.",
+                "condition": "Price reaches swing high while RSI prints lower high.",
+                "action": "Flag potential momentum exhaustion setup."
+            },
+            {
+                "rule_id": 2,
+                "name": "Structural Confirmation Entry",
+                "description": "Enter when price action confirms reversal at key horizontal level.",
+                "condition": "Candlestick closes confirming rejection of structural level.",
+                "action": "Execute entry in direction of the divergence."
+            }
+        ]
+    },
+    "candlestick": {
+        "name_fallback": "Price Action Candlestick Reversal Strategy",
+        "core_thesis": "Identifies institutional order flow shifts via high-conviction candlestick reversal patterns formed at key inflection levels.",
+        "entry_trigger": "Enter on the close of the confirming candlestick pattern (e.g. engulfing candle, rejection pin bar).",
+        "invalidation_stop": "Place stop loss 1-2 ticks beyond the extreme wick of the pattern candle.",
+        "targets": ["TP1: Preceding swing pivot", "TP2: 2:1 Risk-to-Reward extension"],
+        "rr": "2:1",
+        "indicators": ["Candlestick Reversal Formations", "Key Price Inflection Pivots"],
+        "confluences": [
+            "Reversal pattern forms at major structural level",
+            "Body of candle decisively engulfs prior opposing candle",
+            "Favorable risk-to-reward ratio defined by pattern wick"
+        ],
+        "rules": [
+            {
+                "rule_id": 1,
+                "name": "Pattern Identification",
+                "description": "Detect valid multi-bar candlestick reversal pattern.",
+                "condition": "Engulfing or rejection pin bar forms at key level.",
+                "action": "Prepare entry order upon candle completion."
+            },
+            {
+                "rule_id": 2,
+                "name": "Confirmed Close Entry",
+                "description": "Enter immediately upon the candle closing in the intended direction.",
+                "condition": "Candle close confirms pattern completion.",
+                "action": "Execute trade and place stop beyond candle extreme."
+            }
+        ]
+    },
+    "chart_pattern": {
+        "name_fallback": "Geometric Chart Pattern Breakout Strategy",
+        "core_thesis": "Exploits classic structural geometric chart patterns signaling high-probability trend reversals or continuation after neckline validation.",
+        "entry_trigger": "Enter on confirmed neckline or pattern boundary break with decisive candle close.",
+        "invalidation_stop": "Place stop loss beyond the apex or right shoulder/second test of the pattern.",
+        "targets": ["TP1: Measured height target projected from breakout level", "TP2: Major structural swing target"],
+        "rr": "2.5:1",
+        "indicators": ["Geometric Pattern Boundaries", "Volume Confirmation", "Neckline Level"],
+        "confluences": [
+            "Pattern completion with clean structural touches",
+            "Breakout volume expansion confirming participant interest",
+            "Favorable risk profile anchored to pattern structure"
+        ],
+        "rules": [
+            {
+                "rule_id": 1,
+                "name": "Pattern Validation",
+                "description": "Mark boundaries and neckline of chart pattern.",
+                "condition": "Price tests pattern boundaries at least twice without invalidating structure.",
+                "action": "Wait for neckline breach."
+            },
+            {
+                "rule_id": 2,
+                "name": "Neckline Breakout Execution",
+                "description": "Enter when price closes beyond pattern neckline.",
+                "condition": "Decisive candle close outside pattern boundary.",
+                "action": "Enter position with measured move target."
+            }
+        ]
+    },
+    "support_resistance": {
+        "name_fallback": "Support & Resistance Level Flip Strategy",
+        "core_thesis": "Capitalizes on structural role reversals where broken resistance converts into high-probability demand support upon retest.",
+        "entry_trigger": "Enter on confirmed bounce and rejection wicks during a retest of the broken structural level.",
+        "invalidation_stop": "Place protective stop loss beyond the support/resistance consolidation zone.",
+        "targets": ["TP1: Preceding major swing high", "TP2: Structural extension target (2:1 minimum R:R)"],
+        "rr": "2:1",
+        "indicators": ["Horizontal Support & Resistance", "Price Action Candlesticks"],
+        "confluences": [
+            "Prior resistance broken with decisive candle close",
+            "Clean pullback retesting the level as support",
+            "Rejection candle wick confirming buyer presence"
+        ],
+        "rules": [
+            {
+                "rule_id": 1,
+                "name": "Level Breakout Identification",
+                "description": "Identify a key horizontal price level that was decisively broken.",
+                "condition": "Candle closes clearly beyond horizontal support/resistance.",
+                "action": "Mark level as active zone for potential retest."
+            },
+            {
+                "rule_id": 2,
+                "name": "Pullback Retest Execution",
+                "description": "Enter when price returns to retest the level and shows rejection.",
+                "condition": "Price tests level with lower shadow rejection candle.",
+                "action": "Execute entry aligned with the breakout direction."
+            }
+        ]
+    },
+    "trending": {
+        "name_fallback": "Trending Market Structure Strategy",
+        "core_thesis": "Rides dominant higher timeframe trend momentum by executing high-probability pullbacks into dynamic trend levels and market structure shifts.",
+        "entry_trigger": "Enter on trend continuation pullback candle close following higher high/lower low structural confirmation.",
+        "invalidation_stop": "Place stop loss below the most recent higher low (bullish) or above lower high (bearish).",
+        "targets": ["TP1: Previous swing high/low extension", "TP2: Trailing trend runner target"],
+        "rr": "2:1",
+        "indicators": ["Trend Structure Pivots", "Dynamic Moving Averages", "Candlestick Momentum"],
+        "confluences": [
+            "Clear series of higher highs and higher lows",
+            "Dynamic trend support alignment",
+            "Strong directional momentum candles"
+        ],
+        "rules": [
+            {
+                "rule_id": 1,
+                "name": "Market Structure Progression",
+                "description": "Confirm trend direction via sequence of structural pivots.",
+                "condition": "Market consistently prints higher highs/lows or lower highs/lows.",
+                "action": "Trade strictly in direction of dominant structure."
+            },
+            {
+                "rule_id": 2,
+                "name": "Trend Pullback Entry",
+                "description": "Enter when pullback terminates into dynamic trend support.",
+                "condition": "Candle prints rejection wick at trend support zone.",
+                "action": "Execute trade entry in direction of primary trend."
+            }
+        ]
+    },
+    "position_management": {
+        "name_fallback": "Position & Trade Management Strategy",
+        "core_thesis": "Systematic trade management and risk allocation protocols to preserve capital, lock in gains, and scale into winning positions.",
+        "entry_trigger": "Execute according to core setup rules and immediately calibrate position size to max 1-2% risk.",
+        "invalidation_stop": "Hard stop-loss placed at predefined structural invalidation; trail stop to breakeven once TP1 is achieved.",
+        "targets": ["TP1: Secure 50% profit at 1:1.5 R:R", "TP2: Let remainder run to key structural target with trailing stop"],
+        "rr": "2.5:1",
+        "indicators": ["Risk/Reward Tool", "Structural Swing Pivots", "ATR Volatility Band"],
+        "confluences": [
+            "Strict 1-2% portfolio risk allocation",
+            "Breakeven stop mitigation after initial impulse",
+            "Systematic profit realization without emotional interference"
+        ],
+        "rules": [
+            {
+                "rule_id": 1,
+                "name": "Pre-Trade Risk Sizing",
+                "description": "Calculate position size based on account balance and stop loss distance.",
+                "condition": "Stop loss distance is objectively determined by chart structure.",
+                "action": "Size position to not exceed 1% account risk."
+            },
+            {
+                "rule_id": 2,
+                "name": "Dynamic Stop Trailing",
+                "description": "Move stop loss to breakeven upon achieving initial target.",
+                "condition": "Price reaches 1.5R favorable excursion.",
+                "action": "Move stop to entry price and take partial profits."
+            }
+        ]
+    },
+    "market_structure": {
+        "name_fallback": "Market Structure Strategy",
+        "core_thesis": "Systematic trend alignment following market structure progression and key structural pivot breaks.",
+        "entry_trigger": "Enter upon confirmed structural breakout or pullback retest into dynamic support.",
+        "invalidation_stop": "Place protective stop loss beyond recent swing pivot.",
+        "targets": ["TP1: Next structural resistance", "TP2: Extended trend target (2:1 minimum R:R)"],
+        "rr": "2:1",
+        "indicators": ["Price Action Candlesticks", "Fractal Swing Pivots"],
+        "confluences": ["Trend alignment", "Decisive candle close", "Protected swing anchor"],
+        "rules": [
+            {
+                "rule_id": 1,
+                "name": "Trend Structure Confirmation",
+                "description": "Identify prevailing trend direction via swing highs and lows.",
+                "condition": "Market prints consecutive higher highs/lows or lower highs/lows.",
+                "action": "Trade exclusively in direction of dominant structure."
+            },
+            {
+                "rule_id": 2,
+                "name": "Inflection Entry",
+                "description": "Enter on pullback into trend support.",
+                "condition": "Price tests dynamic trend support with reversal candle.",
+                "action": "Execute trade entry with predefined stop."
+            }
+        ]
+    }
+}
 
 def clean_rolling_transcript(text: str) -> str:
     """Removes rolling Video live subtitle duplicate phrases."""
@@ -86,13 +340,13 @@ class MultiStrategyBreakdownEngine:
         os.makedirs(out_dir, exist_ok=True)
         cached_json = os.path.join(out_dir, "multi_strategy_breakdown.json")
 
-        if not force_recompute and os.path.exists(cached_json):
-            try:
-                with open(cached_json, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                return MultiStrategyBreakdown(**data)
-            except Exception as e:
-                logger.warning(f"Error loading cached multi-strategy breakdown: {e}")
+        if not force_recompute:
+            cached_data = safe_load_json(cached_json)
+            if cached_data:
+                try:
+                    return MultiStrategyBreakdown(**cached_data)
+                except Exception as e:
+                    logger.warning(f"Error parsing cached multi-strategy breakdown: {e}")
 
         # Resolve paths
         vpath = video_path or get_video_file_path(video_id)
@@ -315,8 +569,7 @@ Return ONLY the valid JSON object.
         if not raw:
             return None
 
-        clean_json = _clean_json_markdown(raw)
-        clean_json = re.sub(r',\s*([\]}])', r'\1', clean_json)
+        clean_json = clean_json_markdown(raw)
         try:
             data = json.loads(clean_json)
             rules = []
@@ -371,51 +624,12 @@ Return ONLY the valid JSON object.
         ts_range: str,
         transcript: str
     ) -> StrategySegment:
-        """Generic algorithmic fallback synthesis for a video segment."""
-        lower = transcript.lower()
-
-        # Dynamic Asset Extraction
-        asset = "Market Asset"
-        ticker_matches = re.findall(r'\b([A-Z]{2,6}(?:/[A-Z]{2,6})?)\b', transcript)
-        exclude_tokens = {
-            "VSS", "VLM", "LVS", "CHoCH", "BOS", "FVG", "RSI", "MACD", "SMA", "EMA",
-            "GPU", "CPU", "AI", "TP1", "TP2", "TP", "SL", "TV", "HTF", "LTF", "RR",
-            "USD", "CAD", "EUR", "GBP", "JPY", "AUD", "NZD", "CHF"
-        }
-        for tm in ticker_matches:
-            if tm not in exclude_tokens and len(tm) >= 3:
-                asset = tm
-                break
-
-        # Dynamic Timeframe
-        timeframe = "Chart Timeframe"
-        if "weekly" in lower or "1w" in lower:
-            timeframe = "Weekly (1W)"
-        elif "daily" in lower or "1d" in lower:
-            timeframe = "Daily (1D)"
-        elif "4h" in lower:
-            timeframe = "4-Hour (4H)"
-        elif "1h" in lower:
-            timeframe = "1-Hour (1H)"
-
-        # Directional Bias
-        bullish_score = sum(1 for w in ["bullish", "buy", "demand", "higher high", "support bounce"] if w in lower)
-        bearish_score = sum(1 for w in ["bearish", "sell", "supply", "lower low", "divergence", "rejection"] if w in lower)
-
-        if bullish_score > 0 and bearish_score > 0 and abs(bullish_score - bearish_score) <= 1:
-            bias = "Both"
-        elif bullish_score > bearish_score:
-            bias = "Bullish"
-        elif bearish_score > bullish_score:
-            bias = "Bearish"
-        else:
-            bias = "Neutral"
+        # Dynamic Asset, Timeframe, and Directional Bias Extraction
+        asset = extract_ticker_symbol(transcript, default="Market Asset")
+        timeframe = extract_timeframe(transcript, default="Chart Timeframe")
+        bias = extract_directional_bias(transcript, default="Neutral")
 
         # Determine strategy theme using multi-signal term-frequency and chapter weighting
-        rules: List[TradingRule] = []
-        indicators = []
-        confluences = []
-
         clean_title = re.sub(r'^[0-9]+[.\-:\s]+', '', title).strip()
         if clean_title.lower().startswith("<untitled") or not clean_title:
             clean_title = f"Trading Strategy {strategy_id}"
@@ -438,12 +652,14 @@ Return ONLY the valid JSON object.
             for kw in kws:
                 if kw in title_lower:
                     sc += 50
-                sc += lower.count(kw)
+                sc += transcript.lower().count(kw)
             scores[theme] = sc
 
         top_theme = max(scores, key=scores.get)
         if scores[top_theme] == 0:
             top_theme = "market_structure"
+
+        tpl = STRATEGY_TEMPLATES.get(top_theme, STRATEGY_TEMPLATES["market_structure"])
 
         # Determine strategy name
         if clean_title and clean_title != f"Trading Strategy {strategy_id}":
@@ -452,222 +668,19 @@ Return ONLY the valid JSON object.
             else:
                 name = clean_title
         else:
-            name_map = {
-                "breakout": "Consolidation Range Breakout Strategy",
-                "divergence": "RSI Momentum Divergence Strategy",
-                "candlestick": "Price Action Candlestick Reversal Strategy",
-                "chart_pattern": "Geometric Chart Pattern Breakout Strategy",
-                "support_resistance": "Support & Resistance Level Flip Strategy",
-                "trending": "Trending Market Structure Strategy",
-                "position_management": "Position & Trade Management Strategy",
-                "market_structure": f"Market Structure Strategy {strategy_id}"
-            }
-            name = name_map.get(top_theme, f"Trading Strategy {strategy_id}")
+            name_base = tpl["name_fallback"]
+            name = f"{name_base} {strategy_id}" if top_theme == "market_structure" else name_base
 
-        if top_theme == "breakout":
-            core_thesis = "Captures directional expansion momentum when price decisively breaks outside a defined multi-period consolidation boundary."
-            entry_trigger = "Enter upon decisive candle close breaking beyond the consolidation boundary."
-            invalidation_stop = "Anchor stop-loss inside the middle of the consolidation range or below the breakout candle."
-            targets = ["TP1: Measured move equal to consolidation range height", "TP2: Next higher timeframe structural resistance"]
-            rr = "2.5:1"
-            indicators = ["Consolidation Range High/Low", "Volume Expansion", "Candlestick Action"]
-            confluences = [
-                "Decisive candle close outside horizontal boundary",
-                "Heikin Ashi or standard candle confirming momentum",
-                "Measured move target matching preceding impulse"
-            ]
-            rules.append(TradingRule(
-                rule_id=1,
-                name="Range Boundary Definition",
-                description="Mark the upper and lower boundaries of the consolidation zone.",
-                condition="Price forms at least two touches of support and resistance bounds.",
-                action="Wait for decisive breakout close."
-            ))
-            rules.append(TradingRule(
-                rule_id=2,
-                name="Breakout Confirmation Entry",
-                description="Enter upon breakout candle close.",
-                condition="Close > Resistance or Close < Support.",
-                action="Execute market entry in direction of breakout."
-            ))
-        elif top_theme == "divergence":
-            core_thesis = "Exploits momentum exhaustion where price makes new extreme peaks while oscillator prints divergent lower peaks at key structural levels."
-            entry_trigger = "Enter upon confirmed reversal candle close after oscillator divergence confirms at key structural boundary."
-            invalidation_stop = "Place stop-loss beyond the most recent swing high or low pivot."
-            targets = ["TP1: Immediate structural liquidity support/resistance", "TP2: Baseline trend demand/supply zone"]
-            rr = "2.5:1"
-            indicators = ["RSI (14-Period)", "Horizontal Support & Resistance", "Candlestick Exhaustion Patterns"]
-            confluences = [
-                "Price making higher highs while RSI prints lower highs (or vice versa)",
-                "Retest of major overhead resistance or support level",
-                "Reversal candlestick pattern confirmation"
-            ]
-            rules.append(TradingRule(
-                rule_id=1,
-                name="Oscillator Divergence Verification",
-                description="Identify divergence between price action peaks and oscillator indicator highs/lows.",
-                condition="Price reaches swing high while RSI prints lower high.",
-                action="Flag potential momentum exhaustion setup."
-            ))
-            rules.append(TradingRule(
-                rule_id=2,
-                name="Structural Confirmation Entry",
-                description="Enter when price action confirms reversal at key horizontal level.",
-                condition="Candlestick closes confirming rejection of structural level.",
-                action="Execute entry in direction of the divergence."
-            ))
-        elif top_theme == "candlestick":
-            core_thesis = "Identifies institutional order flow shifts via high-conviction candlestick reversal patterns formed at key inflection levels."
-            entry_trigger = "Enter on the close of the confirming candlestick pattern (e.g. engulfing candle, rejection pin bar)."
-            invalidation_stop = "Place stop loss 1-2 ticks beyond the extreme wick of the pattern candle."
-            targets = ["TP1: Preceding swing pivot", "TP2: 2:1 Risk-to-Reward extension"]
-            rr = "2:1"
-            indicators = ["Candlestick Reversal Formations", "Key Price Inflection Pivots"]
-            confluences = [
-                "Reversal pattern forms at major structural level",
-                "Body of candle decisively engulfs prior opposing candle",
-                "Favorable risk-to-reward ratio defined by pattern wick"
-            ]
-            rules.append(TradingRule(
-                rule_id=1,
-                name="Pattern Identification",
-                description="Detect valid multi-bar candlestick reversal pattern.",
-                condition="Engulfing or rejection pin bar forms at key level.",
-                action="Prepare entry order upon candle completion."
-            ))
-            rules.append(TradingRule(
-                rule_id=2,
-                name="Confirmed Close Entry",
-                description="Enter immediately upon the candle closing in the intended direction.",
-                condition="Candle close confirms pattern completion.",
-                action="Execute trade and place stop beyond candle extreme."
-            ))
-        elif top_theme == "chart_pattern":
-            core_thesis = "Exploits classic structural geometric chart patterns signaling high-probability trend reversals or continuation after neckline validation."
-            entry_trigger = "Enter on confirmed neckline or pattern boundary break with decisive candle close."
-            invalidation_stop = "Place stop loss beyond the apex or right shoulder/second test of the pattern."
-            targets = ["TP1: Measured height target projected from breakout level", "TP2: Major structural swing target"]
-            rr = "2.5:1"
-            indicators = ["Geometric Pattern Boundaries", "Volume Confirmation", "Neckline Level"]
-            confluences = [
-                "Pattern completion with clean structural touches",
-                "Breakout volume expansion confirming participant interest",
-                "Favorable risk profile anchored to pattern structure"
-            ]
-            rules.append(TradingRule(
-                rule_id=1,
-                name="Pattern Validation",
-                description="Mark boundaries and neckline of chart pattern.",
-                condition="Price tests pattern boundaries at least twice without invalidating structure.",
-                action="Wait for neckline breach."
-            ))
-            rules.append(TradingRule(
-                rule_id=2,
-                name="Neckline Breakout Execution",
-                description="Enter when price closes beyond pattern neckline.",
-                condition="Decisive candle close outside pattern boundary.",
-                action="Enter position with measured move target."
-            ))
-        elif top_theme == "support_resistance":
-            core_thesis = "Capitalizes on structural role reversals where broken resistance converts into high-probability demand support upon retest."
-            entry_trigger = "Enter on confirmed bounce and rejection wicks during a retest of the broken structural level."
-            invalidation_stop = "Place protective stop loss beyond the support/resistance consolidation zone."
-            targets = ["TP1: Preceding major swing high", "TP2: Structural extension target (2:1 minimum R:R)"]
-            rr = "2:1"
-            indicators = ["Horizontal Support & Resistance", "Price Action Candlesticks"]
-            confluences = [
-                "Prior resistance broken with decisive candle close",
-                "Clean pullback retesting the level as support",
-                "Rejection candle wick confirming buyer presence"
-            ]
-            rules.append(TradingRule(
-                rule_id=1,
-                name="Level Breakout Identification",
-                description="Identify a key horizontal price level that was decisively broken.",
-                condition="Candle closes clearly beyond horizontal support/resistance.",
-                action="Mark level as active zone for potential retest."
-            ))
-            rules.append(TradingRule(
-                rule_id=2,
-                name="Pullback Retest Execution",
-                description="Enter when price returns to retest the level and shows rejection.",
-                condition="Price tests level with lower shadow rejection candle.",
-                action="Execute entry aligned with the breakout direction."
-            ))
-        elif top_theme == "trending":
-            core_thesis = "Rides dominant higher timeframe trend momentum by executing high-probability pullbacks into dynamic trend levels and market structure shifts."
-            entry_trigger = "Enter on trend continuation pullback candle close following higher high/lower low structural confirmation."
-            invalidation_stop = "Place stop loss below the most recent higher low (bullish) or above lower high (bearish)."
-            targets = ["TP1: Previous swing high/low extension", "TP2: Trailing trend runner target"]
-            rr = "2:1"
-            indicators = ["Trend Structure Pivots", "Dynamic Moving Averages", "Candlestick Momentum"]
-            confluences = [
-                "Clear series of higher highs and higher lows",
-                "Dynamic trend support alignment",
-                "Strong directional momentum candles"
-            ]
-            rules.append(TradingRule(
-                rule_id=1,
-                name="Market Structure Progression",
-                description="Confirm trend direction via sequence of structural pivots.",
-                condition="Market consistently prints higher highs/lows or lower highs/lows.",
-                action="Trade strictly in direction of dominant structure."
-            ))
-            rules.append(TradingRule(
-                rule_id=2,
-                name="Trend Pullback Entry",
-                description="Enter when pullback terminates into dynamic trend support.",
-                condition="Candle prints rejection wick at trend support zone.",
-                action="Execute trade entry in direction of primary trend."
-            ))
-        elif top_theme == "position_management":
-            core_thesis = "Systematic trade management and risk allocation protocols to preserve capital, lock in gains, and scale into winning positions."
-            entry_trigger = "Execute according to core setup rules and immediately calibrate position size to max 1-2% risk."
-            invalidation_stop = "Hard stop-loss placed at predefined structural invalidation; trail stop to breakeven once TP1 is achieved."
-            targets = ["TP1: Secure 50% profit at 1:1.5 R:R", "TP2: Let remainder run to key structural target with trailing stop"]
-            rr = "2.5:1"
-            indicators = ["Risk/Reward Tool", "Structural Swing Pivots", "ATR Volatility Band"]
-            confluences = [
-                "Strict 1-2% portfolio risk allocation",
-                "Breakeven stop mitigation after initial impulse",
-                "Systematic profit realization without emotional interference"
-            ]
-            rules.append(TradingRule(
-                rule_id=1,
-                name="Pre-Trade Risk Sizing",
-                description="Calculate position size based on account balance and stop loss distance.",
-                condition="Stop loss distance is objectively determined by chart structure.",
-                action="Size position to not exceed 1% account risk."
-            ))
-            rules.append(TradingRule(
-                rule_id=2,
-                name="Dynamic Stop Trailing",
-                description="Move stop loss to breakeven upon achieving initial target.",
-                condition="Price reaches 1.5R favorable excursion.",
-                action="Move stop to entry price and take partial profits."
-            ))
-        else:
-            core_thesis = "Systematic trend alignment following market structure progression and key structural pivot breaks."
-            entry_trigger = "Enter upon confirmed structural breakout or pullback retest into dynamic support."
-            invalidation_stop = "Place protective stop loss beyond recent swing pivot."
-            targets = ["TP1: Next structural resistance", "TP2: Extended trend target (2:1 minimum R:R)"]
-            rr = "2:1"
-            indicators = ["Price Action Candlesticks", "Fractal Swing Pivots"]
-            confluences = ["Trend alignment", "Decisive candle close", "Protected swing anchor"]
-            rules.append(TradingRule(
-                rule_id=1,
-                name="Trend Structure Confirmation",
-                description="Identify prevailing trend direction via swing highs and lows.",
-                condition="Market prints consecutive higher highs/lows or lower highs/lows.",
-                action="Trade exclusively in direction of dominant structure."
-            ))
-            rules.append(TradingRule(
-                rule_id=2,
-                name="Inflection Entry",
-                description="Enter on pullback into trend support.",
-                condition="Price tests dynamic trend support with reversal candle.",
-                action="Execute trade entry with predefined stop."
-            ))
+        rules = [
+            TradingRule(
+                rule_id=r["rule_id"],
+                name=r["name"],
+                description=r["description"],
+                condition=r["condition"],
+                action=r["action"]
+            )
+            for r in tpl["rules"]
+        ]
 
         return StrategySegment(
             strategy_id=strategy_id,
@@ -679,13 +692,13 @@ Return ONLY the valid JSON object.
             asset=asset,
             timeframe=timeframe,
             directional_bias=bias,
-            core_thesis=core_thesis,
-            entry_trigger=entry_trigger,
-            invalidation_stop=invalidation_stop,
-            take_profit_targets=targets,
-            risk_reward_ratio=rr,
-            technical_indicators=indicators,
-            structural_confluences=confluences,
+            core_thesis=tpl["core_thesis"],
+            entry_trigger=tpl["entry_trigger"],
+            invalidation_stop=tpl["invalidation_stop"],
+            take_profit_targets=tpl["targets"],
+            risk_reward_ratio=tpl["rr"],
+            technical_indicators=tpl["indicators"],
+            structural_confluences=tpl["confluences"],
             step_by_step_rules=rules,
             transcript_summary=transcript[:250] + "..."
         )

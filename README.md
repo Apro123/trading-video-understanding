@@ -58,9 +58,13 @@ flowchart TD
 ```
 ├── config.py                 # Dataclasses and environment configurations
 ├── schemas.py                # Pydantic schemas (VSS OpenAPI and data contracts)
+├── utils.py                  # Shared helpers (safe JSON loading, Markdown cleaning, NLP heuristics)
 ├── subtitle_sync.py          # Dynamic subtitle parsing, 0:00 anchoring, and window alignment
 ├── chunk_engine.py           # FFmpeg-based video chunking and frame extraction
+├── downloader.py             # yt-dlp video/subtitle downloader and local metadata cache
 ├── vlm_reasoner.py           # Cosmos 3 Nano multimodal perception and reasoning engine
+├── nemotron_reasoner.py      # OpenAI-compatible Nemotron 3.5 Lightning reasoning client
+├── strategy_breakdown.py     # Multi-strategy segment breakdown and algorithmic template engine
 ├── search_engine.py          # Hybrid vector and keyword semantic search index
 ├── summarizer.py             # Long Video Summarization (LVS) and milestone event aggregator
 ├── trade_strategy_agent.py   # Algorithmic trade idea and execution rule synthesizer
@@ -68,12 +72,13 @@ flowchart TD
 ├── vss_cli.py                # Unified CLI (summarize, search, trade-idea, serve)
 ├── server.py                 # FastAPI microservice implementing VSS REST endpoints
 ├── README.md                 # Complete documentation and usage instructions
-└── tests/                    # Comprehensive unit test suite
+└── tests/                    # Comprehensive unit test suite (19 tests)
     ├── test_api_server.py
     ├── test_chunk_engine.py
     ├── test_search_engine.py
     ├── test_subtitle_sync.py
-    └── test_trade_strategy.py
+    ├── test_trade_strategy.py
+    └── test_utils.py
 ```
 
 ---
@@ -165,8 +170,7 @@ rsync -avz \
   --exclude='.venv' \
   --exclude='videos' \
   --exclude='outputs_*' \
-  server.py downloader.py strategy_breakdown.py vlm_reasoner.py \
-  templates/ tests/ \
+  *.py templates/ tests/ \
   user@dgx-spark:/workspace/
 ```
 
@@ -178,7 +182,7 @@ ssh user@dgx-spark "docker run --rm -e PYTHONPATH=/workspace --entrypoint pytest
 
 # 2. Stage and commit on DGX Spark
 ssh user@dgx-spark "cd /workspace && \
-  git add <modified_files> && \
+  git add -A && \
   git commit -m 'Descriptive commit message'"
 ```
 
@@ -194,7 +198,7 @@ ssh user@dgx-spark "cd /workspace && git status"
 ### 🧪 Testing Strategy: What Tests to Run on Each
 
 #### 1. Local Tests (macOS)
-Run the full 14-test suite using the local virtual environment:
+Run the full 19-test suite using the local virtual environment:
 ```bash
 ./.venv/bin/pytest tests/ -v
 ```

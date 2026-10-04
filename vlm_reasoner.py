@@ -10,8 +10,11 @@ import re
 import json
 import time
 import subprocess
+import logging
 from typing import List, Dict, Any, Optional, Tuple
 from PIL import Image
+
+logger = logging.getLogger(__name__)
 
 try:
     from .config import DEFAULT_COSMOS3_PATH, VSSVLMConfig
@@ -119,11 +122,11 @@ class VSSVLMReasoner:
             return
 
         if not self._has_cuda:
-            print("[VSSVLMReasoner] CUDA not available; running in CPU fallback/mock mode.")
+            logger.info("CUDA not available; running in CPU fallback/mock mode.")
             return
 
         if not os.path.exists(self.config.model_path):
-            print(f"[VSSVLMReasoner] Model path not found at {self.config.model_path}; using fallback reasoning.")
+            logger.info(f"Model path not found at {self.config.model_path}; using fallback reasoning.")
             return
 
         try:
@@ -132,7 +135,7 @@ class VSSVLMReasoner:
             from transformers.models.cosmos3_omni.modeling_cosmos3_omni import Cosmos3OmniForConditionalGeneration
 
             dtype = torch.bfloat16 if self.config.torch_dtype == "bfloat16" else torch.float16
-            print(f"[VSSVLMReasoner] Loading NVIDIA Cosmos 3 Nano from {self.config.model_path} on {self.config.device}...")
+            logger.info(f"Loading NVIDIA Cosmos 3 Nano from {self.config.model_path} on {self.config.device}...")
             self.processor = AutoProcessor.from_pretrained(self.config.model_path, local_files_only=True)
             self.model = Cosmos3OmniForConditionalGeneration.from_pretrained(
                 self.config.model_path,
@@ -143,9 +146,9 @@ class VSSVLMReasoner:
             self.model.eval()
             self._is_loaded = True
             vram = self.get_vram_stats()
-            print(f"[VSSVLMReasoner] Model loaded successfully. Peak allocated VRAM: {vram['peak_allocated_gb']} GB.")
+            logger.info(f"Model loaded successfully. Peak allocated VRAM: {vram['peak_allocated_gb']} GB.")
         except Exception as e:
-            print(f"[VSSVLMReasoner Warning] Failed to load Cosmos 3 Nano on GPU: {e}. Switching to fallback mode.")
+            logger.warning(f"Failed to load Cosmos 3 Nano on GPU: {e}. Switching to fallback mode.")
             self._is_loaded = False
 
     def reason_over_chunk(
@@ -196,7 +199,7 @@ class VSSVLMReasoner:
                 output_ids = generated_ids[:, prompt_len:]
                 raw_output = self.processor.batch_decode(output_ids, skip_special_tokens=True)[0].strip()
             except Exception as e:
-                print(f"[VSSVLMReasoner Warning] Inference failed on chunk {chunk.chunk_id}: {e}. Using rule-based fallback.")
+                logger.warning(f"Inference failed on chunk {chunk.chunk_id}: {e}. Using rule-based fallback.")
                 raw_output = ""
 
         # Fallback / parsing logic
@@ -280,7 +283,7 @@ class VSSVLMReasoner:
                 if len(synth) > 100:
                     return synth
             except Exception as e:
-                print(f"[VSSVLMReasoner Warning] Text synthesis failed: {e}. Using deterministic synthesis.")
+                logger.warning(f"Text synthesis failed: {e}. Using deterministic synthesis.")
 
         return self._generate_fallback_strategy_synthesis(chunk_captions)
 

@@ -1,10 +1,6 @@
 import pytest
-try:
-    from search_engine import VSSSearchIndex
-    from schemas import VideoChunk, VlmCaptionResponse
-except ImportError:
-    from video_search_and_summarization.search_engine import VSSSearchIndex
-    from video_search_and_summarization.schemas import VideoChunk, VlmCaptionResponse
+from search_engine import VSSSearchIndex
+from schemas import VideoChunk, VlmCaptionResponse
 
 def test_search_engine_indexing_and_retrieval():
     index = VSSSearchIndex(video_id="nvda_test")
@@ -64,3 +60,11 @@ def test_search_engine_indexing_and_retrieval():
     exported = index.export_index_json()
     assert exported["total_chunks"] == 3
     assert exported["video_id"] == "nvda_test"
+
+    # Test reconstruction via from_dict
+    reconstructed = VSSSearchIndex.from_dict(exported)
+    assert reconstructed.video_id == "nvda_test"
+    assert len(reconstructed.chunks_data) == 3
+    rec_res = reconstructed.search("1927 breakout", top_k=1)
+    assert len(rec_res.results) == 1
+    assert rec_res.results[0].chunk_id == 1

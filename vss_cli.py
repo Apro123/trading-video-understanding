@@ -47,16 +47,7 @@ def cmd_search(args):
         print(f"Error: Search index file not found at {args.index}")
         sys.exit(1)
 
-    with open(args.index, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    idx = VSSSearchIndex(video_id=data.get("video_id", "default_video"))
-    idx.chunks_data = data.get("chunks", [])
-    idx._total_docs = len(idx.chunks_data)
-    for d in idx.chunks_data:
-        d["tokens"] = idx._tokenize(f"{d.get('transcript','')} {d.get('caption','')} {d.get('reasoning','')}")
-        for t in set(d["tokens"]):
-            idx._doc_frequencies[t] = idx._doc_frequencies.get(t, 0) + 1
+    idx = VSSSearchIndex.from_file(args.index)
 
     res = idx.search(args.query, top_k=args.top_k)
     print(f"\n🔍 Search Query: \"{args.query}\"")

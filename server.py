@@ -60,6 +60,7 @@ try:
         get_subtitle_file_path,
         KNOWN_VIDEOS
     )
+    from .utils import safe_load_json
 except (ImportError, ValueError):
     from config import DEFAULT_COSMOS3_PATH, DEFAULT_OUTPUT_DIR, VSSVLMConfig
     from schemas import (
@@ -87,6 +88,7 @@ except (ImportError, ValueError):
         get_subtitle_file_path,
         KNOWN_VIDEOS
     )
+    from utils import safe_load_json
 
 from contextlib import asynccontextmanager
 
@@ -123,15 +125,7 @@ def get_or_load_search_index(video_id: str) -> Optional[VSSSearchIndex]:
     for p in candidate_paths:
         if os.path.exists(p):
             try:
-                with open(p, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                idx = VSSSearchIndex(video_id=data.get("video_id", video_id))
-                idx.chunks_data = data.get("chunks", [])
-                idx._total_docs = len(idx.chunks_data)
-                for d in idx.chunks_data:
-                    d["tokens"] = idx._tokenize(f"{d.get('transcript','')} {d.get('caption','')} {d.get('reasoning','')}")
-                    for t in set(d["tokens"]):
-                        idx._doc_frequencies[t] = idx._doc_frequencies.get(t, 0) + 1
+                idx = VSSSearchIndex.from_file(p)
                 video_search_indices[video_id] = idx
                 return idx
             except Exception as e:
@@ -259,38 +253,11 @@ def get_video_status_endpoint(video_id: str):
     meta = get_video_status(video_id)
     out_dir = os.path.join(BASE_DIR, f"outputs_{video_id}")
 
-    spec_data = None
-    spec_path = os.path.join(out_dir, "trading_strategy_spec.json")
-    if os.path.exists(spec_path):
-        try:
-            with open(spec_path, "r", encoding="utf-8") as f:
-                spec_data = json.load(f)
-        except Exception:
-            pass
-
-    summary_data = None
-    summary_path = os.path.join(out_dir, "trading_summary.json")
-    if os.path.exists(summary_path):
-        try:
-            with open(summary_path, "r", encoding="utf-8") as f:
-                summary_data = json.load(f)
-        except Exception:
-            pass
-
-    strat_data = None
-    strat_path = os.path.join(out_dir, "multi_strategy_breakdown.json")
-    if os.path.exists(strat_path):
-        try:
-            with open(strat_path, "r", encoding="utf-8") as f:
-                strat_data = json.load(f)
-        except Exception:
-            pass
-
     return {
         **meta,
-        "trade_spec": spec_data,
-        "summary": summary_data,
-        "strategies": strat_data
+        "trade_spec": safe_load_json(os.path.join(out_dir, "trading_strategy_spec.json")),
+        "summary": safe_load_json(os.path.join(out_dir, "trading_summary.json")),
+        "strategies": safe_load_json(os.path.join(out_dir, "multi_strategy_breakdown.json"))
     }
 
 @app.get("/api/videos/strategies/{video_id}", response_model=MultiStrategyBreakdown, tags=["Trading Strategy"])
@@ -298,13 +265,12 @@ def get_video_strategies_endpoint(video_id: str):
     """Retrieves all discrete trading strategies identified across video intervals."""
     out_dir = os.path.join(BASE_DIR, f"outputs_{video_id}")
     strat_path = os.path.join(out_dir, "multi_strategy_breakdown.json")
-    if os.path.exists(strat_path):
+    cached = safe_load_json(strat_path)
+    if cached:
         try:
-            with open(strat_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            return MultiStrategyBreakdown(**data)
+            return MultiStrategyBreakdown(**cached)
         except Exception as e:
-            logger.warning(f"Error reading cached strategies: {e}")
+            logger.warning(f"Error parsing cached strategies: {e}")
 
     engine = MultiStrategyBreakdownEngine()
     try:
@@ -433,16 +399,12 @@ def search_video(query: SearchQuery):
 
     if active_search_index is None:
         if os.path.exists(index_file):
-            with open(index_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            active_search_index = VSSSearchIndex(video_id=data.get("video_id", "default_video"))
-            active_search_index.chunks_data = data.get("chunks", [])
-            active_search_index._total_docs = len(active_search_index.chunks_data)
-            for d in active_search_index.chunks_data:
-                d["tokens"] = active_search_index._tokenize(f"{d.get('transcript','')} {d.get('caption','')} {d.get('reasoning','')}")
-                for t in set(d["tokens"]):
-                    active_search_index._doc_frequencies[t] = active_search_index._doc_frequencies.get(t, 0) + 1
-        else:
+            try:
+                active_search_index = VSSSearchIndex.from_file(index_file)
+            except Exception as e:
+                logger.warning(f"Failed to load search index from {index_file}: {e}")
+
+        if active_search_index is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="No search index found. Please run /v1/summarize on a video first to build the index."
