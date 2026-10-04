@@ -125,14 +125,110 @@ ssh user@dgx-spark "docker run --rm --gpus all \
   --output_dir /workspace/outputs_vss_my_video"
 ```
 
+## 🔄 Dual Repository Architecture: Local (Mac) vs Remote (DGX Spark GPU)
+
+This project operates across **two distinct development environments**:
+1. **Local Machine (macOS)**: Where lightweight development, local testing, yt-dlp downloading, and the interactive web interface execute.
+2. **Remote GPU Server (NVIDIA DGX Spark)**: Where heavy GPU multimodal perception (NVIDIA Cosmos 3 Nano) and LLM reasoning (Nemotron 3.5 on port 8000) take place.
+
+### Environment Matrix
+
+| Property | Local Environment (macOS) | Remote Environment (NVIDIA DGX Spark) |
+|---|---|---|
+| **Host / User** | Local workstation (`mac`) | `user@dgx-spark` (passwordless SSH) |
+| **Path** | `/Users/armaankapoor/Desktop/coding/trading-video-understanding` | `/workspace` |
+| **Git Branch** | `master` (independent clone) | `master` (independent clone) |
+| **Primary Role** | Fast UI dashboard, video remuxing, API server, rapid test execution | High-VRAM GPU inference, Cosmos 3 Nano VLM, Nemotron 3.5 Reasoner |
+| **Python Env** | `./.venv/bin/python` (Python 3.14) | Docker container `trader-vids:latest` (Linux aarch64, Python 3.12) |
+| **Inference Services** | Connects to remote services or local mocks | Cosmos 3 Nano GPU + Nemotron 3.5 Lightning on port 8000 (`http://localhost:8000/v1`) |
+
 ---
 
-## 🧪 Running Unit Tests
+### 🤖 LLM & Developer Protocol: Dual Git Commit & Synchronization
 
-Run the full pytest suite locally or in Docker:
+> [!IMPORTANT]
+> **Strict Synchronization Rule**: The local workspace and the remote repository are **separate Git clones**. Changes made locally are **not** automatically reflected on DGX Spark, and vice versa. Whenever any developer or LLM modifies code files, you **MUST** follow this exact 4-step synchronization and dual-commit procedure:
 
+#### Step 1: Stage and Commit Locally
+Verify changes and commit them cleanly on local `master`:
 ```bash
-pytest tests/ -v
+git status
+git add <modified_files>
+git commit -m "Descriptive commit message"
+```
+
+#### Step 2: Sync Code Files to DGX Spark via Rsync
+Push modified code files, templates, and tests to DGX Spark (carefully excluding local `.git`, virtual environments, video binaries, and model checkpoints):
+```bash
+rsync -avz \
+  --exclude='.git' \
+  --exclude='.venv' \
+  --exclude='videos' \
+  --exclude='outputs_*' \
+  server.py downloader.py strategy_breakdown.py vlm_reasoner.py \
+  templates/ tests/ \
+  user@dgx-spark:/workspace/
+```
+
+#### Step 3: Run Remote Tests & Commit on DGX Spark
+Execute the test suite inside the Docker container on DGX Spark, then commit the synchronized changes to the remote Git tree:
+```bash
+# 1. Run Docker test suite on DGX Spark
+ssh user@dgx-spark "docker run --rm -e PYTHONPATH=/workspace --entrypoint pytest -v /workspace:/workspace -w /workspace trader-vids:latest tests/ -v"
+
+# 2. Stage and commit on DGX Spark
+ssh user@dgx-spark "cd /workspace && \
+  git add <modified_files> && \
+  git commit -m 'Descriptive commit message'"
+```
+
+#### Step 4: Verify Both Repositories are Clean
+Ensure both repositories report a clean working directory:
+```bash
+git status
+ssh user@dgx-spark "cd /workspace && git status"
+```
+
+---
+
+### 🧪 Testing Strategy: What Tests to Run on Each
+
+#### 1. Local Tests (macOS)
+Run the full 14-test suite using the local virtual environment:
+```bash
+./.venv/bin/pytest tests/ -v
+```
+**What this validates**:
+- FastAPI REST probes (`/v1/ready`, `/v1/live`, `/v1/healthz`).
+- Model listings (`/models`).
+- Web UI template rendering (validates clean 2-tab layout: `Strategy Breakdown` and `Semantic Video Search`, verifying obsolete tabs are absent).
+- Video streaming HTTP Range (`HTTP 206 Partial Content`) and `HEAD` request handling.
+- Video video metadata, download tracking, and status retrieval.
+- Hybrid semantic search index query matching and score thresholds.
+- Multi-strategy breakdown extraction and JSON schema compliance.
+- Subtitle parsing, 0:00 temporal anchoring, and chunk boundary normalization.
+
+#### 2. Remote Docker Tests (NVIDIA DGX Spark)
+Run the test suite inside the production `trader-vids:latest` container:
+```bash
+ssh user@dgx-spark "docker run --rm -e PYTHONPATH=/workspace --entrypoint pytest -v /workspace:/workspace -w /workspace trader-vids:latest tests/ -v"
+```
+**What this validates**:
+- Linux aarch64 runtime and dependency compatibility.
+- Seamless container filesystem mounts and environment variables (`PYTHONPATH=/workspace`).
+- Live GPU reasoning integration with Nemotron 3.5 Lightning (`http://localhost:8000/v1`).
+
+#### 3. Local API & Streaming Smoke Tests
+Quickly verify live HTTP responses from the local uvicorn server (`http://127.0.0.1:8088`):
+```bash
+# Verify UI root
+curl -s -o /dev/null -w "UI Root: %{http_code}\n" http://127.0.0.1:8088/
+
+# Verify HTTP Range streaming (206)
+curl -s -D - -o /dev/null -H "Range: bytes=0-100" http://127.0.0.1:8088/api/videos/stream/video_1
+
+# Verify Multi-Strategy API response
+curl -s -o /dev/null -w "Strategy API: %{http_code}\n" http://127.0.0.1:8088/api/videos/strategies/video_2
 ```
 
 ---
@@ -177,9 +273,10 @@ Available endpoints:
 ## 📦 Output Artifacts
 
 Each pipeline run generates the following artifacts in the designated output directory:
-1. `trading_summary.json`: Standard VSS `CompletionResponse` containing the narrative summary, chronological milestone events, and chunk captions.
-2. `trading_summary.md`: Human-readable summary report with comparative milestone tables.
-3. `trading_strategy_spec.json`: Machine-readable algorithmic trading rules (entry triggers, invalidation stops, profit targets, indicators).
-4. `trading_strategy_spec.md`: Polished markdown trade plan for algorithmic execution.
-5. `vss_search_index.json`: Vector and keyword search index enabling instant query retrieval.
-6. `augmented_subtitles.json` & `augmented_subtitles.md`: Grounded timeline linking spoken subtitle blocks to visual chart confluences.
+1. `multi_strategy_breakdown.json` & `multi_strategy_breakdown.md`: Multi-strategy breakdown across video timeline chapters synthesized via Nemotron 3.5 Reasoner.
+2. `trading_summary.json`: Standard VSS `CompletionResponse` containing the narrative summary, chronological milestone events, and chunk captions.
+3. `trading_summary.md`: Human-readable summary report with comparative milestone tables.
+4. `trading_strategy_spec.json`: Machine-readable algorithmic trading rules (entry triggers, invalidation stops, profit targets, indicators).
+5. `trading_strategy_spec.md`: Polished markdown trade plan for algorithmic execution.
+6. `vss_search_index.json`: Vector and keyword search index enabling instant query retrieval.
+7. `augmented_subtitles.json` & `augmented_subtitles.md`: Grounded timeline linking spoken subtitle blocks to visual chart confluences.
