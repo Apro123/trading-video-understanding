@@ -95,6 +95,33 @@ class TradeIdeaSpec(BaseModel):
     structural_confluences: List[str] = Field(default_factory=list)
     step_by_step_rules: List[TradingRule] = Field(default_factory=list)
 
+class StrategySegment(BaseModel):
+    """A distinct trading strategy identified within a specific temporal segment/chunk of a video."""
+    strategy_id: int
+    name: str                                  # e.g., "Support & Resistance Retest Strategy"
+    timestamp_range: str                       # e.g., "16:08 - 25:40"
+    start_s: float
+    end_s: float
+    duration_s: float
+    asset: str = "Market Asset"
+    timeframe: str = "Chart Timeframe"
+    directional_bias: str = "Neutral"          # Bullish, Bearish, Neutral, Both
+    core_thesis: str = ""
+    entry_trigger: str = ""
+    invalidation_stop: str = ""
+    take_profit_targets: List[str] = Field(default_factory=list)
+    risk_reward_ratio: str = "1:2"
+    technical_indicators: List[str] = Field(default_factory=list)
+    structural_confluences: List[str] = Field(default_factory=list)
+    step_by_step_rules: List[TradingRule] = Field(default_factory=list)
+    transcript_summary: str = ""
+
+class MultiStrategyBreakdown(BaseModel):
+    """Collection of trading strategies identified across video intervals."""
+    video_id: str
+    total_strategies: int
+    strategies: List[StrategySegment] = Field(default_factory=list)
+
 class CompletionResponse(BaseModel):
     """Standard VSS Completion Response model."""
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))

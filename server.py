@@ -39,7 +39,9 @@ try:
         CompletionResponse,
         SearchQuery,
         SearchResponse,
-        TradeIdeaSpec
+        TradeIdeaSpec,
+        MultiStrategyBreakdown,
+        StrategySegment
     )
     from .pipeline import run_vss_pipeline
     from .search_engine import VSSSearchIndex
@@ -48,6 +50,7 @@ try:
     from .chunk_engine import VideoChunkManager
     from .summarizer import VSSLVSSummarizer
     from .trade_strategy_agent import VSSTradeStrategyAgent
+    from .strategy_breakdown import MultiStrategyBreakdownEngine
     from .downloader import (
         list_available_videos,
         download_video,
@@ -63,7 +66,9 @@ except (ImportError, ValueError):
         CompletionResponse,
         SearchQuery,
         SearchResponse,
-        TradeIdeaSpec
+        TradeIdeaSpec,
+        MultiStrategyBreakdown,
+        StrategySegment
     )
     from pipeline import run_vss_pipeline
     from search_engine import VSSSearchIndex
@@ -72,6 +77,7 @@ except (ImportError, ValueError):
     from chunk_engine import VideoChunkManager
     from summarizer import VSSLVSSummarizer
     from trade_strategy_agent import VSSTradeStrategyAgent
+    from strategy_breakdown import MultiStrategyBreakdownEngine
     from downloader import (
         list_available_videos,
         download_video,
@@ -172,10 +178,15 @@ def analyze_and_index_video(video_id: str) -> Dict[str, Any]:
     with open(os.path.join(out_dir, "trading_strategy_spec.md"), "w", encoding="utf-8") as f:
         f.write(agent.export_spec_markdown(spec))
 
+    # 5. Multi-Strategy Breakdown Across Video Intervals
+    breakdown_engine = MultiStrategyBreakdownEngine()
+    breakdown = breakdown_engine.breakdown_video_strategies(video_id)
+
     return {
         "status": "success",
         "video_id": video_id,
         "chunks_indexed": len(chunks),
+        "total_strategies": breakdown.total_strategies,
         "output_dir": out_dir
     }
 
@@ -265,11 +276,42 @@ def get_video_status_endpoint(video_id: str):
         except Exception:
             pass
 
+    strat_data = None
+    strat_path = os.path.join(out_dir, "multi_strategy_breakdown.json")
+    if os.path.exists(strat_path):
+        try:
+            with open(strat_path, "r", encoding="utf-8") as f:
+                strat_data = json.load(f)
+        except Exception:
+            pass
+
     return {
         **meta,
         "trade_spec": spec_data,
-        "summary": summary_data
+        "summary": summary_data,
+        "strategies": strat_data
     }
+
+@app.get("/api/videos/strategies/{video_id}", response_model=MultiStrategyBreakdown, tags=["Trading Strategy"])
+def get_video_strategies_endpoint(video_id: str):
+    """Retrieves all discrete trading strategies identified across video intervals."""
+    out_dir = os.path.join(BASE_DIR, f"outputs_{video_id}")
+    strat_path = os.path.join(out_dir, "multi_strategy_breakdown.json")
+    if os.path.exists(strat_path):
+        try:
+            with open(strat_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return MultiStrategyBreakdown(**data)
+        except Exception as e:
+            logger.warning(f"Error reading cached strategies: {e}")
+
+    engine = MultiStrategyBreakdownEngine()
+    try:
+        breakdown = engine.breakdown_video_strategies(video_id)
+        return breakdown
+    except Exception as e:
+        logger.error(f"Failed to generate strategy breakdown for {video_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/search", response_model=SearchResponse, tags=["Semantic Search"])
 def search_video_api(req: VideoSearchRequest):

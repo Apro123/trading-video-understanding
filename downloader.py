@@ -138,6 +138,31 @@ def get_video_status(video_id: str) -> Dict[str, Any]:
         "has_spec": has_spec
     }
 
+def get_video_chapters(video_id: str) -> List[Dict[str, Any]]:
+    """Retrieves chapter metadata for a Video video, caching locally."""
+    cache_path = os.path.join(VIDEOS_DIR, f"{video_id}_chapters.json")
+    if os.path.exists(cache_path):
+        try:
+            with open(cache_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            logger.warning(f"Error reading chapters cache: {e}")
+
+    url = f"https://example.com/watch?v={video_id}"
+    try:
+        cmd = ["yt-dlp", "--dump-json", "--skip-download", url]
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=25)
+        if res.returncode == 0 and res.stdout:
+            data = json.loads(res.stdout)
+            chapters = data.get("chapters") or []
+            if chapters:
+                with open(cache_path, "w", encoding="utf-8") as f:
+                    json.dump(chapters, f, indent=2)
+                return chapters
+    except Exception as e:
+        logger.warning(f"yt-dlp chapter extraction failed: {e}")
+    return []
+
 def list_available_videos() -> List[Dict[str, Any]]:
     """Lists status for all supported Video trading videos."""
     return [get_video_status(vid) for vid in KNOWN_VIDEOS]

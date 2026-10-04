@@ -1,0 +1,42 @@
+[
+  {
+    "start_time": 0,
+    "end_time": 150,
+    "title": "<Untitled Chapter 1>"
+  },
+  {
+    "start_time": 150,
+    "title": "1. Candlestick Charts",
+    "end_time": 473
+  },
+  {
+    "start_time": 473,
+    "title": "2. Trending Markets",
+    "end_time": 968
+  },
+  {
+    "start_time": 968,
+    "title": "3. Support & Resistance",
+    "end_time": 1540
+  },
+  {
+    "start_time": 1540,
+    "title": "4. Indicators",
+    "end_time": 2505
+  },
+  {
+    "start_time": 2505,
+    "title": "5. Candlestick Patterns",
+    "end_time": 3340
+  },
+  {
+    "start_time": 3340,
+    "title": "6. Chart Patterns",
+    "end_time": 3930
+  },
+  {
+    "start_time": 3930,
+    "title": "7. Breakout Patterns",
+    "end_time": 4655
+  }
+]

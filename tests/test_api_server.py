@@ -66,3 +66,26 @@ def test_api_semantic_search():
     assert len(data["results"]) > 0
     assert "timestamp_range" in data["results"][0]
 
+def test_api_video_strategies():
+    res = client.get("/api/videos/strategies/video_2")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["video_id"] == "video_2"
+    assert data["total_strategies"] >= 1
+    assert len(data["strategies"]) == data["total_strategies"]
+    s = data["strategies"][0]
+    assert "name" in s
+    assert "timestamp_range" in s
+    assert "directional_bias" in s
+    assert "core_thesis" in s
+    assert "entry_trigger" in s
+    assert "invalidation_stop" in s
+    assert len(s["step_by_step_rules"]) > 0
+
+    res2 = client.get("/api/videos/strategies/video_1")
+    assert res2.status_code == 200
+    data2 = res2.json()
+    assert data2["video_id"] == "video_1"
+    assert data2["total_strategies"] >= 1
+
+

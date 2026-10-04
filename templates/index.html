@@ -203,6 +203,46 @@
       border: 1px solid rgba(245, 158, 11, 0.3);
     }
 
+    .tag-red {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .tag-purple {
+      background: rgba(139, 92, 246, 0.15);
+      color: #c4b5fd;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+
+    .tag-neutral {
+      background: rgba(148, 163, 184, 0.15);
+      color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    .tab-count-badge {
+      background: var(--accent-green-bg);
+      color: var(--accent-green);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      font-size: 0.7rem;
+      padding: 0.1rem 0.45rem;
+      border-radius: 12px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      margin-left: 0.25rem;
+    }
+
+    .strategy-card {
+      border-left: 4px solid var(--accent-cyan);
+      transition: all 0.25s ease;
+    }
+
+    .strategy-card:hover {
+      border-left-color: var(--accent-green);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
     .video-card-meta {
       display: flex;
       align-items: center;
@@ -738,13 +778,21 @@
       <!-- Right: Tabs -->
       <div class="content-panel">
         <div class="tab-header">
-          <button class="tab-btn active" onclick="switchTab('search')">🔍 Semantic Video Search</button>
+          <button class="tab-btn active" onclick="switchTab('strategies')">📑 Strategy Breakdown <span class="tab-count-badge" id="strategies-badge">0</span></button>
+          <button class="tab-btn" onclick="switchTab('search')">🔍 Semantic Video Search</button>
           <button class="tab-btn" onclick="switchTab('spec')">🎯 Trade Strategy Spec</button>
           <button class="tab-btn" onclick="switchTab('milestones')">⏱ Chronological Milestones</button>
         </div>
 
+        <!-- TAB 0: Multi-Strategy Breakdown Across Video -->
+        <div class="tab-content active" id="tab-strategies">
+          <div class="spec-container" id="strategies-container">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
         <!-- TAB 1: Semantic Search -->
-        <div class="tab-content active" id="tab-search">
+        <div class="tab-content" id="tab-search">
           <div class="search-box">
             <div class="search-input-group">
               <input type="text" id="search-input" class="search-input" placeholder="Search trading concepts, levels, chart setups, or indicator divergence..." onkeydown="if(event.key==='Enter') executeSearch()">
@@ -935,8 +983,249 @@
         currentVideoData = data;
         renderStrategySpec(data.trade_spec);
         renderMilestones(data.summary);
+
+        let stratData = data.strategies;
+        if (!stratData) {
+          try {
+            const sRes = await fetch(`/api/videos/strategies/${videoId}`);
+            if (sRes.ok) {
+              stratData = await sRes.json();
+              if (currentVideoData) currentVideoData.strategies = stratData;
+            }
+          } catch(e) { console.warn("Failed to fetch strategies:", e); }
+        }
+        renderMultiStrategyBreakdown(stratData);
       } catch (err) {
         console.error("Failed to load video details:", err);
+      }
+    }
+
+    function renderMultiStrategyBreakdown(breakdown) {
+      const container = document.getElementById("strategies-container");
+      const badge = document.getElementById("strategies-badge");
+      if (!breakdown || !breakdown.strategies || breakdown.strategies.length === 0) {
+        if (badge) badge.textContent = "0";
+        container.innerHTML = `<div style="color: var(--text-dim); padding: 2rem 0;">No multi-strategy breakdown available for this video yet.</div>`;
+        return;
+      }
+
+      if (badge) badge.textContent = breakdown.total_strategies;
+
+      // Quick navigation scrubber chips
+      const navChips = breakdown.strategies.map(s => `
+        <button class="chip" onclick="scrollToStrategy(${s.strategy_id}, ${s.start_s})" title="${escapeHtml(s.name)}">
+          ▶ [${s.timestamp_range}] ${escapeHtml(s.name.replace(/ Strategy$/i, ''))}
+        </button>
+      `).join('');
+
+      const strategiesHtml = breakdown.strategies.map(s => {
+        const isBull = (s.directional_bias || '').toLowerCase().includes("bull");
+        const isBear = (s.directional_bias || '').toLowerCase().includes("bear");
+        const isBoth = (s.directional_bias || '').toLowerCase().includes("both");
+        const biasTagClass = isBull ? 'tag-green' : (isBear ? 'tag-red' : (isBoth ? 'tag-purple' : 'tag-neutral'));
+
+        let rulesHtml = '';
+        if (s.step_by_step_rules && s.step_by_step_rules.length > 0) {
+          rulesHtml = `
+            <div style="margin-top: 1rem;">
+              <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-dim); margin-bottom: 0.5rem; font-weight: 600;">
+                ⚡ Formal Execution Rules
+              </div>
+              <table class="rule-table">
+                <thead>
+                  <tr>
+                    <th style="width: 70px;">Rule #</th>
+                    <th style="width: 190px;">Rule Name</th>
+                    <th>Condition Logic</th>
+                    <th>Execution Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${s.step_by_step_rules.map(r => `
+                    <tr>
+                      <td><strong style="color: var(--accent-cyan);">Rule ${r.rule_id}</strong></td>
+                      <td><strong>${escapeHtml(r.name)}</strong></td>
+                      <td><span class="rule-code">${escapeHtml(r.condition)}</span></td>
+                      <td>${escapeHtml(r.action)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+        }
+
+        const indicatorsHtml = (s.technical_indicators || []).map(ind => `
+          <span class="signal-pill" style="background: rgba(6, 182, 212, 0.15); color: #67e8f9; border-color: rgba(6, 182, 212, 0.3);">
+            ${escapeHtml(ind)}
+          </span>
+        `).join('');
+
+        const confluencesHtml = (s.structural_confluences || []).map(c => `
+          <span class="signal-pill" style="background: rgba(139, 92, 246, 0.15); color: #c4b5fd; border-color: rgba(139, 92, 246, 0.3);">
+            ✓ ${escapeHtml(c)}
+          </span>
+        `).join('');
+
+        const targetsStr = Array.isArray(s.take_profit_targets) ? s.take_profit_targets.join(' | ') : s.take_profit_targets;
+
+        return `
+          <div class="result-card strategy-card" id="strategy-card-${s.strategy_id}">
+            <div class="result-header" style="flex-wrap: wrap; gap: 0.75rem;">
+              <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                <span class="video-tag" style="background: #23314d; color: #fff; font-weight: 700;">Strategy #${s.strategy_id}</span>
+                <span class="timestamp-badge" onclick="seekTo(${s.start_s})" title="Click to jump video to this interval">
+                  ▶ [${s.timestamp_range}] (${s.duration_s}s)
+                </span>
+                <span class="video-tag ${biasTagClass}">${(s.directional_bias || 'NEUTRAL').toUpperCase()}</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-left: auto;">
+                <button class="speed-btn" onclick="seekTo(${s.start_s})" style="color: var(--accent-cyan); border-color: rgba(6, 182, 212, 0.4);">
+                  ▶ Jump Video
+                </button>
+                <button class="speed-btn" onclick="copyStrategyJsonById(${s.strategy_id})">
+                  📋 JSON
+                </button>
+                <button class="speed-btn" onclick="copyStrategyMarkdownById(${s.strategy_id})">
+                  📄 Markdown
+                </button>
+              </div>
+            </div>
+
+            <div style="font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">
+              ${escapeHtml(s.name)}
+            </div>
+
+            <div style="display: flex; gap: 1.25rem; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-dim); margin-bottom: 1rem; flex-wrap: wrap;">
+              <span>Asset: <strong style="color: var(--text-main);">${escapeHtml(s.asset)}</strong></span>
+              <span>•</span>
+              <span>Timeframe: <strong style="color: var(--text-main);">${escapeHtml(s.timeframe)}</strong></span>
+              <span>•</span>
+              <span>Risk/Reward: <strong style="color: var(--accent-amber);">${escapeHtml(s.risk_reward_ratio)}</strong></span>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.25); border-radius: 8px; padding: 0.85rem; margin-bottom: 1rem; border-left: 3px solid var(--accent-cyan);">
+              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--accent-cyan); font-weight: 700; margin-bottom: 0.25rem;">
+                Core Thesis & Alpha Edge
+              </div>
+              <div style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5;">
+                ${escapeHtml(s.core_thesis)}
+              </div>
+            </div>
+
+            <div style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); display: grid; gap: 0.75rem; margin-bottom: 1rem;">
+              <div style="background: var(--bg-card); border-radius: 6px; padding: 0.75rem; border: 1px solid var(--border);">
+                <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--accent-green); font-weight: 700; margin-bottom: 0.2rem;">
+                  ⚡ Entry Trigger
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-main);">${escapeHtml(s.entry_trigger)}</div>
+              </div>
+              <div style="background: var(--bg-card); border-radius: 6px; padding: 0.75rem; border: 1px solid var(--border);">
+                <div style="font-size: 0.7rem; text-transform: uppercase; color: #ef4444; font-weight: 700; margin-bottom: 0.2rem;">
+                  🛑 Invalidation Stop
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-main);">${escapeHtml(s.invalidation_stop)}</div>
+              </div>
+              <div style="background: var(--bg-card); border-radius: 6px; padding: 0.75rem; border: 1px solid var(--border);">
+                <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--accent-amber); font-weight: 700; margin-bottom: 0.2rem;">
+                  🎯 Take Profit Targets
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-main);">${escapeHtml(targetsStr)}</div>
+              </div>
+            </div>
+
+            ${indicatorsHtml || confluencesHtml ? `
+              <div style="margin-bottom: 0.75rem;">
+                <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;">
+                  <span style="font-size: 0.75rem; color: var(--text-dim); margin-right: 0.25rem;">Signals:</span>
+                  ${indicatorsHtml}
+                  ${confluencesHtml}
+                </div>
+              </div>
+            ` : ''}
+
+            ${rulesHtml}
+
+            ${s.transcript_summary ? `
+              <div style="margin-top: 0.85rem; font-size: 0.8rem; color: var(--text-dim); font-style: italic; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.6rem;">
+                "${escapeHtml(s.transcript_summary)}"
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = `
+        <div class="spec-section-card" style="margin-bottom: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div class="spec-section-heading" style="margin-bottom: 0;">
+              <span>📑 Distinct Strategies Deconstructed Across Video Timeline</span>
+              <span class="video-tag tag-cyan" style="font-size: 0.8rem;">${breakdown.total_strategies} Strategies</span>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-dim); font-family: var(--font-mono);">
+              Interactive Timeline Sync
+            </div>
+          </div>
+          <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5;">
+            This masterclass covers multiple independent technical strategies across different curriculum chapters. Click any interval chip below to jump and play the strategy demonstration.
+          </div>
+          <div class="query-chips" style="gap: 0.4rem;">
+            ${navChips}
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+          ${strategiesHtml}
+        </div>
+      `;
+    }
+
+    function scrollToStrategy(strategyId, startS) {
+      seekTo(startS);
+      const card = document.getElementById(`strategy-card-${strategyId}`);
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        card.style.borderColor = 'var(--accent-cyan)';
+        setTimeout(() => {
+          card.style.borderColor = '';
+        }, 2000);
+      }
+    }
+
+    function copyStrategyJsonById(strategyId) {
+      if (!currentVideoData || !currentVideoData.strategies) return;
+      const strat = currentVideoData.strategies.strategies.find(s => s.strategy_id === strategyId);
+      if (strat) {
+        navigator.clipboard.writeText(JSON.stringify(strat, null, 2));
+        showToast(`Strategy #${strategyId} JSON copied!`);
+      }
+    }
+
+    function copyStrategyMarkdownById(strategyId) {
+      if (!currentVideoData || !currentVideoData.strategies) return;
+      const strat = currentVideoData.strategies.strategies.find(s => s.strategy_id === strategyId);
+      if (strat) {
+        let md = `## Strategy #${strat.strategy_id}: ${strat.name}\n` +
+          `**Timestamp:** [${strat.timestamp_range}] (${strat.duration_s}s)\n` +
+          `**Asset:** ${strat.asset} | **Timeframe:** ${strat.timeframe} | **Bias:** ${strat.directional_bias} | **R:R:** ${strat.risk_reward_ratio}\n\n` +
+          `### 💡 Core Thesis\n${strat.core_thesis}\n\n` +
+          `### ⚡ Execution Directives\n- **Entry Trigger:** ${strat.entry_trigger}\n- **Stop Loss:** ${strat.invalidation_stop}\n- **Targets:** ${(strat.take_profit_targets || []).join(' | ')}\n\n`;
+        if (strat.step_by_step_rules && strat.step_by_step_rules.length > 0) {
+          md += `### 📋 Formal Rules\n| Rule # | Name | Condition | Action |\n|---|---|---|---|\n`;
+          strat.step_by_step_rules.forEach(r => {
+            md += `| Rule ${r.rule_id} | ${r.name} | \`${r.condition}\` | ${r.action} |\n`;
+          });
+        }
+        navigator.clipboard.writeText(md);
+        showToast(`Strategy #${strategyId} Markdown copied!`);
+      }
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      if (t) {
+        t.textContent = msg || "Copied to clipboard!";
+        t.style.display = "block";
+        setTimeout(() => { t.style.display = "none"; }, 2500);
       }
     }
 
