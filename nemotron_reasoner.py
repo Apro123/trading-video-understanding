@@ -54,7 +54,9 @@ def _clean_json_markdown(text: str) -> str:
     text = text.strip()
     match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', text, re.IGNORECASE)
     if match:
-        return match.group(1).strip()
+        text = match.group(1).strip()
+    # Strip illegal trailing commas in JSON objects and arrays
+    text = re.sub(r',\s*([\]}])', r'\1', text)
     return text
 
 class NemotronReasoner:
@@ -93,6 +95,7 @@ class NemotronReasoner:
         # Candidate endpoints to check:
         candidates = [
             DEFAULT_LLM_BASE_URL.rstrip("/"),
+            "http://localhost:8000/v1",        # NVIDIA DGX Spark GPU server
             "http://172.17.0.1:8000/v1",  # Docker standard bridge to Linux host
             "http://127.0.0.1:8000/v1",  # Localhost / --network host
             "http://localhost:8000/v1"

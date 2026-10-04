@@ -316,6 +316,7 @@ Return ONLY the valid JSON object.
             return None
 
         clean_json = _clean_json_markdown(raw)
+        clean_json = re.sub(r',\s*([\]}])', r'\1', clean_json)
         try:
             data = json.loads(clean_json)
             rules = []
@@ -355,7 +356,7 @@ Return ONLY the valid JSON object.
                 technical_indicators=data.get("technical_indicators", []),
                 structural_confluences=data.get("structural_confluences", []),
                 step_by_step_rules=rules,
-                transcript_summary=clean_transcript[:300] + "..."
+                transcript_summary=transcript[:300] + "..."
             )
         except Exception as e:
             logger.warning(f"Error parsing Nemotron StrategySegment JSON: {e}")
