@@ -34,7 +34,23 @@ def test_ui_root_endpoint():
     res = client.get("/")
     assert res.status_code == 200
     assert "NVIDIA Video Search & Summarization" in res.text
+    assert "Strategy Breakdown" in res.text
     assert "Semantic Video Search" in res.text
+    assert "Trade Strategy Spec" not in res.text
+    assert "Chronological Milestones" not in res.text
+
+def test_api_videos_stream_range_and_head():
+    # Test HEAD request
+    head_res = client.head("/api/videos/stream/video_1")
+    assert head_res.status_code == 200
+    assert head_res.headers.get("accept-ranges") == "bytes"
+    assert "content-length" in head_res.headers
+
+    # Test GET with Range header (HTTP 206)
+    get_res = client.get("/api/videos/stream/video_1", headers={"Range": "bytes=0-1024"})
+    assert get_res.status_code == 206
+    assert "bytes 0-1024/" in get_res.headers.get("content-range", "")
+    assert len(get_res.content) == 1025
 
 def test_api_videos_list():
     res = client.get("/api/videos")

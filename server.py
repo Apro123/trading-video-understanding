@@ -24,6 +24,7 @@ Interactive Web UI Endpoints:
 """
 
 import os
+import re
 import time
 import json
 import logging
@@ -326,68 +327,16 @@ def search_video_api(req: VideoSearchRequest):
     results = index.search(req.query, top_k=req.top_k, min_score=req.min_score)
     return results
 
-@app.get("/api/videos/stream/{video_id}", tags=["Video Streaming"])
-async def stream_video(video_id: str, request: Request):
+@app.api_route("/api/videos/stream/{video_id}", methods=["GET", "HEAD"], tags=["Video Streaming"])
+def stream_video(video_id: str):
     """
-    High-performance video streaming endpoint with chunk-bounded HTTP 206 Partial Content support.
-    Prevents threadpool starvation, runaway file handles, and CPU spikes during video playback and seeking.
+    High-performance video streaming endpoint with HTTP 206 Partial Content Range and HEAD support.
+    Leverages faststart-optimized MP4 files for instant browser seeking and near-zero CPU usage.
     """
     vpath = get_video_file_path(video_id)
     if not vpath or not os.path.exists(vpath):
         raise HTTPException(status_code=404, detail="Video file not found")
-
-    file_size = os.path.getsize(vpath)
-    range_header = request.headers.get("range")
-
-    if not range_header:
-        return FileResponse(vpath, media_type="video/mp4")
-
-    range_match = re.match(r"bytes=(\d+)-(\d*)", range_header.strip())
-    if not range_match:
-        return FileResponse(vpath, media_type="video/mp4")
-
-    start = int(range_match.group(1))
-    end_str = range_match.group(2)
-
-    # Bound open-ended ranges to 4MB chunks for instant buffering and minimal CPU
-    MAX_CHUNK_BYTES = 4 * 1024 * 1024  # 4MB
-    if end_str:
-        end = min(int(end_str), file_size - 1)
-    else:
-        end = min(start + MAX_CHUNK_BYTES - 1, file_size - 1)
-
-    if start > end or start >= file_size:
-        headers = {"Content-Range": f"bytes */{file_size}"}
-        return Response(status_code=416, headers=headers)
-
-    content_length = (end - start) + 1
-
-    def iter_file(path: str, offset: int, length: int):
-        with open(path, "rb") as f:
-            f.seek(offset)
-            remaining = length
-            chunk_size = 256 * 1024  # 256KB buffer
-            while remaining > 0:
-                read_size = min(chunk_size, remaining)
-                data = f.read(read_size)
-                if not data:
-                    break
-                remaining -= len(data)
-                yield data
-
-    headers = {
-        "Content-Range": f"bytes {start}-{end}/{file_size}",
-        "Accept-Ranges": "bytes",
-        "Content-Length": str(content_length),
-        "Content-Type": "video/mp4",
-        "Cache-Control": "public, max-age=3600"
-    }
-
-    return StreamingResponse(
-        iter_file(vpath, start, content_length),
-        status_code=206,
-        headers=headers
-    )
+    return FileResponse(vpath, media_type="video/mp4")
 
 @app.get("/api/videos/subtitles/{video_id}", tags=["Video Streaming"])
 def stream_subtitles(video_id: str):

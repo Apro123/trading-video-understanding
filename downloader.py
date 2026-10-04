@@ -211,8 +211,8 @@ def download_video(video_id: str) -> Dict[str, Any]:
 
     # 2. Download Highest Quality Video-Only (Non-Premium)
     if not os.path.exists(target_video) or os.path.getsize(target_video) < 1024 * 1024:
-        logger.info(f"Downloading highest quality video for {video_id}...")
-        format_selector = "bestvideo[format_note!*=Premium][format_note!*=premium][ext=mp4]/137/299/623/bestvideo"
+        # Prioritize 1080p/highest H.264 (avc1) for universal browser/Safari playback without high CPU
+        format_selector = "bestvideo[vcodec^=avc1][format_note!*=Premium][format_note!*=premium]/299/137/bestvideo[ext=mp4][format_note!*=Premium][format_note!*=premium]/bestvideo"
         vid_cmd = [
             "yt-dlp",
             "-f", format_selector,

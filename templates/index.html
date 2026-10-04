@@ -733,7 +733,7 @@
       <!-- Left: Player & Video Info -->
       <div class="player-panel">
         <div class="video-wrapper">
-          <video id="video-player" controls preload="metadata">
+          <video id="video-player" controls preload="metadata" src="/api/videos/stream/video_1">
             <source id="video-source" src="/api/videos/stream/video_1" type="video/mp4">
             <track id="video-track" label="English" kind="subtitles" srclang="en" src="/api/videos/subtitles/video_1" default>
             Your browser does not support HTML5 video.
@@ -780,8 +780,6 @@
         <div class="tab-header">
           <button class="tab-btn active" onclick="switchTab('strategies')">📑 Strategy Breakdown <span class="tab-count-badge" id="strategies-badge">0</span></button>
           <button class="tab-btn" onclick="switchTab('search')">🔍 Semantic Video Search</button>
-          <button class="tab-btn" onclick="switchTab('spec')">🎯 Trade Strategy Spec</button>
-          <button class="tab-btn" onclick="switchTab('milestones')">⏱ Chronological Milestones</button>
         </div>
 
         <!-- TAB 0: Multi-Strategy Breakdown Across Video -->
@@ -812,20 +810,6 @@
           <div class="results-count" id="results-count">Showing indexed results</div>
           <div class="results-list" id="results-list">
             <!-- Search items loaded dynamically -->
-          </div>
-        </div>
-
-        <!-- TAB 2: Trade Strategy Spec -->
-        <div class="tab-content" id="tab-spec">
-          <div class="spec-container" id="spec-container">
-            <!-- Populated via JS -->
-          </div>
-        </div>
-
-        <!-- TAB 3: Milestones & Summary -->
-        <div class="tab-content" id="tab-milestones">
-          <div class="spec-container" id="milestones-container">
-            <!-- Populated via JS -->
           </div>
         </div>
       </div>
@@ -869,8 +853,25 @@
     }
 
     function seekTo(seconds) {
-      player.currentTime = parseFloat(seconds);
-      player.play();
+      const targetSec = parseFloat(seconds);
+      if (isNaN(targetSec)) return;
+
+      const currentStreamUrl = `/api/videos/stream/${currentVideoId}`;
+      const targetFullUrl = window.location.origin + currentStreamUrl;
+
+      // If player src is not set or points to different video, set and load first
+      if (!player.src || (player.src !== targetFullUrl && !player.src.endsWith(currentStreamUrl))) {
+        player.src = currentStreamUrl;
+        if (videoSource) videoSource.src = currentStreamUrl;
+        player.load();
+        player.addEventListener('loadedmetadata', function onLoaded() {
+          player.currentTime = targetSec;
+          player.play().catch(e => console.warn("Playback interrupted:", e));
+        }, { once: true });
+      } else {
+        player.currentTime = targetSec;
+        player.play().catch(e => console.warn("Playback interrupted:", e));
+      }
       player.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
@@ -878,7 +879,10 @@
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
       document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
 
-      const targetBtn = Array.from(document.querySelectorAll(".tab-btn")).find(b => b.onclick.toString().includes(tabId));
+      const targetBtn = Array.from(document.querySelectorAll(".tab-btn")).find(b => {
+        const attr = b.getAttribute("onclick") || "";
+        return attr.includes(tabId);
+      });
       if (targetBtn) targetBtn.classList.add("active");
 
       const targetContent = document.getElementById(`tab-${tabId}`);
@@ -940,11 +944,13 @@
         document.getElementById("meta-duration").textContent = vid.duration_str;
         document.getElementById("meta-chunks").textContent = `${vid.indexed_chunks} Indexed Chunks`;
 
-        // Update video player only if source changed
+        // Update video player
         const newStreamUrl = `/api/videos/stream/${videoId}`;
-        if (!videoSource.src || !videoSource.src.endsWith(newStreamUrl)) {
-          videoSource.src = newStreamUrl;
-          videoTrack.src = `/api/videos/subtitles/${videoId}`;
+        const targetFullUrl = window.location.origin + newStreamUrl;
+        if (!player.src || (player.src !== targetFullUrl && !player.src.endsWith(newStreamUrl))) {
+          player.src = newStreamUrl;
+          if (videoSource) videoSource.src = newStreamUrl;
+          if (videoTrack) videoTrack.src = `/api/videos/subtitles/${videoId}`;
           player.load();
         }
 
@@ -984,8 +990,6 @@
         const res = await fetch(`/api/videos/status/${videoId}`);
         const data = await res.json();
         currentVideoData = data;
-        renderStrategySpec(data.trade_spec);
-        renderMilestones(data.summary);
 
         let stratData = data.strategies;
         if (!stratData) {
@@ -1232,116 +1236,6 @@
       }
     }
 
-    function renderStrategySpec(spec) {
-      const container = document.getElementById("spec-container");
-      if (!spec) {
-        container.innerHTML = `<div style="color: var(--text-dim);">No strategy spec generated yet.</div>`;
-        return;
-      }
-
-      const isBullish = spec.directional_bias && spec.directional_bias.toLowerCase().includes("bull");
-      const biasClass = isBullish ? "bias-bullish" : "bias-bearish";
-
-      let rulesHtml = "";
-      if (spec.step_by_step_rules && spec.step_by_step_rules.length > 0) {
-        rulesHtml = `
-          <div class="spec-section-card">
-            <div class="spec-section-heading">⚡ Formal Algorithmic Rule Engine</div>
-            <table class="rule-table">
-              <thead>
-                <tr>
-                  <th style="width: 70px;">Rule #</th>
-                  <th style="width: 180px;">Rule Name</th>
-                  <th>Condition Logic</th>
-                  <th>Execution Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${spec.step_by_step_rules.map(r => `
-                  <tr>
-                    <td><strong style="color: var(--accent-cyan);">Rule ${r.rule_id}</strong></td>
-                    <td><strong>${r.name}</strong></td>
-                    <td><span class="rule-code">${escapeHtml(r.condition)}</span></td>
-                    <td>${escapeHtml(r.action)}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        `;
-      }
-
-      container.innerHTML = `
-        <div class="spec-grid-header">
-          <div class="spec-stat-card">
-            <div class="spec-stat-label">Asset Under Trade</div>
-            <div class="spec-stat-val" style="color: var(--accent-cyan);">${spec.asset || 'N/A'}</div>
-          </div>
-          <div class="spec-stat-card">
-            <div class="spec-stat-label">Chart Timeframe</div>
-            <div class="spec-stat-val">${spec.timeframe || 'N/A'}</div>
-          </div>
-          <div class="spec-stat-card">
-            <div class="spec-stat-label">Directional Bias</div>
-            <div class="spec-stat-val ${biasClass}">${(spec.directional_bias || 'NEUTRAL').toUpperCase()}</div>
-          </div>
-          <div class="spec-stat-card">
-            <div class="spec-stat-label">Risk-to-Reward</div>
-            <div class="spec-stat-val" style="color: var(--accent-amber);">${spec.risk_reward_ratio || '1:2'}</div>
-          </div>
-        </div>
-
-        <div class="spec-section-card">
-          <div class="spec-section-heading">💡 Core Strategy Thesis & Trader Alpha</div>
-          <div class="spec-body-text">${escapeHtml(spec.core_thesis || '')}</div>
-        </div>
-
-        <div class="spec-section-card">
-          <div class="spec-section-heading">🎯 Trade Entry, Stops & Invalidation Targets</div>
-          <div class="spec-body-text" style="display: flex; flex-direction: column; gap: 0.6rem;">
-            <div><strong style="color: var(--accent-green);">Entry Trigger:</strong> ${escapeHtml(spec.entry_trigger || '')}</div>
-            <div><strong style="color: #ef4444;">Invalidation Stop Loss:</strong> ${escapeHtml(spec.invalidation_stop || '')}</div>
-            <div><strong style="color: var(--accent-amber);">Take Profit Targets:</strong> ${(spec.take_profit_targets || []).join(' | ')}</div>
-          </div>
-        </div>
-
-        ${rulesHtml}
-      `;
-    }
-
-    function renderMilestones(summary) {
-      const container = document.getElementById("milestones-container");
-      if (!summary) {
-        container.innerHTML = `<div style="color: var(--text-dim);">No summary generated yet.</div>`;
-        return;
-      }
-
-      const events = summary.key_events || [];
-
-      container.innerHTML = `
-        <div class="spec-section-card">
-          <div class="spec-section-heading">Executive Video Summary</div>
-          <div class="spec-body-text">${escapeHtml(summary.summary || '')}</div>
-        </div>
-
-        <div class="spec-section-heading" style="margin-top: 1rem;">Chronological Milestone Events (${events.length})</div>
-        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-          ${events.map(ev => `
-            <div class="result-card">
-              <div class="result-header">
-                <span class="timestamp-badge" onclick="seekTo(${ev.start_s})">▶ ${ev.timestamp_range}</span>
-                <span class="video-tag tag-cyan">${escapeHtml(ev.event_type || 'Event')}</span>
-              </div>
-              <div style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.4rem; color: #fff;">
-                ${escapeHtml(ev.action_or_concept)}
-              </div>
-              ${ev.chart_evidence ? `<div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.3rem;"><strong style="color: var(--accent-cyan);">Chart Evidence:</strong> ${escapeHtml(ev.chart_evidence)}</div>` : ''}
-              ${ev.spoken_rationale ? `<div style="font-size: 0.85rem; color: var(--text-dim); font-style: italic;">"${escapeHtml(ev.spoken_rationale)}"</div>` : ''}
-            </div>
-          `).join('')}
-        </div>
-      `;
-    }
 
     function quickSearch(query) {
       document.getElementById("search-input").value = query;
