@@ -940,10 +940,13 @@
         document.getElementById("meta-duration").textContent = vid.duration_str;
         document.getElementById("meta-chunks").textContent = `${vid.indexed_chunks} Indexed Chunks`;
 
-        // Update video player
-        videoSource.src = `/api/videos/stream/${videoId}`;
-        videoTrack.src = `/api/videos/subtitles/${videoId}`;
-        player.load();
+        // Update video player only if source changed
+        const newStreamUrl = `/api/videos/stream/${videoId}`;
+        if (!videoSource.src || !videoSource.src.endsWith(newStreamUrl)) {
+          videoSource.src = newStreamUrl;
+          videoTrack.src = `/api/videos/subtitles/${videoId}`;
+          player.load();
+        }
 
         // Update quick chips based on video context
         updateQuickChips(videoId);

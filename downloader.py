@@ -224,5 +224,16 @@ def download_video(video_id: str) -> Dict[str, Any]:
         res = subprocess.run(vid_cmd, capture_output=True, text=True)
         if res.returncode != 0:
             logger.warning(f"yt-dlp video download returned code {res.returncode}: {res.stderr}")
+        elif os.path.exists(target_video):
+            # Faststart optimization for instant HTML5 web playback and zero CPU overhead
+            try:
+                faststart_temp = f"{target_video}.faststart.mp4"
+                ff_res = subprocess.run([
+                    "ffmpeg", "-i", target_video, "-c", "copy", "-movflags", "+faststart", faststart_temp, "-y"
+                ], capture_output=True, text=True)
+                if ff_res.returncode == 0 and os.path.exists(faststart_temp) and os.path.getsize(faststart_temp) > 1024:
+                    shutil.move(faststart_temp, target_video)
+            except Exception as e:
+                logger.warning(f"Faststart optimization note: {e}")
 
     return get_video_status(video_id)
