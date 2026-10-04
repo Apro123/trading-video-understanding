@@ -170,7 +170,7 @@ rsync -avz \
   --exclude='.venv' \
   --exclude='videos' \
   --exclude='outputs_*' \
-  *.py templates/ tests/ \
+  *.py README.md templates tests \
   user@dgx-spark:/workspace/
 ```
 
