@@ -20,6 +20,10 @@ EXCLUDE_TICKER_TOKENS: Set[str] = {
 }
 
 
+# Common 2-letter futures tickers
+KNOWN_2LETTER_TICKERS: Set[str] = {"ES", "NQ", "YM", "CL", "GC", "SI", "NG", "ZB", "ZN", "UB"}
+
+
 def safe_load_json(file_path: str, default: Any = None) -> Any:
     """Safely loads and parses a JSON file, returning `default` if missing or invalid."""
     if not os.path.exists(file_path):
@@ -50,7 +54,7 @@ def extract_ticker_symbol(text: str, default: str = "Market Asset") -> str:
     """Extracts ticker symbol or currency pair dynamically from text."""
     matches = re.findall(r'\b([A-Z]{2,6}(?:/[A-Z]{2,6})?)\b', text)
     for token in matches:
-        if token not in EXCLUDE_TICKER_TOKENS and len(token) >= 3:
+        if token not in EXCLUDE_TICKER_TOKENS and (len(token) >= 3 or token in KNOWN_2LETTER_TICKERS):
             return token
     return default
 

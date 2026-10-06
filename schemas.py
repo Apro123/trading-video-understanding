@@ -4,7 +4,7 @@ Implements the contract specified in NVIDIA AI Blueprints:
 https://github.com/NVIDIA-AI-Blueprints/video-search-and-summarization
 """
 
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Dict, Any, Optional, Union, Tuple
 from pydantic import BaseModel, Field
 import uuid
 import time
@@ -32,6 +32,55 @@ class VideoChunk(BaseModel):
     subtitle_entries: List[SubtitleEntry] = Field(default_factory=list)
     synchronized_transcript: str = ""
 
+class BoundingBox(BaseModel):
+    """Normalized bounding box coordinates [0.0 - 1.0]."""
+    ymin: float = 0.0
+    xmin: float = 0.0
+    ymax: float = 1.0
+    xmax: float = 1.0
+
+    def to_pixels(self, width: int, height: int) -> Tuple[int, int, int, int]:
+        """Converts normalized coords to (left, top, right, bottom) pixel tuple."""
+        return (
+            int(self.xmin * width),
+            int(self.ymin * height),
+            int(self.xmax * width),
+            int(self.ymax * height),
+        )
+
+class GroundedPriceLevel(BaseModel):
+    """Specific price level grounded to chart pixel coordinates and visual cues."""
+    price: float
+    level_type: str = "support"  # support, resistance, breakout, pivot_high, pivot_low, stop_loss, target, demand_zone, supply_zone
+    confidence: float = 0.90
+    bounding_box: Optional[BoundingBox] = None
+    label: str = ""
+
+class DeicticAnchor(BaseModel):
+    """Grounding of informal spoken phrase ('here', 'this level') to visual price coordinate."""
+    spoken_phrase: str
+    grounded_price: Optional[float] = None
+    target_type: str = "price_level"  # price_level, zone, indicator, candle
+    bounding_box: Optional[BoundingBox] = None
+    explanation: str = ""
+
+class ChartRegion(BaseModel):
+    """Segmented region of interest in a trading chart."""
+    region_type: str  # price_axis, time_axis, header_ticker, main_canvas, indicator_pane
+    bounding_box: BoundingBox
+    extracted_text: Optional[str] = None
+
+class ChartGroundingData(BaseModel):
+    """Structured visual grounding metadata extracted from chart frames."""
+    ticker: Optional[str] = None
+    timeframe: Optional[str] = None
+    price_range: Optional[Tuple[float, float]] = None  # (min_price, max_price)
+    detected_price_levels: List[GroundedPriceLevel] = Field(default_factory=list)
+    deictic_anchors: List[DeicticAnchor] = Field(default_factory=list)
+    chart_regions: List[ChartRegion] = Field(default_factory=list)
+    timeline_labels: List[str] = Field(default_factory=list)
+    indicator_summary: Dict[str, Any] = Field(default_factory=dict)
+
 class VlmCaptionResponse(BaseModel):
     """Represents a VLM caption response for a single chunk (standard VSS schema)."""
     chunk_id: int
@@ -43,6 +92,7 @@ class VlmCaptionResponse(BaseModel):
     reasoning_description: str = ""
     visual_observations: Dict[str, Any] = Field(default_factory=dict)
     detected_trade_signals: List[str] = Field(default_factory=list)
+    grounding: Optional[ChartGroundingData] = None
 
 class SummarizationQuery(BaseModel):
     """Standard VSS Summarization Query request model."""

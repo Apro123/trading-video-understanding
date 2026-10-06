@@ -18,10 +18,12 @@ logger = logging.getLogger(__name__)
 
 try:
     from .config import DEFAULT_COSMOS3_PATH, VSSVLMConfig
-    from .schemas import VideoChunk, VlmCaptionResponse
+    from .schemas import VideoChunk, VlmCaptionResponse, ChartGroundingData
+    from .chart_grounding import HybridChartGroundingPipeline
 except (ImportError, ValueError):
     from config import DEFAULT_COSMOS3_PATH, VSSVLMConfig
-    from schemas import VideoChunk, VlmCaptionResponse
+    from schemas import VideoChunk, VlmCaptionResponse, ChartGroundingData
+    from chart_grounding import HybridChartGroundingPipeline
 
 # VSS Reasoning Prompt Template for Trading Video Understanding
 VSS_CHUNK_REASONING_PROMPT = """You are the NVIDIA Video Search and Summarization (VSS) Trading AI Agent analyzing a technical trading video clip.
@@ -89,6 +91,7 @@ class VSSVLMReasoner:
         self.config = config or VSSVLMConfig()
         self.model = None
         self.processor = None
+        self.grounding_pipeline = HybridChartGroundingPipeline()
         self._is_loaded = False
         self._has_cuda = False
 
@@ -157,14 +160,18 @@ class VSSVLMReasoner:
         frames: List[Image.Image]
     ) -> VlmCaptionResponse:
         """
-        Processes a single video chunk through Cosmos 3 Nano with synchronized subtitles.
+        Processes a single video chunk through Cosmos 3 Nano with synchronized subtitles
+        and hybrid visual grounding.
         Returns a VlmCaptionResponse adhering to the VSS schema.
         """
+        # 1. Execute hybrid visual grounding over chunk and sampled frames
+        grounding_data = self.grounding_pipeline.ground_chunk(chunk, frames)
+        grounding_prompt_block = self.grounding_pipeline.format_grounding_prompt_block(grounding_data)
+
         transcript = chunk.synchronized_transcript or "(No dialogue in this interval)"
-        prompt = VSS_CHUNK_REASONING_PROMPT.format(
-            start_str=chunk.start_str,
-            end_str=chunk.end_str,
-            transcript=transcript
+        prompt = (
+            f"{VSS_CHUNK_REASONING_PROMPT.format(start_str=chunk.start_str, end_str=chunk.end_str, transcript=transcript)}\n\n"
+            f"{grounding_prompt_block}"
         )
 
         raw_output = ""
@@ -224,6 +231,10 @@ class VSSVLMReasoner:
         if "Detailed visual analysis" in reasoning_content or "Detailed visual observations" in reasoning_content or reasoning_content.strip().startswith("[Detailed"):
             reasoning_content = answer_content
 
+        # Enrich answer content with grounded coordinates if not already present
+        if "[Grounded Coordinates:" not in answer_content:
+            answer_content = self.grounding_pipeline.enrich_caption_with_grounding(answer_content, grounding_data)
+
         # Extract detected signals
         signals = self._detect_trade_signals(chunk, reasoning_content + " " + answer_content)
 
@@ -236,10 +247,12 @@ class VSSVLMReasoner:
             content=answer_content,
             reasoning_description=reasoning_content,
             detected_trade_signals=signals,
+            grounding=grounding_data,
             visual_observations={
                 "frame_count": len(frames),
                 "timestamps": chunk.sampled_frame_timestamps,
-                "has_transcript": bool(chunk.synchronized_transcript)
+                "has_transcript": bool(chunk.synchronized_transcript),
+                "grounded_coordinates": grounding_data.model_dump()
             }
         )
 
