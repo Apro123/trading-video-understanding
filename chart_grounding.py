@@ -43,6 +43,42 @@ DEFAULT_CHART_REGIONS = {
     "indicator_pane": BoundingBox(ymin=0.72, xmin=0.05, ymax=0.85, xmax=0.88),
 }
 
+def clean_transcript_for_grounding(transcript: str) -> str:
+    """
+    Cleans transcript text to remove subtitle timestamps, calendar dates,
+    and metadata before extracting financial price numbers and deictic references.
+    """
+    if not transcript:
+        return ""
+    # 1. Strip timestamp intervals like [00:00 - 00:05] or [00:00 -> 00:05] or [00:00]
+    t = re.sub(r'\[\s*\d{1,2}:\d{2}(?::\d{2})?\s*(?:-|->)?\s*\d{1,2}:\d{2}(?::\d{2})?\s*\]', ' ', transcript)
+    t = re.sub(r'\[\s*\d{1,2}:\d{2}\s*\]', ' ', t)
+
+    # 2. Strip standalone timestamps like '10:30' or '9:30 am'
+    t = re.sub(r'\b\d{1,2}:\d{2}(?::\d{2})?(?:\s*(?:am|pm))?\b', ' ', t, flags=re.IGNORECASE)
+
+    # 3. Strip full date expressions like 'January 30th 2023', 'Jan 30 2023', 'Oct 15'
+    t = re.sub(
+        r'\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?(?:,)?(?:\s+(?:19|20)\d{2})?\b',
+        ' ',
+        t,
+        flags=re.IGNORECASE
+    )
+
+    # 4. Strip ordinal day references like '30th', '1st', '2nd', '3rd', '4th'
+    t = re.sub(r'\b\d{1,2}(?:st|nd|rd|th)\b', ' ', t, flags=re.IGNORECASE)
+
+    # 5. Strip modern calendar years (1980 to 2039) when not preceded by '$'
+    t = re.sub(r'(?<!\$)\b(19[89]\d|20[0-3]\d)\b', ' ', t)
+
+    # 6. Strip percentage expressions like '50%' or '2.5%'
+    t = re.sub(r'\b\d+(?:\.\d+)?%', ' ', t)
+
+    # 7. Strip duration and bar intervals like '5 min', '15 minutes', '1 hour', '4 hour', '1 day'
+    t = re.sub(r'\b\d+(?:\.\d+)?\s*(?:sec|second|min|minute|hr|hour|day|week|month|yr|year)s?\b', ' ', t, flags=re.IGNORECASE)
+
+    return t
+
 class PriceCoordinateMapper:
     """
     Calibrates normalized vertical (Y) chart coordinates to exact monetary price levels.
@@ -186,7 +222,8 @@ class DeicticGrounder:
                 ))
 
         # Check for explicit price numbers mentioned in speech
-        price_mentions = re.findall(r'\$?(\d+(?:\.\d{1,2})?)', transcript)
+        cleaned_transcript = clean_transcript_for_grounding(transcript)
+        price_mentions = re.findall(r'\$?(\d+(?:\.\d{1,2})?)', cleaned_transcript)
         for num_str in price_mentions:
             try:
                 num = float(num_str)
@@ -232,8 +269,9 @@ class HybridChartGroundingPipeline:
         """
         Extracts or estimates plausible price scale extents based on transcript and asset context.
         """
+        cleaned = clean_transcript_for_grounding(transcript)
         numbers = [
-            float(m) for m in re.findall(r'\$?(\d+(?:\.\d{1,2})?)', transcript)
+            float(m) for m in re.findall(r'\$?(\d+(?:\.\d{1,2})?)', cleaned)
             if 0.01 <= float(m) <= 200000.0
         ]
 
@@ -256,6 +294,8 @@ class HybridChartGroundingPipeline:
                 return 5200.0, 5600.0
             elif "NQ" in upper_asset:
                 return 18000.0, 20500.0
+            elif "NVDA" in upper_asset:
+                return 150.0, 250.0
 
         # Standard normalized default scale
         return 100.0, 200.0
@@ -267,11 +307,12 @@ class HybridChartGroundingPipeline:
     ) -> List[GroundedPriceLevel]:
         """Generates grounded price levels from detected price action and context."""
         levels: List[GroundedPriceLevel] = []
-        lower = transcript.lower()
+        cleaned = clean_transcript_for_grounding(transcript)
+        lower = cleaned.lower()
 
         # Parse any explicit numbers in transcript
         raw_nums = sorted(list(set([
-            float(m) for m in re.findall(r'\$?(\d+(?:\.\d{1,2})?)', transcript)
+            float(m) for m in re.findall(r'\$?(\d+(?:\.\d{1,2})?)', cleaned)
             if mapper.min_price <= float(m) <= mapper.max_price
         ])))
 

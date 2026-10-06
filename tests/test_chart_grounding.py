@@ -132,3 +132,20 @@ def test_vlm_reasoner_with_grounding():
     assert "grounded_coordinates" in response.visual_observations
     assert response.visual_observations["grounded_coordinates"]["ticker"] == "BTC"
     assert "Grounded Coordinates:" in response.content
+
+def test_clean_transcript_for_grounding_filters_dates_and_timestamps():
+    from chart_grounding import clean_transcript_for_grounding
+    raw = (
+        "[00:00 - 00:05] market opened at 10:30 am on January 30th 2023. "
+        "Price gained 5% in 15 minutes. Key breakout level at $192.50 with stop at $180.00."
+    )
+    cleaned = clean_transcript_for_grounding(raw)
+    assert "[00:00" not in cleaned
+    assert "10:30" not in cleaned
+    assert "January 30th 2023" not in cleaned
+    assert "2023" not in cleaned
+    assert "5%" not in cleaned
+    assert "15 minutes" not in cleaned
+    # Real prices preserved
+    assert "$192.50" in cleaned
+    assert "$180.00" in cleaned
