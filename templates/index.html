@@ -26,6 +26,8 @@
       --accent-amber-bg: rgba(245, 158, 11, 0.15);
       --accent-purple: #8b5cf6;
       --accent-purple-bg: rgba(139, 92, 246, 0.15);
+      --accent-red: #ef4444;
+      --accent-red-bg: rgba(239, 68, 68, 0.15);
       --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
     }
@@ -49,13 +51,15 @@
     header {
       background-color: var(--bg-secondary);
       border-bottom: 1px solid var(--border);
-      padding: 1rem 2rem;
+      padding: 0.85rem 2rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
       position: sticky;
       top: 0;
       z-index: 50;
+      flex-wrap: wrap;
+      gap: 1rem;
     }
 
     .brand {
@@ -75,7 +79,7 @@
     }
 
     .brand-title {
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       font-weight: 700;
       color: #fff;
     }
@@ -89,9 +93,10 @@
     .system-status {
       display: flex;
       align-items: center;
-      gap: 1.25rem;
+      gap: 1rem;
       font-size: 0.8rem;
       font-family: var(--font-mono);
+      flex-wrap: wrap;
     }
 
     .status-pill {
@@ -112,35 +117,87 @@
       box-shadow: 0 0 8px var(--accent-green);
     }
 
+    .btn-orchestrate-header {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2));
+      border: 1px solid var(--accent-green);
+      color: var(--accent-green);
+      padding: 0.45rem 1rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.825rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+      font-family: var(--font-sans);
+    }
+
+    .btn-orchestrate-header:hover {
+      background: var(--accent-green);
+      color: #000;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.4);
+    }
+
     /* Container */
     .container {
-      max-width: 1600px;
+      max-width: 1650px;
       margin: 0 auto;
       padding: 1.5rem 2rem;
     }
 
-    /* Video Selector Bar */
+    /* Video Selector & Filter Bar */
+    .video-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
     .section-title {
       font-size: 0.85rem;
       text-transform: uppercase;
       letter-spacing: 1px;
       color: var(--text-dim);
-      margin-bottom: 0.75rem;
       font-weight: 600;
+    }
+
+    .filter-pills {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .filter-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filter-btn:hover, .filter-btn.active {
+      color: #fff;
+      border-color: var(--accent-cyan);
+      background-color: var(--bg-card-hover);
     }
 
     .video-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-      gap: 1.25rem;
-      margin-bottom: 2rem;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.75rem;
     }
 
     .video-card {
       background-color: var(--bg-secondary);
       border: 2px solid var(--border);
-      border-radius: 12px;
-      padding: 1.25rem;
+      border-radius: 10px;
+      padding: 1rem;
       cursor: pointer;
       transition: all 0.2s ease;
       display: flex;
@@ -157,7 +214,7 @@
 
     .video-card.active {
       border-color: var(--accent-green);
-      box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+      box-shadow: 0 0 16px rgba(16, 185, 129, 0.2);
       background-color: rgba(16, 185, 129, 0.04);
     }
 
@@ -165,19 +222,19 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      gap: 1rem;
-      margin-bottom: 0.75rem;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
     }
 
     .video-card-title {
-      font-size: 1rem;
+      font-size: 0.925rem;
       font-weight: 600;
       color: #fff;
       line-height: 1.35;
     }
 
     .video-tag {
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       font-family: var(--font-mono);
       padding: 0.2rem 0.5rem;
       border-radius: 4px;
@@ -204,13 +261,13 @@
     }
 
     .tag-red {
-      background: rgba(239, 68, 68, 0.15);
-      color: #ef4444;
+      background: var(--accent-red-bg);
+      color: var(--accent-red);
       border: 1px solid rgba(239, 68, 68, 0.3);
     }
 
     .tag-purple {
-      background: rgba(139, 92, 246, 0.15);
+      background: var(--accent-purple-bg);
       color: #c4b5fd;
       border: 1px solid rgba(139, 92, 246, 0.3);
     }
@@ -221,66 +278,52 @@
       border: 1px solid rgba(148, 163, 184, 0.3);
     }
 
-    .tab-count-badge {
-      background: var(--accent-green-bg);
-      color: var(--accent-green);
-      border: 1px solid rgba(16, 185, 129, 0.4);
-      font-size: 0.7rem;
-      padding: 0.1rem 0.45rem;
-      border-radius: 12px;
-      font-family: var(--font-mono);
-      font-weight: 700;
-      margin-left: 0.25rem;
-    }
-
-    .strategy-card {
-      border-left: 4px solid var(--accent-cyan);
-      transition: all 0.25s ease;
-    }
-
-    .strategy-card:hover {
-      border-left-color: var(--accent-green);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    }
-
     .video-card-meta {
       display: flex;
       align-items: center;
-      gap: 1rem;
-      font-size: 0.8rem;
+      gap: 0.6rem;
+      font-size: 0.75rem;
       color: var(--text-muted);
       font-family: var(--font-mono);
-      margin-bottom: 0.85rem;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
     }
 
     .video-card-desc {
-      font-size: 0.825rem;
+      font-size: 0.775rem;
       color: var(--text-dim);
       line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
     /* Main Workspace Layout */
     .workspace {
       display: grid;
-      grid-template-columns: 580px 1fr;
+      grid-template-columns: 600px 1fr;
       gap: 2rem;
       align-items: flex-start;
     }
 
-    @media (max-width: 1200px) {
+    @media (max-width: 1280px) {
       .workspace {
         grid-template-columns: 1fr;
       }
     }
 
-    /* Left Panel: Video Player */
+    /* Left Panel: Video Player & Grounding HUD */
     .player-panel {
       position: sticky;
-      top: 5rem;
+      top: 4.75rem;
       background-color: var(--bg-secondary);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
     }
 
     .video-wrapper {
@@ -290,7 +333,6 @@
       border-radius: 8px;
       overflow: hidden;
       aspect-ratio: 16 / 9;
-      margin-bottom: 1rem;
       border: 1px solid var(--border);
     }
 
@@ -300,22 +342,140 @@
       object-fit: contain;
     }
 
+    /* Interactive Timeline Scrubber */
+    .timeline-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+    }
+
+    .timeline-title {
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .timeline-active-milestone {
+      color: var(--accent-cyan);
+      max-width: 250px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .timeline-track-wrapper {
+      position: relative;
+      height: 28px;
+      background: #090d15;
+      border-radius: 6px;
+      cursor: pointer;
+      user-select: none;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .timeline-segments {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+    }
+
+    .timeline-segment-block {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      opacity: 0.7;
+      transition: opacity 0.15s, transform 0.15s;
+      border-right: 1px solid rgba(0, 0, 0, 0.4);
+    }
+
+    .timeline-segment-block:hover {
+      opacity: 1.0;
+      filter: brightness(1.2);
+    }
+
+    .timeline-marker-pin {
+      position: absolute;
+      top: 2px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #00ffcc;
+      box-shadow: 0 0 6px #00ffcc;
+      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .timeline-playhead-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: #ffffff;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.8), 0 0 14px var(--accent-cyan);
+      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: 10;
+      transition: left 0.05s linear;
+    }
+
+    .timeline-tooltip {
+      position: absolute;
+      bottom: 34px;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--accent-cyan);
+      color: #fff;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      white-space: nowrap;
+      pointer-events: none;
+      display: none;
+      z-index: 20;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+
+    /* Player Controls */
     .player-controls {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 1rem;
+      gap: 0.75rem;
+      flex-wrap: wrap;
     }
 
     .time-display {
       font-family: var(--font-mono);
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 600;
       color: var(--accent-cyan);
     }
 
-    .speed-selector {
+    .playback-actions {
       display: flex;
+      align-items: center;
       gap: 0.35rem;
     }
 
@@ -337,17 +497,140 @@
       border-color: var(--accent-cyan);
     }
 
+    /* Live Visual Grounding HUD */
+    .grounding-hud-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .hud-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+    }
+
+    .hud-title {
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .hud-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      padding: 0.15rem 0.5rem;
+      border-radius: 12px;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-green);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .hud-status-pulse {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--accent-green);
+      animation: pulse-dot 1.5s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .hud-chunk-bar {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .hud-levels-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .hud-level-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.35rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      border-left: 3px solid var(--accent-cyan);
+    }
+
+    .hud-level-coords {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+    }
+
+    .hud-anchors-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      align-items: center;
+    }
+
+    .hud-anchor-pill {
+      font-size: 0.7rem;
+      background: rgba(139, 92, 246, 0.15);
+      color: #c4b5fd;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+    }
+
+    .hud-signals-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    .hud-signal-pill {
+      font-size: 0.7rem;
+      background: rgba(6, 182, 212, 0.15);
+      color: #67e8f9;
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    /* Player Meta Box */
     .player-meta-box {
       background-color: var(--bg-card);
       border-radius: 8px;
-      padding: 1rem;
-      font-size: 0.85rem;
+      padding: 0.85rem 1rem;
+      font-size: 0.8rem;
     }
 
     .meta-row {
       display: flex;
       justify-content: space-between;
-      padding: 0.35rem 0;
+      padding: 0.3rem 0;
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
 
@@ -370,21 +653,22 @@
       display: flex;
       gap: 0.5rem;
       border-bottom: 1px solid var(--border);
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
     }
 
     .tab-btn {
       background: transparent;
       border: none;
       color: var(--text-muted);
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: 600;
-      padding: 0.75rem 1.25rem;
+      padding: 0.7rem 1.15rem;
       cursor: pointer;
       border-bottom: 2px solid transparent;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.45rem;
       transition: all 0.15s;
     }
 
@@ -397,12 +681,389 @@
       border-bottom-color: var(--accent-green);
     }
 
+    .tab-count-badge {
+      background: var(--accent-green-bg);
+      color: var(--accent-green);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      font-size: 0.7rem;
+      padding: 0.1rem 0.45rem;
+      border-radius: 12px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+    }
+
     .tab-content {
       display: none;
     }
 
     .tab-content.active {
       display: block;
+    }
+
+    /* Teleprompter Tab */
+    .teleprompter-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.85rem;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .teleprompter-search {
+      flex: 1;
+      min-width: 200px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.5rem 0.85rem;
+      color: #fff;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .teleprompter-search:focus {
+      border-color: var(--accent-cyan);
+    }
+
+    .teleprompter-scroll-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .teleprompter-scroll-toggle input {
+      accent-color: var(--accent-green);
+    }
+
+    .teleprompter-container {
+      max-height: 600px;
+      overflow-y: auto;
+      padding: 0.5rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      scroll-behavior: smooth;
+    }
+
+    .teleprompter-line {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+      padding: 0.6rem 0.85rem;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .teleprompter-line:hover {
+      background: var(--bg-card);
+      border-color: var(--border);
+    }
+
+    .teleprompter-line.active {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: var(--accent-green);
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
+    }
+
+    .teleprompter-line.active .teleprompter-text {
+      color: #fff;
+      font-weight: 500;
+    }
+
+    .teleprompter-time {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--accent-cyan);
+      background: rgba(6, 182, 212, 0.12);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      padding: 0.2rem 0.45rem;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .teleprompter-text {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+      flex: 1;
+    }
+
+    /* Orchestrator Tab & Modal Styles */
+    .orchestrator-box {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .mode-select-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .mode-card {
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mode-card:hover {
+      border-color: var(--accent-cyan);
+    }
+
+    .mode-card.active {
+      border-color: var(--accent-green);
+      background: rgba(16, 185, 129, 0.05);
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.15);
+    }
+
+    .mode-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #fff;
+      margin-bottom: 0.35rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .mode-desc {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      line-height: 1.4;
+    }
+
+    .orchestrator-form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .form-label {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .form-input, .form-select {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.55rem 0.85rem;
+      color: #fff;
+      font-size: 0.85rem;
+      outline: none;
+      font-family: var(--font-sans);
+    }
+
+    .form-input:focus, .form-select:focus {
+      border-color: var(--accent-green);
+    }
+
+    .orchestrator-actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .btn-run-orchestration {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.65rem 1.4rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.15s;
+    }
+
+    .btn-run-orchestration:hover:not(:disabled) {
+      opacity: 0.9;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-run-orchestration:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-cancel-orchestration {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #ef4444;
+      border-radius: 6px;
+      padding: 0.65rem 1.2rem;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-cancel-orchestration:hover:not(:disabled) {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .btn-cancel-orchestration:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Live Step Progress Display */
+    .steps-progress-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+
+    .steps-progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.85rem;
+    }
+
+    .steps-progress-title {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      padding: 0.6rem 0.85rem;
+      gap: 0.75rem;
+    }
+
+    .step-item.running {
+      border-color: var(--accent-cyan);
+      background: rgba(6, 182, 212, 0.08);
+    }
+
+    .step-item.success {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.04);
+    }
+
+    .step-item.failed {
+      border-color: rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.08);
+    }
+
+    .step-main {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      flex: 1;
+    }
+
+    .step-icon {
+      font-size: 0.95rem;
+      width: 22px;
+      text-align: center;
+    }
+
+    .step-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .step-desc {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    .step-status-tag {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .overall-progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 0.85rem;
+    }
+
+    .overall-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #10b981, #06b6d4);
+      transition: width 0.3s ease;
+    }
+
+    /* Jobs History Table */
+    .jobs-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+    }
+
+    .jobs-table th, .jobs-table td {
+      border: 1px solid var(--border);
+      padding: 0.55rem 0.75rem;
+      text-align: left;
+    }
+
+    .jobs-table th {
+      background-color: var(--bg-card);
+      color: var(--text-dim);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.5px;
     }
 
     /* Search Tab */
@@ -582,48 +1243,15 @@
       border-radius: 4px;
     }
 
-    /* Strategy Spec Tab */
-    .spec-container {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
+    /* Strategy Breakdown */
+    .strategy-card {
+      border-left: 4px solid var(--accent-cyan);
+      transition: all 0.25s ease;
     }
 
-    .spec-grid-header {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1rem;
-    }
-
-    .spec-stat-card {
-      background-color: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1rem;
-      text-align: center;
-    }
-
-    .spec-stat-label {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--text-dim);
-      margin-bottom: 0.35rem;
-    }
-
-    .spec-stat-val {
-      font-size: 1.25rem;
-      font-weight: 700;
-      font-family: var(--font-mono);
-      color: #fff;
-    }
-
-    .bias-bullish {
-      color: var(--accent-green) !important;
-    }
-
-    .bias-bearish {
-      color: #ef4444 !important;
+    .strategy-card:hover {
+      border-left-color: var(--accent-green);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
 
     .spec-section-card {
@@ -641,12 +1269,6 @@
       display: flex;
       align-items: center;
       gap: 0.5rem;
-    }
-
-    .spec-body-text {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      line-height: 1.55;
     }
 
     .rule-table {
@@ -679,6 +1301,54 @@
       color: var(--accent-cyan);
     }
 
+    /* Modal Overlay */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(10, 14, 23, 0.85);
+      backdrop-filter: blur(4px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      max-width: 820px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 1.75rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      position: relative;
+    }
+
+    .modal-close-btn {
+      position: absolute;
+      top: 1.25rem;
+      right: 1.25rem;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.25rem;
+      cursor: pointer;
+    }
+
+    .modal-close-btn:hover {
+      color: #fff;
+    }
+
     /* Toast Notification */
     .toast {
       position: fixed;
@@ -692,7 +1362,7 @@
       font-size: 0.9rem;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
       display: none;
-      z-index: 100;
+      z-index: 2000;
     }
   </style>
 </head>
@@ -718,31 +1388,63 @@
       <div class="status-pill">
         <span style="color: var(--accent-cyan);" id="active-video-badge">Selected: NVDA (1W)</span>
       </div>
+      <button class="btn-orchestrate-header" onclick="openOrchestratorModal()">
+        <span>⚡</span> Pipeline Orchestrator (DBOS)
+      </button>
     </div>
   </header>
 
   <div class="container">
-    <!-- Video Selection -->
-    <div class="section-title">Select Video Trading Masterclass</div>
+    <!-- Video Selection & Filters -->
+    <div class="video-section-header">
+      <div class="section-title">Select Trading Masterclass or Grounded Clip</div>
+      <div class="filter-pills">
+        <button class="filter-btn active" onclick="filterVideos('all')">All Videos (4)</button>
+        <button class="filter-btn" onclick="filterVideos('clips')">Local Grounded Clips (2)</button>
+        <button class="filter-btn" onclick="filterVideos('masterclasses')">Full Masterclasses (2)</button>
+      </div>
+    </div>
     <div class="video-grid" id="video-grid">
       <!-- Populated via JS -->
     </div>
 
     <!-- Main Workspace -->
     <div class="workspace">
-      <!-- Left: Player & Video Info -->
+      <!-- Left: Player, Timeline Scrubber, & Visual Grounding HUD -->
       <div class="player-panel">
         <div class="video-wrapper">
-          <video id="video-player" controls preload="metadata" src="/api/videos/stream/video_1">
-            <source id="video-source" src="/api/videos/stream/video_1" type="video/mp4">
-            <track id="video-track" label="English" kind="subtitles" srclang="en" src="/api/videos/subtitles/video_1" default>
+          <video id="video-player" controls preload="metadata" src="/api/videos/stream/clip_1">
+            <source id="video-source" src="/api/videos/stream/clip_1" type="video/mp4">
+            <track id="video-track" label="English" kind="subtitles" srclang="en" src="/api/videos/subtitles/clip_1" default>
             Your browser does not support HTML5 video.
           </video>
         </div>
 
+        <!-- Interactive Multi-Segment Timeline Scrubber -->
+        <div class="timeline-container">
+          <div class="timeline-header">
+            <div class="timeline-title">
+              <span>⏱</span>
+              <span>Timeline Milestones</span>
+            </div>
+            <div class="timeline-active-milestone" id="timeline-active-milestone">Ready</div>
+            <div id="timeline-time-label">00:00 / 00:00</div>
+          </div>
+          <div class="timeline-track-wrapper" id="timeline-track-wrapper" onclick="seekByTimelineClick(event)" onmousemove="showTimelineTooltip(event)" onmouseleave="hideTimelineTooltip()">
+            <div class="timeline-segments" id="timeline-segments">
+              <!-- Rendered milestone blocks -->
+            </div>
+            <div class="timeline-playhead-line" id="timeline-playhead" style="left: 0%;"></div>
+            <div class="timeline-tooltip" id="timeline-tooltip">00:00</div>
+          </div>
+        </div>
+
+        <!-- Player Controls & Speed -->
         <div class="player-controls">
           <div class="time-display" id="time-display">00:00:00 / 00:00:00</div>
-          <div class="speed-selector">
+          <div class="playback-actions">
+            <button class="speed-btn" onclick="jumpRelative(-5)" title="Jump back 5s">⏪ -5s</button>
+            <button class="speed-btn" onclick="jumpRelative(5)" title="Jump forward 5s">+5s ⏩</button>
             <button class="speed-btn" onclick="setSpeed(0.75)">0.75x</button>
             <button class="speed-btn active" onclick="setSpeed(1.0)">1x</button>
             <button class="speed-btn" onclick="setSpeed(1.25)">1.25x</button>
@@ -751,6 +1453,51 @@
           </div>
         </div>
 
+        <!-- Live Visual Grounding HUD (Cosmos-3 Nano + YOLO-World) -->
+        <div class="grounding-hud-card" id="grounding-hud">
+          <div class="hud-header">
+            <div class="hud-title">
+              <span>🎯 Live Visual Grounding HUD</span>
+            </div>
+            <div class="hud-status-badge" id="hud-status-badge">
+              <span class="hud-status-pulse"></span>
+              <span id="hud-status-text">TRACKING</span>
+            </div>
+          </div>
+
+          <div class="hud-chunk-bar">
+            <span id="hud-chunk-label">Chunk: --</span>
+            <span id="hud-chunk-duration">Interval: --</span>
+          </div>
+
+          <!-- Active Calibrated Price Levels -->
+          <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); font-weight: 600;">
+            Detected Chart Price Levels & Coordinates:
+          </div>
+          <div class="hud-levels-list" id="hud-levels-list">
+            <div style="color: var(--text-dim); font-size: 0.75rem; font-style: italic;">
+              Synchronizing with chart keyframe...
+            </div>
+          </div>
+
+          <!-- Active Deictic Spatial Anchors -->
+          <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); font-weight: 600; margin-top: 0.2rem;">
+            Visual & Spatial Deictic Anchors:
+          </div>
+          <div class="hud-anchors-row" id="hud-anchors-row">
+            <span class="hud-anchor-pill">Awaiting video playback</span>
+          </div>
+
+          <!-- Trade Signals -->
+          <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); font-weight: 600; margin-top: 0.2rem;">
+            VLM Trade Signals:
+          </div>
+          <div class="hud-signals-row" id="hud-signals-row">
+            <span class="hud-signal-pill">None</span>
+          </div>
+        </div>
+
+        <!-- Player Metadata Box -->
         <div class="player-meta-box">
           <div class="meta-row">
             <span class="meta-label">Selected Asset:</span>
@@ -758,28 +1505,30 @@
           </div>
           <div class="meta-row">
             <span class="meta-label">Chart Timeframe:</span>
-            <span class="meta-val" id="meta-tf">1W (Weekly)</span>
+            <span class="meta-val" id="meta-tf">1D (Daily)</span>
           </div>
           <div class="meta-row">
             <span class="meta-label">Duration:</span>
-            <span class="meta-val" id="meta-duration">39m 29s</span>
+            <span class="meta-val" id="meta-duration">2m 37s</span>
           </div>
           <div class="meta-row">
-            <span class="meta-label">VSS Index Chunks:</span>
-            <span class="meta-val" id="meta-chunks">79 Indexed</span>
+            <span class="meta-label">VSS Grounded Chunks:</span>
+            <span class="meta-val" id="meta-chunks">6 Indexed</span>
           </div>
           <div class="meta-row">
-            <span class="meta-label">Format:</span>
-            <span class="meta-val" style="color: var(--accent-green);">1080p Video-Only (Non-Premium)</span>
+            <span class="meta-label">Grounding Pipeline:</span>
+            <span class="meta-val" style="color: var(--accent-green);">YOLO-World + Cosmos-3 Hybrid</span>
           </div>
         </div>
       </div>
 
-      <!-- Right: Tabs -->
+      <!-- Right: Tabs (Strategy Breakdown, Teleprompter, Semantic Search, Orchestrator) -->
       <div class="content-panel">
         <div class="tab-header">
           <button class="tab-btn active" onclick="switchTab('strategies')">📑 Strategy Breakdown <span class="tab-count-badge" id="strategies-badge">0</span></button>
+          <button class="tab-btn" onclick="switchTab('teleprompter')">🎙️ Live Teleprompter <span class="tab-count-badge" id="teleprompter-badge">0</span></button>
           <button class="tab-btn" onclick="switchTab('search')">🔍 Semantic Video Search</button>
+          <button class="tab-btn" onclick="switchTab('orchestrator')">⚡ Durable Orchestrator</button>
         </div>
 
         <!-- TAB 0: Multi-Strategy Breakdown Across Video -->
@@ -789,7 +1538,21 @@
           </div>
         </div>
 
-        <!-- TAB 1: Semantic Search -->
+        <!-- TAB 1: Live Synchronized Subtitles Teleprompter -->
+        <div class="tab-content" id="tab-teleprompter">
+          <div class="teleprompter-controls">
+            <input type="text" id="teleprompter-search" class="teleprompter-search" placeholder="Search transcript spoken phrases in real-time..." oninput="filterTeleprompter()">
+            <label class="teleprompter-scroll-toggle">
+              <input type="checkbox" id="teleprompter-autoscroll" checked>
+              <span>Auto-scroll to active sentence</span>
+            </label>
+          </div>
+          <div class="teleprompter-container" id="teleprompter-container">
+            <!-- Dynamic subtitle lines -->
+          </div>
+        </div>
+
+        <!-- TAB 2: Semantic Video Search -->
         <div class="tab-content" id="tab-search">
           <div class="search-box">
             <div class="search-input-group">
@@ -798,12 +1561,11 @@
             </div>
             <div class="chips-label">Quick Concept Searches:</div>
             <div class="query-chips" id="query-chips">
-              <span class="chip" onclick="quickSearch('RSI divergence overbought')">RSI divergence overbought</span>
-              <span class="chip" onclick="quickSearch('Weekly breakout above resistance')">Weekly breakout above resistance</span>
-              <span class="chip" onclick="quickSearch('Retest of consolidation buy zone')">Retest of consolidation buy zone</span>
+              <span class="chip" onclick="quickSearch('Breakout above resistance')">Breakout above resistance</span>
+              <span class="chip" onclick="quickSearch('Demand zone support retest')">Demand zone support retest</span>
               <span class="chip" onclick="quickSearch('Stop loss below swing low')">Stop loss below swing low</span>
+              <span class="chip" onclick="quickSearch('RSI divergence overbought')">RSI divergence overbought</span>
               <span class="chip" onclick="quickSearch('Bullish market structure continuation')">Bullish market structure</span>
-              <span class="chip" onclick="quickSearch('Candlestick reversal engulfing pattern')">Candlestick reversal engulfing</span>
             </div>
           </div>
 
@@ -812,6 +1574,142 @@
             <!-- Search items loaded dynamically -->
           </div>
         </div>
+
+        <!-- TAB 3: Durable Pipeline Orchestrator (Synchronous vs Asynchronous) -->
+        <div class="tab-content" id="tab-orchestrator">
+          <div class="orchestrator-box">
+            <div style="font-size: 1.05rem; font-weight: 700; color: #fff;">
+              ⚡ Ingestion & Analysis Orchestration Engine (DBOS-Inspired)
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+              Execute full multi-stage ingestion, keyframe extraction, VLM visual grounding, and strategy synthesis with durable SQLite step-checkpointing.
+            </div>
+
+            <!-- Execution Mode Selection -->
+            <div class="form-group">
+              <span class="form-label">Execution Mode</span>
+              <div class="mode-select-grid">
+                <div class="mode-card active" id="mode-card-async" onclick="selectOrchestratorMode('async')">
+                  <div class="mode-title">
+                    <span>🔄</span> Asynchronous Worker
+                  </div>
+                  <div class="mode-desc">
+                    Dispatches background thread with HTTP 202 Accepted. Streams live Server-Sent Events (SSE) directly to browser with step checkpoints.
+                  </div>
+                </div>
+                <div class="mode-card" id="mode-card-sync" onclick="selectOrchestratorMode('sync')">
+                  <div class="mode-title">
+                    <span>⚡</span> Synchronous Pipeline
+                  </div>
+                  <div class="mode-desc">
+                    Executes pipeline in a single blocking HTTP request with durable checkpoints. Recommended for fast local clips or automated testing.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Config Form -->
+            <div class="orchestrator-form-row">
+              <div class="form-group">
+                <span class="form-label">Target Video</span>
+                <select id="orch-target-video" class="form-select">
+                  <option value="clip_1">clip_1: NVDA Market Structure Shift (2m 37s)</option>
+                  <option value="clip_2">clip_2: RSI Momentum vs Reversal (1m 53s)</option>
+                  <option value="video_1">video_1: Master Technical Charts (39m 29s)</option>
+                  <option value="video_2">video_2: RSI Trading Strategy Masterclass (22m 35s)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <span class="form-label">Chunk Duration (s)</span>
+                <input type="number" id="orch-chunk-duration" class="form-input" value="35" min="10" max="120">
+              </div>
+
+              <div class="form-group">
+                <span class="form-label">Chunk Overlap (s)</span>
+                <input type="number" id="orch-chunk-overlap" class="form-input" value="5" min="0" max="30">
+              </div>
+
+              <div class="form-group" style="justify-content: flex-end;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-muted); cursor: pointer; padding-bottom: 0.6rem;">
+                  <input type="checkbox" id="orch-skip-model" checked>
+                  <span>Skip VLM (Fast Mock Mode)</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="orchestrator-actions">
+              <button class="btn-run-orchestration" id="btn-start-orchestration" onclick="startOrchestration()">
+                <span>🚀</span> Start Pipeline Run
+              </button>
+              <button class="btn-cancel-orchestration" id="btn-cancel-orchestration" onclick="cancelCurrentWorkflow()" disabled>
+                <span>🛑</span> Cancel Active Job
+              </button>
+            </div>
+
+            <!-- Live Progress Card -->
+            <div class="steps-progress-card" id="orchestrator-progress-card">
+              <div class="steps-progress-header">
+                <div class="steps-progress-title">
+                  <span id="orch-live-icon">⏳</span>
+                  <span id="orch-workflow-header-title">Pipeline Steps (0/6 Complete)</span>
+                </div>
+                <div style="font-family: var(--font-mono); font-size: 0.8rem;" id="orch-live-timer">0.0s</div>
+              </div>
+
+              <div class="overall-progress-bar-container">
+                <div class="overall-progress-fill" id="orch-progress-fill"></div>
+              </div>
+
+              <div class="steps-list" id="orch-steps-list" style="margin-top: 0.85rem;">
+                <!-- Populated via JS with 6 DBOS pipeline steps -->
+              </div>
+            </div>
+
+            <!-- Recent Durable Jobs List -->
+            <div style="margin-top: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span class="section-title">Durable Workflow Storage (SQLite WAL)</span>
+                <button class="speed-btn" onclick="fetchWorkflowHistory()">🔄 Refresh Jobs</button>
+              </div>
+              <div style="overflow-x: auto;">
+                <table class="jobs-table">
+                  <thead>
+                    <tr>
+                      <th>Job ID</th>
+                      <th>Video</th>
+                      <th>Mode</th>
+                      <th>Status</th>
+                      <th>Created</th>
+                      <th>Duration</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="orch-jobs-tbody">
+                    <!-- Populated via fetchWorkflowHistory -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Orchestrator Modal Overlay (Can be opened from anywhere) -->
+  <div class="modal-overlay" id="orchestrator-modal">
+    <div class="modal-content">
+      <button class="modal-close-btn" onclick="closeOrchestratorModal()">&times;</button>
+      <div style="font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">
+        ⚡ Ingestion & Analysis Orchestrator
+      </div>
+      <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+        Trigger synchronous or asynchronous analysis runs across all 4 masterclasses and grounded clips.
+      </div>
+      <div id="modal-orchestrator-mount">
+        <!-- Cloned or synced orchestrator content -->
       </div>
     </div>
   </div>
@@ -819,19 +1717,28 @@
   <div class="toast" id="toast">Copied to clipboard!</div>
 
   <script>
-    let currentVideoId = "video_1";
+    let currentVideoId = "clip_1";
     let videoList = [];
     let currentVideoData = null;
+    let orchestratorMode = "async";
+    let activeWorkflowId = null;
+    let activeEventSource = null;
+    let workflowTimerInterval = null;
+    let workflowStartTime = null;
 
     const player = document.getElementById("video-player");
     const videoSource = document.getElementById("video-source");
     const videoTrack = document.getElementById("video-track");
     const timeDisplay = document.getElementById("time-display");
+    const timelineActiveMilestone = document.getElementById("timeline-active-milestone");
+    const timelineTimeLabel = document.getElementById("timeline-time-label");
+    const timelinePlayhead = document.getElementById("timeline-playhead");
+    const timelineTooltip = document.getElementById("timeline-tooltip");
 
     // Format seconds to HH:MM:SS or MM:SS
     function formatTime(s) {
-      if (isNaN(s)) return "00:00";
-      const total = Math.floor(s);
+      if (isNaN(s) || s === null || s === undefined) return "00:00";
+      const total = Math.max(0, Math.floor(s));
       const h = Math.floor(total / 3600);
       const m = Math.floor((total % 3600) / 60);
       const sec = total % 60;
@@ -841,15 +1748,46 @@
       return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
     }
 
+    // Video Playback Event Listeners
     player.addEventListener("timeupdate", () => {
-      timeDisplay.textContent = `${formatTime(player.currentTime)} / ${formatTime(player.duration)}`;
+      const cur = player.currentTime;
+      const dur = player.duration || 1;
+      const percent = Math.min(100, Math.max(0, (cur / dur) * 100));
+
+      // 1. Time displays
+      timeDisplay.textContent = `${formatTime(cur)} / ${formatTime(dur)}`;
+      if (timelineTimeLabel) {
+        timelineTimeLabel.textContent = `${formatTime(cur)} / ${formatTime(dur)}`;
+      }
+
+      // 2. Playhead line
+      if (timelinePlayhead) {
+        timelinePlayhead.style.left = `${percent}%`;
+      }
+
+      // 3. Sync Visual Grounding HUD
+      syncVisualGroundingHUD(cur);
+
+      // 4. Sync Teleprompter
+      syncTeleprompter(cur);
+
+      // 5. Active milestone highlighting
+      syncActiveMilestone(cur);
     });
 
     function setSpeed(speed) {
       player.playbackRate = speed;
       document.querySelectorAll(".speed-btn").forEach(b => {
-        b.classList.toggle("active", parseFloat(b.textContent) === speed);
+        if (b.textContent.includes("x")) {
+          b.classList.toggle("active", parseFloat(b.textContent) === speed);
+        }
       });
+    }
+
+    function jumpRelative(deltaS) {
+      if (player.duration) {
+        player.currentTime = Math.max(0, Math.min(player.duration, player.currentTime + deltaS));
+      }
     }
 
     function seekTo(seconds) {
@@ -859,7 +1797,6 @@
       const currentStreamUrl = `/api/videos/stream/${currentVideoId}`;
       const targetFullUrl = window.location.origin + currentStreamUrl;
 
-      // If player src is not set or points to different video, set and load first
       if (!player.src || (player.src !== targetFullUrl && !player.src.endsWith(currentStreamUrl))) {
         player.src = currentStreamUrl;
         if (videoSource) videoSource.src = currentStreamUrl;
@@ -872,9 +1809,46 @@
         player.currentTime = targetSec;
         player.play().catch(e => console.warn("Playback interrupted:", e));
       }
-      player.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      player.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
+    function seekByTimelineClick(e) {
+      const track = document.getElementById("timeline-track-wrapper");
+      if (!track || !player.duration) return;
+      const rect = track.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const fraction = Math.max(0, Math.min(1, clickX / rect.width));
+      const targetTime = fraction * player.duration;
+      seekTo(targetTime);
+    }
+
+    function showTimelineTooltip(e) {
+      const track = document.getElementById("timeline-track-wrapper");
+      if (!track || !player.duration || !timelineTooltip) return;
+      const rect = track.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const fraction = Math.max(0, Math.min(1, clickX / rect.width));
+      const hoverTime = fraction * player.duration;
+
+      timelineTooltip.style.display = "block";
+      timelineTooltip.style.left = `${clickX}px`;
+
+      // Find closest milestone
+      let label = formatTime(hoverTime);
+      if (currentVideoData && currentVideoData.milestones) {
+        const ms = currentVideoData.milestones.find(m => Math.abs((m.timestamp_s || 0) - hoverTime) < 15);
+        if (ms) {
+          label += ` - ${ms.event}`;
+        }
+      }
+      timelineTooltip.textContent = label;
+    }
+
+    function hideTimelineTooltip() {
+      if (timelineTooltip) timelineTooltip.style.display = "none";
+    }
+
+    // Switch Tabs
     function switchTab(tabId) {
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
       document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
@@ -889,22 +1863,40 @@
       if (targetContent) targetContent.classList.add("active");
     }
 
+    // Load available videos
     async function loadVideos() {
       try {
         const res = await fetch("/api/videos");
         videoList = await res.json();
-        renderVideoCards();
-        selectVideo(videoList[0].video_id);
+        renderVideoCards(videoList);
+        // Default to first video (clip_1)
+        if (videoList.length > 0) {
+          selectVideo(videoList[0].video_id);
+        }
       } catch (err) {
         console.error("Failed to load videos:", err);
       }
     }
 
-    function renderVideoCards() {
+    function filterVideos(filter) {
+      document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+      event.target.classList.add("active");
+
+      if (filter === "all") {
+        renderVideoCards(videoList);
+      } else if (filter === "clips") {
+        renderVideoCards(videoList.filter(v => v.video_id.startsWith("clip_")));
+      } else if (filter === "masterclasses") {
+        renderVideoCards(videoList.filter(v => !v.video_id.startsWith("clip_")));
+      }
+    }
+
+    function renderVideoCards(videos) {
       const container = document.getElementById("video-grid");
       container.innerHTML = "";
 
-      videoList.forEach(v => {
+      videos.forEach(v => {
+        const isClip = v.video_id.startsWith("clip_");
         const card = document.createElement("div");
         card.className = `video-card ${v.video_id === currentVideoId ? 'active' : ''}`;
         card.id = `card-${v.video_id}`;
@@ -914,14 +1906,14 @@
           <div>
             <div class="video-card-header">
               <div class="video-card-title">${v.title}</div>
-              <span class="video-tag ${v.asset === 'NVDA' ? 'tag-green' : 'tag-cyan'}">${v.asset}</span>
+              <span class="video-tag ${isClip ? 'tag-purple' : 'tag-cyan'}">${isClip ? 'Grounded Clip' : 'Masterclass'}</span>
             </div>
             <div class="video-card-meta">
               <span>⏱ ${v.duration_str}</span>
               <span>•</span>
-              <span>📊 ${v.timeframe}</span>
+              <span>📊 ${v.asset} (${v.timeframe})</span>
               <span>•</span>
-              <span style="color: var(--accent-green);">✓ ${v.indexed_chunks} Chunks Indexed</span>
+              <span style="color: var(--accent-green);">✓ ${v.indexed_chunks} Chunks</span>
             </div>
             <div class="video-card-desc">${v.description}</div>
           </div>
@@ -930,6 +1922,7 @@
       });
     }
 
+    // Select Video & Fetch Unified Playback Data
     async function selectVideo(videoId) {
       currentVideoId = videoId;
       document.querySelectorAll(".video-card").forEach(c => c.classList.remove("active"));
@@ -942,9 +1935,13 @@
         document.getElementById("meta-asset").textContent = vid.asset;
         document.getElementById("meta-tf").textContent = vid.timeframe;
         document.getElementById("meta-duration").textContent = vid.duration_str;
-        document.getElementById("meta-chunks").textContent = `${vid.indexed_chunks} Indexed Chunks`;
+        document.getElementById("meta-chunks").textContent = `${vid.indexed_chunks} Chunks`;
 
-        // Update video player
+        // Update target video in orchestrator dropdown
+        const orchSelect = document.getElementById("orch-target-video");
+        if (orchSelect) orchSelect.value = videoId;
+
+        // Update video source & track
         const newStreamUrl = `/api/videos/stream/${videoId}`;
         const targetFullUrl = window.location.origin + newStreamUrl;
         if (!player.src || (player.src !== targetFullUrl && !player.src.endsWith(newStreamUrl))) {
@@ -954,59 +1951,548 @@
           player.load();
         }
 
-        // Update quick chips based on video context
-        updateQuickChips(videoId);
-
-        // Load data
-        await loadVideoDetails(videoId);
-        // Run initial search
-        quickSearch(videoId === "video_1" ? "breakout" : "RSI divergence");
+        // Fetch unified data: subtitles, chunks with grounding, milestones, strategies
+        await loadVideoUnifiedData(videoId);
       }
     }
 
-    function updateQuickChips(videoId) {
-      const container = document.getElementById("query-chips");
-      if (videoId === "video_1") {
-        container.innerHTML = `
-          <span class="chip" onclick="quickSearch('Weekly breakout above resistance')">Weekly breakout above resistance</span>
-          <span class="chip" onclick="quickSearch('Retest of consolidation buy zone')">Retest of consolidation buy zone</span>
-          <span class="chip" onclick="quickSearch('Stop loss below swing low')">Stop loss below swing low</span>
-          <span class="chip" onclick="quickSearch('Bullish market structure continuation')">Bullish market structure</span>
-          <span class="chip" onclick="quickSearch('Heikin Ashi weekly candles')">Heikin Ashi candles</span>
-        `;
-      } else {
-        container.innerHTML = `
-          <span class="chip" onclick="quickSearch('RSI divergence overbought')">RSI divergence overbought</span>
-          <span class="chip" onclick="quickSearch('Momentum indicator not reversal')">Momentum vs reversal</span>
-          <span class="chip" onclick="quickSearch('Candlestick reversal engulfing pattern')">Candlestick reversal engulfing</span>
-          <span class="chip" onclick="quickSearch('Support and resistance retest')">Support & resistance retest</span>
-          <span class="chip" onclick="quickSearch('AUDCAD daily higher highs')">AUDCAD daily structure</span>
-        `;
-      }
-    }
-
-    async function loadVideoDetails(videoId) {
+    async function loadVideoUnifiedData(videoId) {
       try {
-        const res = await fetch(`/api/videos/status/${videoId}`);
+        const res = await fetch(`/api/videos/data/${videoId}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         currentVideoData = data;
 
-        let stratData = data.strategies;
-        if (!stratData) {
-          try {
-            const sRes = await fetch(`/api/videos/strategies/${videoId}`);
-            if (sRes.ok) {
-              stratData = await sRes.json();
-              if (currentVideoData) currentVideoData.strategies = stratData;
-            }
-          } catch(e) { console.warn("Failed to fetch strategies:", e); }
-        }
-        renderMultiStrategyBreakdown(stratData);
+        // 1. Render Multi-Segment Timeline
+        renderTimelineSegments(data);
+
+        // 2. Render Teleprompter
+        renderTeleprompter(data.subtitles || []);
+
+        // 3. Render Multi-Strategy Breakdown
+        renderMultiStrategyBreakdown(data.strategies);
+
+        // 4. Initial Grounding HUD state
+        syncVisualGroundingHUD(0.0);
+
+        // 5. Update Quick Search Chips
+        updateQuickChips(videoId);
+
       } catch (err) {
-        console.error("Failed to load video details:", err);
+        console.error("Failed to load unified video data:", err);
       }
     }
 
+    function renderTimelineSegments(data) {
+      const container = document.getElementById("timeline-segments");
+      container.innerHTML = "";
+
+      const milestones = data.milestones || [];
+      const duration = data.metadata ? data.metadata.duration_s : (player.duration || 180);
+
+      if (milestones.length === 0) {
+        container.innerHTML = `<div class="timeline-segment-block" style="left: 0; width: 100%; background: rgba(6, 182, 212, 0.2);" title="Full Video"></div>`;
+        return;
+      }
+
+      // Sort milestones by timestamp
+      const sorted = [...milestones].sort((a, b) => (a.timestamp_s || 0) - (b.timestamp_s || 0));
+
+      sorted.forEach((m, idx) => {
+        const start = m.timestamp_s || 0;
+        const next = sorted[idx + 1] ? (sorted[idx + 1].timestamp_s || duration) : duration;
+        const leftPercent = Math.max(0, Math.min(100, (start / duration) * 100));
+        const widthPercent = Math.max(1, Math.min(100 - leftPercent, ((next - start) / duration) * 100));
+
+        // Color coding by milestone type
+        const text = (m.event + " " + (m.implication || "")).toLowerCase();
+        let bg = "rgba(6, 182, 212, 0.4)"; // default cyan
+        if (text.includes("breakout") || text.includes("entry") || text.includes("buy")) {
+          bg = "rgba(16, 185, 129, 0.5)"; // green
+        } else if (text.includes("stop") || text.includes("invalidation") || text.includes("bear")) {
+          bg = "rgba(239, 68, 68, 0.5)"; // red
+        } else if (text.includes("retest") || text.includes("consolidation") || text.includes("divergence")) {
+          bg = "rgba(245, 158, 11, 0.5)"; // amber
+        } else if (text.includes("structure") || text.includes("choch")) {
+          bg = "rgba(139, 92, 246, 0.5)"; // purple
+        }
+
+        const block = document.createElement("div");
+        block.className = "timeline-segment-block";
+        block.style.left = `${leftPercent}%`;
+        block.style.width = `${widthPercent}%`;
+        block.style.background = bg;
+        block.title = `[${formatTime(start)}] ${m.event}`;
+        container.appendChild(block);
+      });
+
+      // Pinpoint grounding markers for chunks with detected levels
+      (data.chunks || []).forEach(chunk => {
+        if (chunk.detected_price_levels && chunk.detected_price_levels.length > 0) {
+          const pin = document.createElement("div");
+          pin.className = "timeline-marker-pin";
+          const pos = Math.max(0, Math.min(100, (chunk.start_s / duration) * 100));
+          pin.style.left = `${pos}%`;
+          container.appendChild(pin);
+        }
+      });
+    }
+
+    // Sync Visual Grounding HUD on TimeUpdate
+    function syncVisualGroundingHUD(currentTime) {
+      if (!currentVideoData || !currentVideoData.chunks) return;
+
+      const chunks = currentVideoData.chunks;
+      const activeChunk = chunks.find(c => currentTime >= c.start_s && currentTime <= c.end_s);
+
+      const statusBadge = document.getElementById("hud-status-badge");
+      const statusText = document.getElementById("hud-status-text");
+      const chunkLabel = document.getElementById("hud-chunk-label");
+      const chunkDuration = document.getElementById("hud-chunk-duration");
+      const levelsList = document.getElementById("hud-levels-list");
+      const anchorsRow = document.getElementById("hud-anchors-row");
+      const signalsRow = document.getElementById("hud-signals-row");
+
+      if (activeChunk) {
+        statusBadge.style.background = "rgba(16, 185, 129, 0.15)";
+        statusBadge.style.color = "var(--accent-green)";
+        statusBadge.style.borderColor = "rgba(16, 185, 129, 0.4)";
+        statusText.textContent = "TRACKING ACTIVE";
+
+        chunkLabel.textContent = `Chunk #${activeChunk.chunk_id} [${activeChunk.start_time} - ${activeChunk.end_time}]`;
+        chunkDuration.textContent = `Duration: ${(activeChunk.end_s - activeChunk.start_s).toFixed(1)}s`;
+
+        // Price Levels with coordinates
+        if (activeChunk.detected_price_levels && activeChunk.detected_price_levels.length > 0) {
+          levelsList.innerHTML = activeChunk.detected_price_levels.map(pl => {
+            const b = pl.bounding_box || {};
+            const coordsStr = b.ymin !== undefined ? `[${b.ymin}, ${b.xmin}, ${b.ymax}, ${b.xmax}]` : `[chart y-axis]`;
+            const isEntry = (pl.level_type || '').includes('breakout') || (pl.level_type || '').includes('entry');
+            const isStop = (pl.level_type || '').includes('stop') || (pl.level_type || '').includes('invalidation');
+            const color = isEntry ? 'var(--accent-green)' : (isStop ? '#ef4444' : 'var(--accent-cyan)');
+
+            return `
+              <div class="hud-level-item" style="border-left-color: ${color};">
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                  <strong style="color: ${color};">$${pl.price}</strong>
+                  <span style="color: var(--text-main);">${escapeHtml(pl.label || pl.level_type)}</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                  <span class="hud-level-coords">${coordsStr}</span>
+                  <span style="font-size: 0.65rem; color: var(--accent-green);">${Math.round((pl.confidence || 0.85) * 100)}%</span>
+                </div>
+              </div>
+            `;
+          }).join('');
+        } else {
+          levelsList.innerHTML = `<div style="color: var(--text-dim); font-size: 0.75rem;">Consolidation interval — no breakout levels triggered</div>`;
+        }
+
+        // Deictic Anchors
+        if (activeChunk.deictic_anchors && activeChunk.deictic_anchors.length > 0) {
+          anchorsRow.innerHTML = activeChunk.deictic_anchors.map(a => `
+            <span class="hud-anchor-pill">${escapeHtml(a.phrase || a)}</span>
+          `).join('');
+        } else {
+          anchorsRow.innerHTML = `<span class="hud-anchor-pill" style="opacity: 0.7;">Active chart frame</span>`;
+        }
+
+        // Trade Signals
+        if (activeChunk.signals && activeChunk.signals.length > 0) {
+          signalsRow.innerHTML = activeChunk.signals.map(s => `
+            <span class="hud-signal-pill">${escapeHtml(s)}</span>
+          `).join('');
+        } else {
+          signalsRow.innerHTML = `<span class="hud-signal-pill" style="opacity: 0.6;">Structure Monitoring</span>`;
+        }
+
+      } else {
+        // Between indexed chunks or video end
+        statusBadge.style.background = "rgba(148, 163, 184, 0.15)";
+        statusBadge.style.color = "var(--text-muted)";
+        statusBadge.style.borderColor = "rgba(148, 163, 184, 0.3)";
+        statusText.textContent = "STANDBY";
+
+        chunkLabel.textContent = `Time: ${formatTime(currentTime)}`;
+        chunkDuration.textContent = `Standby`;
+        levelsList.innerHTML = `<div style="color: var(--text-dim); font-size: 0.75rem; font-style: italic;">Seeking to closest indexed frame...</div>`;
+      }
+    }
+
+    // Teleprompter Logic
+    let allSubtitles = [];
+
+    function renderTeleprompter(subtitles) {
+      allSubtitles = subtitles || [];
+      const badge = document.getElementById("teleprompter-badge");
+      if (badge) badge.textContent = allSubtitles.length;
+
+      const container = document.getElementById("teleprompter-container");
+      container.innerHTML = "";
+
+      if (allSubtitles.length === 0) {
+        container.innerHTML = `<div style="color: var(--text-dim); padding: 2rem; text-align: center;">No subtitles available for this video.</div>`;
+        return;
+      }
+
+      allSubtitles.forEach((s, idx) => {
+        const line = document.createElement("div");
+        line.className = "teleprompter-line";
+        line.id = `sub-line-${idx}`;
+        line.onclick = () => seekTo(s.start_s);
+
+        line.innerHTML = `
+          <div class="teleprompter-time">[${s.start_str || formatTime(s.start_s)}]</div>
+          <div class="teleprompter-text">${escapeHtml(s.text)}</div>
+        `;
+        container.appendChild(line);
+      });
+    }
+
+    function syncTeleprompter(currentTime) {
+      if (allSubtitles.length === 0) return;
+
+      const activeIndex = allSubtitles.findIndex(s => currentTime >= s.start_s && currentTime <= s.end_s);
+
+      document.querySelectorAll(".teleprompter-line.active").forEach(el => el.classList.remove("active"));
+
+      if (activeIndex !== -1) {
+        const activeEl = document.getElementById(`sub-line-${activeIndex}`);
+        if (activeEl) {
+          activeEl.classList.add("active");
+          const autoscroll = document.getElementById("teleprompter-autoscroll");
+          if (autoscroll && autoscroll.checked) {
+            activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      }
+    }
+
+    function filterTeleprompter() {
+      const q = (document.getElementById("teleprompter-search").value || "").toLowerCase().trim();
+      document.querySelectorAll(".teleprompter-line").forEach((el, idx) => {
+        const sub = allSubtitles[idx];
+        if (!sub) return;
+        const match = !q || sub.text.toLowerCase().includes(q);
+        el.style.display = match ? "flex" : "none";
+      });
+    }
+
+    function syncActiveMilestone(currentTime) {
+      if (!currentVideoData || !currentVideoData.milestones) return;
+      const ms = currentVideoData.milestones;
+      // Find current or nearest preceding milestone
+      let active = null;
+      for (const m of ms) {
+        if ((m.timestamp_s || 0) <= currentTime + 1.0) {
+          active = m;
+        } else {
+          break;
+        }
+      }
+      if (active && timelineActiveMilestone) {
+        timelineActiveMilestone.textContent = `▶ ${active.event}`;
+      }
+    }
+
+    // Orchestrator Logic (Sync vs Async, SSE live updates)
+    function selectOrchestratorMode(mode) {
+      orchestratorMode = mode;
+      document.getElementById("mode-card-async").classList.toggle("active", mode === "async");
+      document.getElementById("mode-card-sync").classList.toggle("active", mode === "sync");
+    }
+
+    const PIPELINE_STEPS_DEF = [
+      { id: 1, name: "Subtitle Ingestion & 0:00 Normalization", desc: "Offset alignment, SRT/VTT parsing, clean text indexing" },
+      { id: 2, name: "Video Chunking & Keyframe Sampling", desc: "FFmpeg keyframe extraction, 35s windowing with 5s overlap" },
+      { id: 3, name: "VLM Perception & Visual Grounding", desc: "Cosmos-3 Nano + YOLO-World hybrid bounding boxes & price coordinates" },
+      { id: 4, name: "Multimodal Vector & Keyword Search Indexing", desc: "Cosine similarity embeddings, BM25 keyword index formulation" },
+      { id: 5, name: "Long Video Summary & Milestone Formulation", desc: "Nemotron 3.5 structured reasoning, chronological key events" },
+      { id: 6, name: "Algorithmic Strategy Specification Synthesis", desc: "Formal execution rules, R:R calculation, TradeIdeaSpec export" }
+    ];
+
+    function renderInitialOrchestratorSteps() {
+      const container = document.getElementById("orch-steps-list");
+      container.innerHTML = "";
+
+      PIPELINE_STEPS_DEF.forEach(step => {
+        const item = document.createElement("div");
+        item.className = "step-item";
+        item.id = `orch-step-row-${step.id}`;
+
+        item.innerHTML = `
+          <div class="step-main">
+            <span class="step-icon" id="orch-step-icon-${step.id}">⏳</span>
+            <div>
+              <div class="step-title">Step ${step.id}: ${step.name}</div>
+              <div class="step-desc" id="orch-step-desc-${step.id}">${step.desc}</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim);" id="orch-step-time-${step.id}">--</span>
+            <span class="step-status-tag tag-neutral" id="orch-step-badge-${step.id}">PENDING</span>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    async function startOrchestration() {
+      const videoId = document.getElementById("orch-target-video").value;
+      const chunkDur = parseFloat(document.getElementById("orch-chunk-duration").value) || 35.0;
+      const chunkOverlap = parseFloat(document.getElementById("orch-chunk-overlap").value) || 5.0;
+      const skipModel = document.getElementById("orch-skip-model").checked;
+
+      const btnStart = document.getElementById("btn-start-orchestration");
+      const btnCancel = document.getElementById("btn-cancel-orchestration");
+
+      btnStart.disabled = true;
+      btnCancel.disabled = false;
+
+      renderInitialOrchestratorSteps();
+      document.getElementById("orch-progress-fill").style.width = "5%";
+      document.getElementById("orch-workflow-header-title").textContent = `Running Pipeline on ${videoId} (${orchestratorMode.toUpperCase()})...`;
+
+      workflowStartTime = Date.now();
+      if (workflowTimerInterval) clearInterval(workflowTimerInterval);
+      workflowTimerInterval = setInterval(() => {
+        const elapsed = ((Date.now() - workflowStartTime) / 1000).toFixed(1);
+        document.getElementById("orch-live-timer").textContent = `${elapsed}s`;
+      }, 100);
+
+      try {
+        const res = await fetch("/api/orchestrate/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            video_id: videoId,
+            mode: orchestratorMode,
+            chunk_duration_s: chunkDur,
+            chunk_overlap_s: chunkOverlap,
+            skip_model: skipModel,
+            skip_llm: false
+          })
+        });
+
+        if (!res.ok) {
+          throw new Error(`Orchestration failed: HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        activeWorkflowId = data.workflow_id;
+
+        if (orchestratorMode === "sync") {
+          // Synchronous mode returns completed workflow record
+          handleWorkflowRecordUpdate(data);
+          finalizeOrchestration(data);
+        } else {
+          // Asynchronous mode returns HTTP 202 with stream_url
+          listenToWorkflowSSE(data.workflow_id, data.stream_url);
+        }
+
+      } catch (err) {
+        console.error("Orchestration error:", err);
+        showToast(`Orchestration error: ${err.message}`);
+        clearInterval(workflowTimerInterval);
+        btnStart.disabled = false;
+        btnCancel.disabled = true;
+      }
+    }
+
+    function listenToWorkflowSSE(workflowId, streamUrl) {
+      if (activeEventSource) {
+        activeEventSource.close();
+      }
+
+      const url = streamUrl || `/api/orchestrate/jobs/${workflowId}/stream`;
+      activeEventSource = new EventSource(url);
+
+      activeEventSource.addEventListener("progress", (e) => {
+        try {
+          const rec = JSON.parse(e.data);
+          handleWorkflowRecordUpdate(rec);
+
+          if (rec.status === "SUCCESS" || rec.status === "FAILED" || rec.status === "CANCELLED") {
+            activeEventSource.close();
+            activeEventSource = null;
+            finalizeOrchestration(rec);
+          }
+        } catch (err) {
+          console.warn("Error parsing SSE event:", err);
+        }
+      });
+
+      activeEventSource.onerror = (err) => {
+        console.warn("SSE connection closed or error, falling back to polling:", err);
+        if (activeEventSource) {
+          activeEventSource.close();
+          activeEventSource = null;
+        }
+        pollWorkflowStatus(workflowId);
+      };
+    }
+
+    async function pollWorkflowStatus(workflowId) {
+      const pollTimer = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/orchestrate/jobs/${workflowId}`);
+          if (res.ok) {
+            const rec = await res.json();
+            handleWorkflowRecordUpdate(rec);
+            if (rec.status === "SUCCESS" || rec.status === "FAILED" || rec.status === "CANCELLED") {
+              clearInterval(pollTimer);
+              finalizeOrchestration(rec);
+            }
+          }
+        } catch (e) {
+          console.warn("Polling error:", e);
+        }
+      }, 1000);
+    }
+
+    function handleWorkflowRecordUpdate(rec) {
+      const steps = rec.steps || [];
+      let completedCount = 0;
+
+      steps.forEach((step, idx) => {
+        const stepNum = idx + 1;
+        const row = document.getElementById(`orch-step-row-${stepNum}`);
+        const icon = document.getElementById(`orch-step-icon-${stepNum}`);
+        const desc = document.getElementById(`orch-step-desc-${stepNum}`);
+        const timeEl = document.getElementById(`orch-step-time-${stepNum}`);
+        const badge = document.getElementById(`orch-step-badge-${stepNum}`);
+
+        if (!row) return;
+
+        row.className = `step-item ${step.status.toLowerCase()}`;
+        if (badge) {
+          badge.textContent = step.status;
+          badge.className = `step-status-tag ${step.status === 'SUCCESS' ? 'tag-green' : (step.status === 'RUNNING' ? 'tag-cyan' : (step.status === 'FAILED' ? 'tag-red' : 'tag-neutral'))}`;
+        }
+
+        if (step.status === "RUNNING") {
+          if (icon) icon.textContent = "⚡";
+        } else if (step.status === "SUCCESS") {
+          if (icon) icon.textContent = "✓";
+          completedCount++;
+        } else if (step.status === "FAILED") {
+          if (icon) icon.textContent = "❌";
+        }
+
+        if (step.duration_s !== null && step.duration_s !== undefined && timeEl) {
+          timeEl.textContent = `${step.duration_s}s`;
+        }
+
+        if (step.description && desc) {
+          desc.textContent = step.description;
+        }
+      });
+
+      const fillPercent = Math.round((completedCount / PIPELINE_STEPS_DEF.length) * 100);
+      document.getElementById("orch-progress-fill").style.width = `${fillPercent}%`;
+      document.getElementById("orch-workflow-header-title").textContent = `Pipeline Steps (${completedCount}/6 Complete) - ${rec.status}`;
+    }
+
+    async function finalizeOrchestration(rec) {
+      if (workflowTimerInterval) clearInterval(workflowTimerInterval);
+      document.getElementById("btn-start-orchestration").disabled = false;
+      document.getElementById("btn-cancel-orchestration").disabled = true;
+
+      if (rec.status === "SUCCESS") {
+        showToast("Workflow succeeded! Reloading video intelligence...");
+        document.getElementById("orch-progress-fill").style.width = "100%";
+        // Reload current video data if matching
+        if (rec.video_id === currentVideoId) {
+          await loadVideoUnifiedData(currentVideoId);
+        }
+      } else if (rec.status === "CANCELLED") {
+        showToast("Workflow was cancelled.");
+      } else {
+        showToast(`Workflow ended with status: ${rec.status}`);
+      }
+
+      fetchWorkflowHistory();
+    }
+
+    async function cancelCurrentWorkflow() {
+      if (!activeWorkflowId) return;
+      try {
+        const res = await fetch(`/api/orchestrate/jobs/${activeWorkflowId}/cancel`, { method: "POST" });
+        if (res.ok) {
+          showToast(`Cancellation requested for ${activeWorkflowId}`);
+        }
+      } catch (err) {
+        console.error("Failed to cancel workflow:", err);
+      }
+    }
+
+    async function fetchWorkflowHistory() {
+      try {
+        const res = await fetch("/api/orchestrate/jobs?limit=8");
+        if (!res.ok) return;
+        const jobs = await res.json();
+        const tbody = document.getElementById("orch-jobs-tbody");
+        if (!tbody) return;
+
+        if (jobs.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim);">No previous workflow records stored in SQLite yet.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = jobs.map(j => {
+          const isSuccess = j.status === "SUCCESS";
+          const isRunning = j.status === "RUNNING";
+          const badgeClass = isSuccess ? 'tag-green' : (isRunning ? 'tag-cyan' : (j.status === 'CANCELLED' ? 'tag-amber' : 'tag-red'));
+          const durStr = j.total_duration_s ? `${j.total_duration_s.toFixed(1)}s` : '--';
+
+          return `
+            <tr>
+              <td><span style="font-family: var(--font-mono); color: var(--accent-cyan);">${j.workflow_id.slice(0, 8)}...</span></td>
+              <td><strong>${j.video_id}</strong></td>
+              <td><span class="video-tag tag-neutral">${(j.mode || 'async').toUpperCase()}</span></td>
+              <td><span class="step-status-tag ${badgeClass}">${j.status}</span></td>
+              <td>${new Date(j.created_at * 1000).toLocaleTimeString()}</td>
+              <td style="font-family: var(--font-mono);">${durStr}</td>
+              <td>
+                <button class="speed-btn" onclick="inspectWorkflow('${j.workflow_id}')">Inspect</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.warn("Failed to fetch workflow history:", err);
+      }
+    }
+
+    async function inspectWorkflow(workflowId) {
+      try {
+        const res = await fetch(`/api/orchestrate/jobs/${workflowId}`);
+        if (!res.ok) return;
+        const rec = await res.json();
+        switchTab('orchestrator');
+        handleWorkflowRecordUpdate(rec);
+        showToast(`Loaded details for job ${workflowId.slice(0, 8)}`);
+      } catch (e) {
+        console.error("Error inspecting workflow:", e);
+      }
+    }
+
+    // Modal open/close
+    function openOrchestratorModal() {
+      switchTab('orchestrator');
+      const card = document.getElementById("tab-orchestrator");
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      showToast("Opened Pipeline Orchestrator tab");
+    }
+
+    function closeOrchestratorModal() {
+      document.getElementById("orchestrator-modal").classList.remove("active");
+    }
+
+    // Strategy Breakdown Rendering (reused from existing template)
     function renderMultiStrategyBreakdown(breakdown) {
       const container = document.getElementById("strategies-container");
       const badge = document.getElementById("strategies-badge");
@@ -1018,7 +2504,6 @@
 
       if (badge) badge.textContent = breakdown.total_strategies;
 
-      // Quick navigation scrubber chips
       const navChips = breakdown.strategies.map(s => `
         <button class="chip" onclick="scrollToStrategy(${s.strategy_id}, ${s.start_s})" title="${escapeHtml(s.name)}">
           ▶ [${s.timestamp_range}] ${escapeHtml(s.name.replace(/ Strategy$/i, ''))}
@@ -1152,12 +2637,6 @@
             ` : ''}
 
             ${rulesHtml}
-
-            ${s.transcript_summary ? `
-              <div style="margin-top: 0.85rem; font-size: 0.8rem; color: var(--text-dim); font-style: italic; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.6rem;">
-                "${escapeHtml(s.transcript_summary)}"
-              </div>
-            ` : ''}
           </div>
         `;
       }).join('');
@@ -1172,9 +2651,6 @@
             <div style="font-size: 0.8rem; color: var(--text-dim); font-family: var(--font-mono);">
               Interactive Timeline Sync
             </div>
-          </div>
-          <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5;">
-            This masterclass covers multiple independent technical strategies across different curriculum chapters. Click any interval chip below to jump and play the strategy demonstration.
           </div>
           <div class="query-chips" style="gap: 0.4rem;">
             ${navChips}
@@ -1192,9 +2668,7 @@
       if (card) {
         card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         card.style.borderColor = 'var(--accent-cyan)';
-        setTimeout(() => {
-          card.style.borderColor = '';
-        }, 2000);
+        setTimeout(() => { card.style.borderColor = ''; }, 2000);
       }
     }
 
@@ -1216,29 +2690,35 @@
           `**Asset:** ${strat.asset} | **Timeframe:** ${strat.timeframe} | **Bias:** ${strat.directional_bias} | **R:R:** ${strat.risk_reward_ratio}\n\n` +
           `### 💡 Core Thesis\n${strat.core_thesis}\n\n` +
           `### ⚡ Execution Directives\n- **Entry Trigger:** ${strat.entry_trigger}\n- **Stop Loss:** ${strat.invalidation_stop}\n- **Targets:** ${(strat.take_profit_targets || []).join(' | ')}\n\n`;
-        if (strat.step_by_step_rules && strat.step_by_step_rules.length > 0) {
-          md += `### 📋 Formal Rules\n| Rule # | Name | Condition | Action |\n|---|---|---|---|\n`;
-          strat.step_by_step_rules.forEach(r => {
-            md += `| Rule ${r.rule_id} | ${r.name} | \`${r.condition}\` | ${r.action} |\n`;
-          });
-        }
         navigator.clipboard.writeText(md);
         showToast(`Strategy #${strategyId} Markdown copied!`);
       }
     }
 
-    function showToast(msg) {
-      const t = document.getElementById("toast");
-      if (t) {
-        t.textContent = msg || "Copied to clipboard!";
-        t.style.display = "block";
-        setTimeout(() => { t.style.display = "none"; }, 2500);
+    // Search Execution
+    function updateQuickChips(videoId) {
+      const container = document.getElementById("query-chips");
+      if (videoId.startsWith("clip_1") || videoId === "video_1") {
+        container.innerHTML = `
+          <span class="chip" onclick="quickSearch('Weekly breakout above resistance')">Weekly breakout above resistance</span>
+          <span class="chip" onclick="quickSearch('Retest of consolidation buy zone')">Retest of consolidation buy zone</span>
+          <span class="chip" onclick="quickSearch('Stop loss below swing low')">Stop loss below swing low</span>
+          <span class="chip" onclick="quickSearch('Bullish market structure continuation')">Bullish market structure</span>
+          <span class="chip" onclick="quickSearch('Heikin Ashi weekly candles')">Heikin Ashi candles</span>
+        `;
+      } else {
+        container.innerHTML = `
+          <span class="chip" onclick="quickSearch('RSI divergence overbought')">RSI divergence overbought</span>
+          <span class="chip" onclick="quickSearch('Momentum indicator not reversal')">Momentum vs reversal</span>
+          <span class="chip" onclick="quickSearch('Candlestick reversal engulfing pattern')">Candlestick reversal engulfing</span>
+          <span class="chip" onclick="quickSearch('Support and resistance retest')">Support & resistance retest</span>
+        `;
       }
     }
 
-
     function quickSearch(query) {
       document.getElementById("search-input").value = query;
+      switchTab('search');
       executeSearch();
     }
 
@@ -1309,9 +2789,18 @@
       }).join('');
     }
 
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      if (t) {
+        t.textContent = msg || "Copied to clipboard!";
+        t.style.display = "block";
+        setTimeout(() => { t.style.display = "none"; }, 2500);
+      }
+    }
+
     function escapeHtml(str) {
       if (!str) return '';
-      return str
+      return String(str)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
@@ -1319,8 +2808,12 @@
         .replace(/'/g, "&#039;");
     }
 
-    // Initialize on load
-    window.addEventListener("DOMContentLoaded", loadVideos);
+    // Initialize on page load
+    window.addEventListener("DOMContentLoaded", () => {
+      loadVideos();
+      renderInitialOrchestratorSteps();
+      fetchWorkflowHistory();
+    });
   </script>
 </body>
 </html>

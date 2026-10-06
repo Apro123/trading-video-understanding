@@ -13,3 +13,4 @@ __pycache__/
 .DS_Store
 outputs_clip_*/
 outputs_vss*/
+*.sqlite3*

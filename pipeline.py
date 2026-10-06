@@ -18,7 +18,7 @@ import sys
 import time
 import json
 import argparse
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Callable
 
 try:
     from .config import (
@@ -85,7 +85,8 @@ def run_vss_pipeline(
     device: str = "cuda",
     llm_base_url: str = DEFAULT_LLM_BASE_URL,
     llm_model: str = DEFAULT_LLM_MODEL,
-    skip_llm: bool = False
+    skip_llm: bool = False,
+    progress_callback: Optional[Callable[[int, str, float, Optional[Dict[str, Any]]], None]] = None
 ) -> VSSPipelineResult:
     """
     Executes the end-to-end NVIDIA VSS pipeline on a trading video clip and subtitle file.
@@ -124,6 +125,9 @@ def run_vss_pipeline(
         print(f"  First Anchor: [{sub_mgr.entries[0].orig_timestamp_str} -> {sub_mgr.entries[0].clip_timestamp_str}] \"{sub_mgr.entries[0].text[:50]}...\"")
         print(f"  Last Anchor:  [{sub_mgr.entries[-1].orig_timestamp_str} -> {sub_mgr.entries[-1].clip_timestamp_str}] \"{sub_mgr.entries[-1].text[:50]}...\"")
 
+    if progress_callback:
+        progress_callback(1, "Subtitle Ingestion & 0:00 Normalization", 15.0, {"subtitles_count": len(sub_mgr.entries)})
+
     # -------------------------------------------------------------
     # STAGE 2: Video Chunking & Keyframe Extraction via FFmpeg Pipe
     # -------------------------------------------------------------
@@ -138,6 +142,9 @@ def run_vss_pipeline(
     chunks = chunk_mgr.generate_chunks()
     print(f"✓ Generated {len(chunks)} temporal chunks across {video_duration:.1f}s.")
 
+    if progress_callback:
+        progress_callback(2, "Video Chunking & Keyframe Sampling", 30.0, {"chunks_count": len(chunks)})
+
     # -------------------------------------------------------------
     # STAGE 3: Multimodal Video Reasoning with NVIDIA Cosmos 3 Nano
     # -------------------------------------------------------------
@@ -151,8 +158,13 @@ def run_vss_pipeline(
     reasoner.load_model()
 
     chunk_captions = []
-    for chunk in chunks:
+    total_chunks = len(chunks)
+    for idx, chunk in enumerate(chunks):
         frames = chunk_mgr.extract_chunk_frames(chunk)
+        if progress_callback:
+            chunk_pct = 30.0 + (35.0 * (idx / max(1, total_chunks)))
+            progress_callback(3, f"VLM Perception & Visual Grounding (Chunk {idx+1}/{total_chunks})", chunk_pct, {"chunk_id": chunk.chunk_id})
+
         print(f"  -> Processing Chunk #{chunk.chunk_id} [{chunk.start_str} - {chunk.end_str}] ({len(frames)} frames):")
         if chunk.synchronized_transcript:
             print(f"     Transcript: \"{chunk.synchronized_transcript[:60]}...\"")
@@ -163,6 +175,9 @@ def run_vss_pipeline(
         if cap.detected_trade_signals:
             print(f"     Signals:     {', '.join(cap.detected_trade_signals)}")
 
+    if progress_callback:
+        progress_callback(3, "VLM Perception & Visual Grounding", 65.0, {"chunks_processed": len(chunk_captions)})
+
     # -------------------------------------------------------------
     # STAGE 4: Semantic Search Indexing
     # -------------------------------------------------------------
@@ -170,6 +185,9 @@ def run_vss_pipeline(
     search_index = VSSSearchIndex(video_id=os.path.basename(video_path))
     search_index.index_chunks(chunks, chunk_captions)
     print(f"✓ Indexed {len(chunks)} chunks with multimodal embeddings and BM25 keywords.")
+
+    if progress_callback:
+        progress_callback(4, "Multimodal Vector & Keyword Search Indexing", 75.0, {"indexed_chunks": len(chunks)})
 
     # Execute representative trading search queries
     demo_queries = [
@@ -199,6 +217,9 @@ def run_vss_pipeline(
     trade_spec = trade_agent.synthesize_trade_idea(temp_completion, chunks=chunks)
     completion = summarizer.summarize(chunks, chunk_captions, trade_spec=trade_spec, video_id=os.path.basename(video_path))
     print(f"✓ Formulated {len(completion.key_events)} chronological milestone events.")
+
+    if progress_callback:
+        progress_callback(5, "Long Video Summary & Milestone Formulation", 90.0, {"milestones_count": len(completion.key_events)})
 
     # -------------------------------------------------------------
     # STAGE 6: Output Artifact Generation
@@ -270,6 +291,8 @@ def run_vss_pipeline(
         "augmented_subtitles_json": aug_json_path,
         "augmented_subtitles_md": aug_md_path
     }
+    if progress_callback:
+        progress_callback(6, "Algorithmic Strategy Specification Synthesis", 100.0, {"artifacts": list(generated_files.keys())})
 
     print("\n" + "=" * 80)
     print(f"✅ VSS PIPELINE EXECUTION COMPLETE ({elapsed:.1f}s)")

@@ -24,8 +24,34 @@ except (ImportError, ValueError):
 VIDEOS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "videos")
 os.makedirs(VIDEOS_DIR, exist_ok=True)
 
-# Pre-registered Video trading videos from videos.md
+# Pre-registered Video trading videos & local test clips
 KNOWN_VIDEOS: Dict[str, Dict[str, Any]] = {
+    "clip_1": {
+        "video_id": "clip_1",
+        "title": "NVDA Market Structure Shift & Breakout Retest (Trading Lesson 1)",
+        "url": "local:trading_lesson.clip.mp4",
+        "asset": "NVDA",
+        "timeframe": "1D (Daily)",
+        "duration_s": 157.02,
+        "duration_str": "2m 37s",
+        "clip_ref": "trading_lesson.clip.mp4",
+        "subtitles_ref": "subtitles_clip",
+        "output_dir_ref": "outputs_vss_clip_1_grounded",
+        "description": "Bullish change of character (CHoCH), pivot level breakout validation at $1927, demand zone retesting, and protected swing stop placement."
+    },
+    "clip_2": {
+        "video_id": "clip_2",
+        "title": "RSI Momentum vs Reversal & Divergence Confluence (Trading Lesson 2)",
+        "url": "local:trading_lesson_2.clip.mp4",
+        "asset": "BTC/USD & Multi-Asset",
+        "timeframe": "1D / 4H",
+        "duration_s": 113.0,
+        "duration_str": "1m 53s",
+        "clip_ref": "trading_lesson_2.clip.mp4",
+        "subtitles_ref": "subtitles_clip_2",
+        "output_dir_ref": "outputs_vss_clip_2_grounded",
+        "description": "RSI indicator dynamics: overcoming common overbought/oversold misconceptions, exploiting momentum divergence at key resistance, and candlestick confirmation."
+    },
     "video_1": {
         "video_id": "video_1",
         "title": "Master Technical Charts: Swing Trading & Long-Term Investing with Market Structure",
@@ -36,6 +62,7 @@ KNOWN_VIDEOS: Dict[str, Dict[str, Any]] = {
         "duration_str": "39m 29s",
         "clip_ref": "trading_lesson.clip.mp4",
         "subtitles_ref": "subtitles_clip",
+        "output_dir_ref": "outputs_video_1",
         "description": "Comprehensive institutional market structure breakdown, multi-year consolidation breakouts, and buy zone pullback entries on NVIDIA weekly charts."
     },
     "video_2": {
@@ -48,58 +75,93 @@ KNOWN_VIDEOS: Dict[str, Dict[str, Any]] = {
         "duration_str": "1h 17m 35s",
         "clip_ref": "trading_lesson_2.clip.mp4",
         "subtitles_ref": "subtitles_clip_2",
+        "output_dir_ref": "outputs_video_2",
         "description": "Complete technical analysis masterclass covering RSI momentum vs reversal, RSI divergence, structural support/resistance, and candlestick confirmation."
     }
 }
 
 def get_video_file_path(video_id: str) -> Optional[str]:
     """Finds the local MP4 or WebM video file for a video_id."""
+    root_dir = os.path.dirname(VIDEOS_DIR)
+    
+    # 1. Check if direct file path was passed
+    if os.path.exists(video_id) and os.path.getsize(video_id) > 1024:
+        return os.path.abspath(video_id)
+        
+    # 2. Check clip_ref in KNOWN_VIDEOS
+    if video_id in KNOWN_VIDEOS and "clip_ref" in KNOWN_VIDEOS[video_id]:
+        clip_name = KNOWN_VIDEOS[video_id]["clip_ref"]
+        for base in [root_dir, VIDEOS_DIR]:
+            p = os.path.join(base, clip_name)
+            if os.path.exists(p) and os.path.getsize(p) > 1024:
+                return os.path.abspath(p)
+
+    # 3. Standard naming conventions
     candidates = [
         os.path.join(VIDEOS_DIR, f"{video_id}.mp4"),
         os.path.join(VIDEOS_DIR, f"{video_id}.webm"),
         os.path.join(VIDEOS_DIR, f"{video_id}.mkv"),
+        os.path.join(root_dir, f"{video_id}.mp4"),
+        os.path.join(root_dir, f"{video_id}.clip.mp4"),
     ]
-    # Also search for files containing the video ID in VIDEOS_DIR and project root
     for candidate in candidates:
         if os.path.exists(candidate) and os.path.getsize(candidate) > 1024:
-            return candidate
+            return os.path.abspath(candidate)
 
-    for d in [VIDEOS_DIR, os.path.dirname(VIDEOS_DIR)]:
+    # 4. Search directory contents
+    for d in [VIDEOS_DIR, root_dir]:
         if not os.path.exists(d):
             continue
         for fname in os.listdir(d):
             if video_id in fname and fname.endswith((".mp4", ".webm", ".mkv")):
                 p = os.path.join(d, fname)
                 if os.path.getsize(p) > 1024:
-                    return p
+                    return os.path.abspath(p)
     return None
 
 def get_subtitle_file_path(video_id: str) -> Optional[str]:
-    """Finds the local subtitle file (.vtt or .srt) for a video_id."""
+    """Finds the local subtitle file (.vtt or .srt or raw subtitle file) for a video_id."""
+    root_dir = os.path.dirname(VIDEOS_DIR)
+
+    # 1. Check if direct path passed
+    if os.path.exists(video_id) and os.path.getsize(video_id) > 50:
+        return os.path.abspath(video_id)
+
+    # 2. Check subtitles_ref in KNOWN_VIDEOS
+    if video_id in KNOWN_VIDEOS and "subtitles_ref" in KNOWN_VIDEOS[video_id]:
+        sub_name = KNOWN_VIDEOS[video_id]["subtitles_ref"]
+        for base in [root_dir, VIDEOS_DIR]:
+            p = os.path.join(base, sub_name)
+            if os.path.exists(p) and os.path.getsize(p) > 50:
+                return os.path.abspath(p)
+
+    # 3. Standard candidate paths
     candidates = [
         os.path.join(VIDEOS_DIR, f"{video_id}.vtt"),
         os.path.join(VIDEOS_DIR, f"subtitles_{video_id}.en.vtt"),
         os.path.join(VIDEOS_DIR, f"{video_id}.en.vtt"),
         os.path.join(VIDEOS_DIR, f"{video_id}.srt"),
+        os.path.join(root_dir, f"subtitles_{video_id}"),
+        os.path.join(root_dir, f"subtitles_{video_id}.vtt"),
     ]
     for candidate in candidates:
-        if os.path.exists(candidate) and os.path.getsize(candidate) > 100:
-            return candidate
+        if os.path.exists(candidate) and os.path.getsize(candidate) > 50:
+            return os.path.abspath(candidate)
 
-    root_dir = os.path.dirname(VIDEOS_DIR)
+    # 4. Search directory contents
     for fname in os.listdir(root_dir):
         if video_id in fname and fname.endswith((".vtt", ".srt")):
             p = os.path.join(root_dir, fname)
-            if os.path.getsize(p) > 100:
-                return p
+            if os.path.getsize(p) > 50:
+                return os.path.abspath(p)
     return None
 
 def get_video_status(video_id: str) -> Dict[str, Any]:
-    """Returns the download and indexing status of a Video video."""
+    """Returns the download and indexing status of a Video video or local clip."""
     meta = KNOWN_VIDEOS.get(video_id, {
         "video_id": video_id,
-        "title": f"Video Video [{video_id}]",
-        "url": f"https://example.com/watch?v={video_id}",
+        "title": f"Video [{video_id}]",
+        "url": f"local:{video_id}",
         "duration_s": 0.0,
         "duration_str": "Unknown",
         "asset": "Unknown",
@@ -113,7 +175,21 @@ def get_video_status(video_id: str) -> Dict[str, Any]:
     sub_size_kb = round(os.path.getsize(sub_path) / 1024, 1) if sub_path else 0.0
 
     # Check for existing analysis output directory
-    output_dir = os.path.join(os.path.dirname(VIDEOS_DIR), f"outputs_{video_id}")
+    root_dir = os.path.dirname(VIDEOS_DIR)
+    candidate_out_dirs = [
+        os.path.join(root_dir, f"outputs_vss_{video_id}_grounded"),
+        os.path.join(root_dir, f"outputs_vss_{video_id}"),
+        os.path.join(root_dir, f"outputs_{video_id}"),
+    ]
+    if "output_dir_ref" in meta:
+        candidate_out_dirs.insert(0, os.path.join(root_dir, meta["output_dir_ref"]))
+
+    output_dir = candidate_out_dirs[0]
+    for d in candidate_out_dirs:
+        if os.path.exists(os.path.join(d, "vss_search_index.json")) or os.path.exists(os.path.join(d, "trading_summary.json")):
+            output_dir = d
+            break
+
     index_file = os.path.join(output_dir, "vss_search_index.json")
     spec_file = os.path.join(output_dir, "trading_strategy_spec.json")
 
