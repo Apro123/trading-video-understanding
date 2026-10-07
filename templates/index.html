@@ -142,7 +142,7 @@
       font-weight: 600;
     }
 
-    .video-grid-split {
+    .video-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1.25rem;
@@ -150,90 +150,70 @@
     }
 
     @media (max-width: 900px) {
-      .video-grid-split {
+      .video-grid {
         grid-template-columns: 1fr;
       }
     }
 
-    .video-master-card {
+    .video-card {
       background-color: var(--bg-secondary);
       border: 2px solid var(--border);
       border-radius: 10px;
-      padding: 1rem 1.25rem;
+      padding: 1.15rem 1.35rem;
       transition: all 0.2s ease;
+      cursor: pointer;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      gap: 0.65rem;
+      gap: 0.75rem;
     }
 
-    .video-master-card.active {
+    .video-card:hover {
+      border-color: rgba(16, 185, 129, 0.45);
+      background-color: var(--bg-card);
+      transform: translateY(-1px);
+    }
+
+    .video-card.active {
       border-color: var(--accent-green);
       box-shadow: 0 0 16px rgba(16, 185, 129, 0.2);
-      background-color: rgba(16, 185, 129, 0.03);
+      background-color: rgba(16, 185, 129, 0.04);
     }
 
-    .video-master-header {
+    .video-card-top {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       gap: 0.75rem;
     }
 
-    .video-master-title {
+    .video-card-title {
       font-size: 0.95rem;
       font-weight: 700;
       color: #fff;
       line-height: 1.35;
     }
 
-    .video-master-desc {
-      font-size: 0.775rem;
+    .video-card-desc {
+      font-size: 0.8rem;
       color: var(--text-dim);
-      line-height: 1.4;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+      line-height: 1.45;
     }
 
-    .video-version-selector {
+    .video-card-meta {
       display: flex;
-      gap: 0.5rem;
-      background: rgba(0, 0, 0, 0.35);
-      padding: 0.3rem;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-    }
-
-    .video-version-btn {
-      flex: 1;
-      background: transparent;
-      border: 1px solid transparent;
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      font-family: var(--font-sans);
-      padding: 0.4rem 0.6rem;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.15s;
-      display: flex;
+      justify-content: space-between;
       align-items: center;
-      justify-content: center;
-      gap: 0.35rem;
-      font-weight: 600;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      padding-top: 0.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
     }
 
-    .video-version-btn:hover {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .video-version-btn.active {
-      background: rgba(16, 185, 129, 0.2);
-      color: #fff;
-      border-color: var(--accent-green);
-      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+    .video-card.active .meta-status {
+      color: var(--accent-green);
+      font-weight: 700;
     }
 
     .video-tag {
@@ -322,6 +302,18 @@
       width: 100%;
       height: 100%;
       object-fit: contain;
+    }
+
+    video::cue {
+      background: rgba(10, 14, 23, 0.88);
+      color: #f8fafc;
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      font-weight: 500;
+      border-radius: 6px;
+      line-height: 1.4;
+      padding: 0.25rem 0.6rem;
+      border: 1px solid rgba(255, 255, 255, 0.15);
     }
 
     /* Interactive Timeline Scrubber */
@@ -874,103 +866,6 @@
       color: #fff !important;
     }
 
-    /* Teleprompter Tab */
-    .teleprompter-controls {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.85rem;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-    }
-
-    .teleprompter-search {
-      flex: 1;
-      min-width: 200px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 0.5rem 0.85rem;
-      color: #fff;
-      font-size: 0.85rem;
-      outline: none;
-    }
-
-    .teleprompter-search:focus {
-      border-color: var(--accent-cyan);
-    }
-
-    .teleprompter-scroll-toggle {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      cursor: pointer;
-    }
-
-    .teleprompter-scroll-toggle input {
-      accent-color: var(--accent-green);
-    }
-
-    .teleprompter-container {
-      max-height: 550px;
-      overflow-y: auto;
-      padding: 0.5rem;
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-      scroll-behavior: smooth;
-    }
-
-    .teleprompter-line {
-      display: flex;
-      gap: 0.75rem;
-      align-items: flex-start;
-      padding: 0.6rem 0.85rem;
-      border-radius: 6px;
-      border: 1px solid transparent;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .teleprompter-line:hover {
-      background: var(--bg-card);
-      border-color: var(--border);
-    }
-
-    .teleprompter-line.active {
-      background: rgba(16, 185, 129, 0.12);
-      border-color: var(--accent-green);
-      box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
-    }
-
-    .teleprompter-line.active .teleprompter-text {
-      color: #fff;
-      font-weight: 500;
-    }
-
-    .teleprompter-time {
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      color: var(--accent-cyan);
-      background: rgba(6, 182, 212, 0.12);
-      border: 1px solid rgba(6, 182, 212, 0.3);
-      padding: 0.2rem 0.45rem;
-      border-radius: 4px;
-      white-space: nowrap;
-    }
-
-    .teleprompter-text {
-      font-size: 0.875rem;
-      color: var(--text-muted);
-      line-height: 1.45;
-      flex: 1;
-    }
-
     /* Search Tab */
     .search-box {
       background-color: var(--bg-secondary);
@@ -1195,12 +1090,12 @@
   </header>
 
   <div class="container">
-    <!-- Video Selection: Split by Video -->
+    <!-- Video Selection -->
     <div class="video-section-header">
-      <div class="section-title">Trading Masterclasses (Split by Video Topic)</div>
+      <div class="section-title">Select Trading Masterclass</div>
     </div>
-    <div class="video-grid-split" id="video-grid-split">
-      <!-- Populated dynamically via JS: Video 1 vs Video 2 with clip toggles -->
+    <div class="video-grid" id="video-grid">
+      <!-- Populated dynamically via JS: Video 1 & Video 2 -->
     </div>
 
     <!-- Main Workspace -->
@@ -1208,9 +1103,9 @@
       <!-- Left: Player, Timeline Scrubber, & Visual Grounding HUD -->
       <div class="player-panel">
         <div class="video-wrapper">
-          <video id="video-player" controls preload="metadata" src="/api/videos/stream/clip_1">
-            <source id="video-source" src="/api/videos/stream/clip_1" type="video/mp4">
-            <track id="video-track" label="English" kind="subtitles" srclang="en" src="/api/videos/subtitles/clip_1" default>
+          <video id="video-player" controls preload="metadata" playsinline crossorigin="anonymous" src="/api/videos/stream/video_1">
+            <source id="video-source" src="/api/videos/stream/video_1" type="video/mp4">
+            <track id="video-track" label="English" kind="subtitles" srclang="en" src="/api/videos/subtitles/video_1" default>
             Your browser does not support HTML5 video.
           </video>
         </div>
@@ -1300,15 +1195,15 @@
           </div>
           <div class="meta-row">
             <span class="meta-label">Chart Timeframe:</span>
-            <span class="meta-val" id="meta-tf">1D (Daily)</span>
+            <span class="meta-val" id="meta-tf">1W (Weekly)</span>
           </div>
           <div class="meta-row">
             <span class="meta-label">Duration:</span>
-            <span class="meta-val" id="meta-duration">2m 37s</span>
+            <span class="meta-val" id="meta-duration">39m 29s</span>
           </div>
           <div class="meta-row">
             <span class="meta-label">VSS Grounded Chunks:</span>
-            <span class="meta-val" id="meta-chunks">6 Indexed</span>
+            <span class="meta-val" id="meta-chunks">79 Indexed</span>
           </div>
           <div class="meta-row">
             <span class="meta-label">Grounding Pipeline:</span>
@@ -1317,11 +1212,10 @@
         </div>
       </div>
 
-      <!-- Right: Tabs (Strategy Breakdown, Teleprompter, Semantic Search) -->
+      <!-- Right: Tabs (Strategy Breakdown, Semantic Search) -->
       <div class="content-panel">
         <div class="tab-header">
           <button class="tab-btn active" onclick="switchTab('strategies')">📑 Strategy Breakdown <span class="tab-count-badge" id="strategies-badge">0</span></button>
-          <button class="tab-btn" onclick="switchTab('teleprompter')">🎙️ Live Teleprompter <span class="tab-count-badge" id="teleprompter-badge">0</span></button>
           <button class="tab-btn" onclick="switchTab('search')">🔍 Semantic Video Search</button>
         </div>
 
@@ -1329,20 +1223,6 @@
         <div class="tab-content active" id="tab-strategies">
           <div class="spec-container" id="strategies-container">
             <!-- Populated via JS -->
-          </div>
-        </div>
-
-        <!-- TAB 1: Live Synchronized Subtitles Teleprompter -->
-        <div class="tab-content" id="tab-teleprompter">
-          <div class="teleprompter-controls">
-            <input type="text" id="teleprompter-search" class="teleprompter-search" placeholder="Search transcript spoken phrases in real-time..." oninput="filterTeleprompter()">
-            <label class="teleprompter-scroll-toggle">
-              <input type="checkbox" id="teleprompter-autoscroll" checked>
-              <span>Auto-scroll with playback</span>
-            </label>
-          </div>
-          <div class="teleprompter-container" id="teleprompter-container">
-            <!-- Dynamic subtitle lines -->
           </div>
         </div>
 
@@ -1375,33 +1255,27 @@
   <div class="toast" id="toast">Copied to clipboard!</div>
 
   <script>
-    let currentVideoId = "clip_1";
+    let currentVideoId = "video_1";
     let videoList = [];
     let currentVideoData = null;
     let activeEventSource = null;
 
-    const VIDEO_GROUPS = [
+    const VIDEOS = [
       {
-        id: "video_1",
-        title: "Video 1: NVDA Market Structure Shift & Breakout",
+        video_id: "video_1",
+        title: "Video 1: NVDA Market Structure Shift & Breakout Masterclass",
         asset: "NVDA",
-        timeframe: "1D / 1W",
-        desc: "Bullish change of character (CHoCH), pivot level breakout validation at $1927, demand zone retest, and weekly consolidation expansion.",
-        versions: [
-          { video_id: "clip_1", label: "📹 Grounded Clip", duration: "2m 37s", type: "Grounded" },
-          { video_id: "video_1", label: "🎬 Full Masterclass", duration: "39m 29s", type: "Masterclass" }
-        ]
+        timeframe: "1W (Weekly)",
+        duration_str: "39m 29s",
+        summary: "Institutional market structure breakdown, multi-year consolidation breakouts, change of character (CHoCH), and buy zone pullback entries on NVIDIA."
       },
       {
-        id: "video_2",
-        title: "Video 2: RSI Momentum vs Reversal Masterclass",
-        asset: "BTC/USD & Multi-Asset",
-        timeframe: "Daily / 4H",
-        desc: "RSI indicator dynamics: overcoming overbought/oversold misconceptions, exploiting momentum divergence at key resistance, and candlestick confirmation.",
-        versions: [
-          { video_id: "clip_2", label: "📹 Grounded Clip", duration: "1m 53s", type: "Grounded" },
-          { video_id: "video_2", label: "🎬 Full Masterclass", duration: "22m 35s", type: "Masterclass" }
-        ]
+        video_id: "video_2",
+        title: "Video 2: RSI Momentum vs Reversal & Full Technical Analysis Course",
+        asset: "Forex / Multi-Asset",
+        timeframe: "1D / 4H",
+        duration_str: "1h 17m",
+        summary: "Complete technical analysis masterclass covering RSI momentum vs reversal dynamics, overcoming overbought/oversold misconceptions, divergence setups, and candlestick confirmation."
       }
     ];
 
@@ -1447,13 +1321,10 @@
       // 3. Sync Visual Grounding HUD
       syncVisualGroundingHUD(cur);
 
-      // 4. Sync Teleprompter (Scrolls ONLY the inner container)
-      syncTeleprompter(cur);
-
-      // 5. Active milestone highlighting
+      // 4. Active milestone highlighting
       syncActiveMilestone(cur);
 
-      // 6. Sync Strategy Breakdown & Active Rule Execution
+      // 5. Sync Strategy Breakdown & Active Rule Execution
       syncStrategyBreakdown(cur);
     });
 
@@ -1544,36 +1415,28 @@
       if (targetContent) targetContent.classList.add("active");
     }
 
-    // Render Split-by-Video master cards
-    function renderVideoGroups() {
-      const container = document.getElementById("video-grid-split");
+    // Render Clean Toggle-Free Video Cards (Title & Short Summary)
+    function renderVideoCards() {
+      const container = document.getElementById("video-grid");
       if (!container) return;
       container.innerHTML = "";
 
-      VIDEO_GROUPS.forEach(g => {
-        const isGroupActive = g.versions.some(v => v.video_id === currentVideoId);
+      VIDEOS.forEach(v => {
+        const isActive = v.video_id === currentVideoId;
         const card = document.createElement("div");
-        card.className = `video-master-card ${isGroupActive ? 'active' : ''}`;
-        card.id = `group-card-${g.id}`;
-
-        const buttonsHtml = g.versions.map(v => `
-          <button class="video-version-btn ${v.video_id === currentVideoId ? 'active' : ''}" 
-                  id="btn-version-${v.video_id}" 
-                  onclick="selectVideo('${v.video_id}')">
-            ${v.label} <span style="font-family: var(--font-mono); font-size: 0.7rem; opacity: 0.85;">(${v.duration})</span>
-          </button>
-        `).join('');
+        card.className = `video-card ${isActive ? 'active' : ''}`;
+        card.id = `card-${v.video_id}`;
+        card.onclick = () => selectVideo(v.video_id);
 
         card.innerHTML = `
-          <div>
-            <div class="video-master-header">
-              <div class="video-master-title">${g.title}</div>
-              <span class="video-tag ${g.asset === 'NVDA' ? 'tag-green' : 'tag-cyan'}">${g.asset} • ${g.timeframe}</span>
-            </div>
-            <div class="video-master-desc" style="margin-top: 0.35rem;">${g.desc}</div>
+          <div class="video-card-top">
+            <div class="video-card-title">${v.title}</div>
+            <span class="video-tag ${v.asset === 'NVDA' ? 'tag-green' : 'tag-cyan'}">${v.asset} • ${v.timeframe}</span>
           </div>
-          <div class="video-version-selector">
-            ${buttonsHtml}
+          <div class="video-card-desc">${v.summary}</div>
+          <div class="video-card-meta">
+            <span>⏱ ${v.duration_str}</span>
+            <span class="meta-status">${isActive ? '● Active' : 'Click to select'}</span>
           </div>
         `;
         container.appendChild(card);
@@ -1584,44 +1447,64 @@
     async function selectVideo(videoId) {
       currentVideoId = videoId;
 
-      // Update button & card states
-      document.querySelectorAll(".video-master-card").forEach(c => c.classList.remove("active"));
-      document.querySelectorAll(".video-version-btn").forEach(b => b.classList.remove("active"));
-
-      const activeBtn = document.getElementById(`btn-version-${videoId}`);
-      if (activeBtn) activeBtn.classList.add("active");
-
-      const activeGroup = VIDEO_GROUPS.find(g => g.versions.some(v => v.video_id === videoId));
-      if (activeGroup) {
-        const groupCard = document.getElementById(`group-card-${activeGroup.id}`);
-        if (groupCard) groupCard.classList.add("active");
+      // Update card states
+      document.querySelectorAll(".video-card").forEach(c => {
+        c.classList.remove("active");
+        const st = c.querySelector(".meta-status");
+        if (st) st.textContent = "Click to select";
+      });
+      const activeCard = document.getElementById(`card-${videoId}`);
+      if (activeCard) {
+        activeCard.classList.add("active");
+        const st = activeCard.querySelector(".meta-status");
+        if (st) st.textContent = "● Active";
       }
 
-      const vid = (videoList || []).find(v => v.video_id === videoId) || {
+      const vid = VIDEOS.find(v => v.video_id === videoId) || {
         video_id: videoId,
-        asset: activeGroup ? activeGroup.asset : "Asset",
-        timeframe: activeGroup ? activeGroup.timeframe : "1D",
+        asset: "Asset",
+        timeframe: "1D",
         duration_str: "--",
-        indexed_chunks: "--"
+        summary: ""
       };
 
       document.getElementById("active-video-badge").textContent = `Selected: ${vid.asset} (${vid.timeframe})`;
       document.getElementById("meta-asset").textContent = vid.asset;
       document.getElementById("meta-tf").textContent = vid.timeframe;
       if (vid.duration_str) document.getElementById("meta-duration").textContent = vid.duration_str;
-      if (vid.indexed_chunks) document.getElementById("meta-chunks").textContent = `${vid.indexed_chunks} Chunks`;
 
-      // Update video source & track
+      // Update video source & subtitles track
       const newStreamUrl = `/api/videos/stream/${videoId}`;
+      const newSubUrl = `/api/videos/subtitles/${videoId}`;
       const targetFullUrl = window.location.origin + newStreamUrl;
+
       if (!player.src || (player.src !== targetFullUrl && !player.src.endsWith(newStreamUrl))) {
         player.src = newStreamUrl;
         if (videoSource) videoSource.src = newStreamUrl;
-        if (videoTrack) videoTrack.src = `/api/videos/subtitles/${videoId}`;
+
+        // Cleanly recreate subtitle track for immediate browser closed-captioning
+        const oldTrack = document.getElementById("video-track");
+        if (oldTrack) oldTrack.remove();
+        const newTrack = document.createElement("track");
+        newTrack.id = "video-track";
+        newTrack.kind = "subtitles";
+        newTrack.label = "English";
+        newTrack.srclang = "en";
+        newTrack.src = newSubUrl;
+        newTrack.default = true;
+        player.appendChild(newTrack);
+
         player.load();
+        setTimeout(() => {
+          if (player.textTracks && player.textTracks.length > 0) {
+            for (let i = 0; i < player.textTracks.length; i++) {
+              player.textTracks[i].mode = "showing";
+            }
+          }
+        }, 200);
       }
 
-      // Fetch unified data: subtitles, chunks with grounding, milestones, strategies
+      // Fetch unified data: chunks with grounding, milestones, strategies
       await loadVideoUnifiedData(videoId);
     }
 
@@ -1649,20 +1532,21 @@
           statusDot.style.boxShadow = "0 0 8px var(--accent-green)";
         }
 
+        if (data.chunks) {
+          document.getElementById("meta-chunks").textContent = `${data.chunks.length} Chunks Indexed`;
+        }
+
         // 1. Render Multi-Segment Timeline
         renderTimelineSegments(data);
 
-        // 2. Render Teleprompter
-        renderTeleprompter(data.subtitles || []);
-
-        // 3. Render Multi-Strategy Breakdown
+        // 2. Render Multi-Strategy Breakdown
         renderMultiStrategyBreakdown(data.strategies);
 
-        // 4. Initial Grounding HUD & Strategy Sync
+        // 3. Initial Grounding HUD & Strategy Sync
         syncVisualGroundingHUD(0.0);
         syncStrategyBreakdown(0.0);
 
-        // 5. Update Quick Search Chips
+        // 4. Update Quick Search Chips
         updateQuickChips(videoId);
 
       } catch (err) {
@@ -1824,69 +1708,7 @@
       }
     }
 
-    // Teleprompter Logic (Smooth internal scroll ONLY)
-    let allSubtitles = [];
 
-    function renderTeleprompter(subtitles) {
-      allSubtitles = subtitles || [];
-      const badge = document.getElementById("teleprompter-badge");
-      if (badge) badge.textContent = allSubtitles.length;
-
-      const container = document.getElementById("teleprompter-container");
-      container.innerHTML = "";
-
-      if (allSubtitles.length === 0) {
-        container.innerHTML = `<div style="color: var(--text-dim); padding: 2rem; text-align: center;">No subtitles available for this video.</div>`;
-        return;
-      }
-
-      allSubtitles.forEach((s, idx) => {
-        const line = document.createElement("div");
-        line.className = "teleprompter-line";
-        line.id = `sub-line-${idx}`;
-        line.onclick = () => seekTo(s.start_s);
-
-        line.innerHTML = `
-          <div class="teleprompter-time">[${s.start_str || formatTime(s.start_s)}]</div>
-          <div class="teleprompter-text">${escapeHtml(s.text)}</div>
-        `;
-        container.appendChild(line);
-      });
-    }
-
-    function syncTeleprompter(currentTime) {
-      if (allSubtitles.length === 0) return;
-
-      const activeIndex = allSubtitles.findIndex(s => currentTime >= s.start_s && currentTime <= s.end_s);
-
-      document.querySelectorAll(".teleprompter-line.active").forEach(el => el.classList.remove("active"));
-
-      if (activeIndex !== -1) {
-        const activeEl = document.getElementById(`sub-line-${activeIndex}`);
-        if (activeEl) {
-          activeEl.classList.add("active");
-          const autoscroll = document.getElementById("teleprompter-autoscroll");
-          if (autoscroll && autoscroll.checked) {
-            const container = document.getElementById("teleprompter-container");
-            if (container) {
-              const elTop = activeEl.offsetTop - container.offsetTop;
-              const targetScroll = elTop - (container.clientHeight / 2) + (activeEl.clientHeight / 2);
-              container.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
-            }
-          }
-        }
-      }
-    }
-
-    function filterTeleprompter() {
-      const q = (document.getElementById("teleprompter-search").value || "").toLowerCase().trim();
-      document.querySelectorAll(".teleprompter-line").forEach((el, idx) => {
-        const sub = allSubtitles[idx];
-        if (!sub) return;
-        const match = !q || sub.text.toLowerCase().includes(q);
-        el.style.display = match ? "flex" : "none";
-      });
-    }
 
     function syncActiveMilestone(currentTime) {
       if (!currentVideoData || !currentVideoData.milestones) return;
@@ -2193,7 +2015,7 @@
     // Search Execution
     function updateQuickChips(videoId) {
       const container = document.getElementById("query-chips");
-      if (videoId.startsWith("clip_1") || videoId === "video_1") {
+      if (videoId === "video_1") {
         container.innerHTML = `
           <span class="chip" onclick="quickSearch('Weekly breakout above resistance')">Weekly breakout above resistance</span>
           <span class="chip" onclick="quickSearch('Retest of consolidation buy zone')">Retest of consolidation buy zone</span>
@@ -2305,7 +2127,7 @@
 
     // Initialize on page load
     window.addEventListener("DOMContentLoaded", () => {
-      renderVideoGroups();
+      renderVideoCards();
       selectVideo(currentVideoId);
     });
   </script>

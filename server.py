@@ -338,9 +338,42 @@ def get_video_unified_data_endpoint(video_id: str):
             "price_range": grounding.get("price_range", [100.0, 200.0])
         })
 
+    # If chunks_data is empty, load from vss_search_index.json
+    if not chunks_data:
+        idx_path = os.path.join(out_dir, "vss_search_index.json")
+        idx_json = safe_load_json(idx_path, default={})
+        for c in idx_json.get("chunks", []):
+            st_s = c.get("start_s", 0.0)
+            en_s = c.get("end_s", 0.0)
+            st_str = c.get("timestamp_range", "00:00").split(" - ")[0]
+            en_str = c.get("timestamp_range", "00:00").split(" - ")[-1]
+            chunks_data.append({
+                "chunk_id": c.get("chunk_id", 0),
+                "start_s": st_s,
+                "end_s": en_s,
+                "start_time": st_str,
+                "end_time": en_str,
+                "content": c.get("transcript", c.get("caption", "")),
+                "signals": c.get("signals", []),
+                "detected_price_levels": [],
+                "deictic_anchors": [],
+                "chart_regions": [],
+                "price_range": [100.0, 200.0]
+            })
+
     # 4. Strategy Specs (with automatic synthesis and disk caching)
     trade_spec = safe_load_json(os.path.join(out_dir, "trading_strategy_spec.json"), default={})
     strategies = safe_load_json(os.path.join(out_dir, "multi_strategy_breakdown.json"), default={})
+
+    # If milestones are empty, synthesize chronological milestones from strategy segments
+    if not milestones and strategies and strategies.get("strategies"):
+        for s in strategies["strategies"]:
+            milestones.append({
+                "timestamp_s": s.get("start_s", 0.0),
+                "timestamp_str": s.get("timestamp_range", "00:00").split(" - ")[0],
+                "event": s.get("name", "Strategy Setup"),
+                "implication": s.get("entry_trigger") or s.get("core_thesis") or "Trading Setup"
+            })
 
     if (not strategies or not strategies.get("strategies")) and trade_spec:
         duration_s = meta.get("duration_s", 180.0)
