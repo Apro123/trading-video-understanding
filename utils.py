@@ -51,12 +51,17 @@ def clean_json_markdown(text: str) -> str:
 
 
 def extract_ticker_symbol(text: str, default: str = "Market Asset") -> str:
-    """Extracts ticker symbol or currency pair dynamically from text."""
+    """Extracts ticker symbol or currency pair dynamically from text based on prominence/frequency."""
+    from collections import Counter
     matches = re.findall(r'\b([A-Z]{2,6}(?:/[A-Z]{2,6})?)\b', text)
-    for token in matches:
-        if token not in EXCLUDE_TICKER_TOKENS and (len(token) >= 3 or token in KNOWN_2LETTER_TICKERS):
-            return token
-    return default
+    candidates = [
+        token for token in matches
+        if token not in EXCLUDE_TICKER_TOKENS and (len(token) >= 3 or token in KNOWN_2LETTER_TICKERS)
+    ]
+    if not candidates:
+        return default
+    counts = Counter(candidates)
+    return counts.most_common(1)[0][0]
 
 
 def extract_timeframe(text: str, default: str = "Chart Timeframe") -> str:
