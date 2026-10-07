@@ -338,9 +338,71 @@ def get_video_unified_data_endpoint(video_id: str):
             "price_range": grounding.get("price_range", [100.0, 200.0])
         })
 
-    # 4. Strategy Specs
+    # 4. Strategy Specs (with automatic synthesis and disk caching)
     trade_spec = safe_load_json(os.path.join(out_dir, "trading_strategy_spec.json"), default={})
     strategies = safe_load_json(os.path.join(out_dir, "multi_strategy_breakdown.json"), default={})
+
+    if (not strategies or not strategies.get("strategies")) and trade_spec:
+        duration_s = meta.get("duration_s", 180.0)
+        dur_str = meta.get("duration_str", seconds_to_time_str(duration_s))
+        vid_title = meta.get("title", f"Trading Strategy - {video_id}")
+        strat_entry = {
+            "strategy_id": 1,
+            "name": vid_title,
+            "start_s": 0.0,
+            "end_s": duration_s,
+            "timestamp_range": f"00:00 - {dur_str}",
+            "duration_s": duration_s,
+            "asset": trade_spec.get("asset", meta.get("asset", "Asset")),
+            "timeframe": trade_spec.get("timeframe", meta.get("timeframe", "1D")),
+            "directional_bias": trade_spec.get("directional_bias", "BULLISH"),
+            "risk_reward_ratio": trade_spec.get("risk_reward_ratio", "1:1.5"),
+            "core_thesis": trade_spec.get("core_thesis", trade_spec.get("market_context", "")),
+            "entry_trigger": trade_spec.get("entry_trigger", ""),
+            "invalidation_stop": trade_spec.get("invalidation_stop", ""),
+            "take_profit_targets": trade_spec.get("take_profit_targets", []),
+            "technical_indicators": trade_spec.get("technical_indicators", []),
+            "structural_confluences": trade_spec.get("structural_confluences", []),
+            "step_by_step_rules": trade_spec.get("step_by_step_rules", []),
+            "transcript_summary": trade_spec.get("market_context", "")
+        }
+        strategies = {
+            "video_id": video_id,
+            "total_strategies": 1,
+            "strategies": [strat_entry]
+        }
+        try:
+            with open(os.path.join(out_dir, "multi_strategy_breakdown.json"), "w", encoding="utf-8") as f:
+                json.dump(strategies, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Failed to persist synthesized multi_strategy_breakdown.json for {video_id}: {e}")
+
+    # 5. Automatic Ingestion & Analysis Orchestration (Background worker with caching)
+    pipeline_status = "ready"
+    active_workflow_id = None
+    stream_url = None
+    poll_url = None
+
+    if not trade_spec and not chunks_data:
+        # Video is unanalyzed - check if already running or auto-start in background
+        active_job = None
+        recent_jobs = global_orchestrator.store.list(video_id=video_id, limit=5)
+        for j in recent_jobs:
+            if j.status == WorkflowStatus.RUNNING:
+                active_job = j
+                break
+        if not active_job:
+            try:
+                active_job = global_orchestrator.run_async(video_id)
+                logger.info(f"Auto-triggered background orchestration for {video_id} (job: {active_job.workflow_id})")
+            except Exception as e:
+                logger.error(f"Auto-orchestration trigger failed for {video_id}: {e}")
+
+        if active_job:
+            pipeline_status = "running"
+            active_workflow_id = active_job.workflow_id
+            stream_url = f"/api/orchestrate/jobs/{active_job.workflow_id}/stream"
+            poll_url = f"/api/orchestrate/jobs/{active_job.workflow_id}"
 
     return {
         "video_id": video_id,
@@ -350,7 +412,11 @@ def get_video_unified_data_endpoint(video_id: str):
         "milestones": milestones,
         "summary": summary_data,
         "trade_spec": trade_spec,
-        "strategies": strategies
+        "strategies": strategies,
+        "pipeline_status": pipeline_status,
+        "workflow_id": active_workflow_id,
+        "stream_url": stream_url,
+        "poll_url": poll_url
     }
 
 @app.get("/api/videos/strategies/{video_id}", response_model=MultiStrategyBreakdown, tags=["Trading Strategy"])
@@ -360,11 +426,50 @@ def get_video_strategies_endpoint(video_id: str):
     out_dir = meta.get("output_dir", os.path.join(BASE_DIR, f"outputs_{video_id}"))
     strat_path = os.path.join(out_dir, "multi_strategy_breakdown.json")
     cached = safe_load_json(strat_path)
-    if cached:
+    if cached and cached.get("strategies"):
         try:
             return MultiStrategyBreakdown(**cached)
         except Exception as e:
             logger.warning(f"Error parsing cached strategies: {e}")
+
+    # Fallback to trading_strategy_spec.json if present
+    spec_path = os.path.join(out_dir, "trading_strategy_spec.json")
+    trade_spec = safe_load_json(spec_path)
+    if trade_spec:
+        duration_s = meta.get("duration_s", 180.0)
+        dur_str = meta.get("duration_str", seconds_to_time_str(duration_s))
+        vid_title = meta.get("title", f"Trading Strategy - {video_id}")
+        strat_entry = StrategySegment(
+            strategy_id=1,
+            name=vid_title,
+            start_s=0.0,
+            end_s=duration_s,
+            timestamp_range=f"00:00 - {dur_str}",
+            duration_s=duration_s,
+            asset=trade_spec.get("asset", meta.get("asset", "Asset")),
+            timeframe=trade_spec.get("timeframe", meta.get("timeframe", "1D")),
+            directional_bias=trade_spec.get("directional_bias", "BULLISH"),
+            risk_reward_ratio=trade_spec.get("risk_reward_ratio", "1:1.5"),
+            core_thesis=trade_spec.get("core_thesis", trade_spec.get("market_context", "")),
+            entry_trigger=trade_spec.get("entry_trigger", ""),
+            invalidation_stop=trade_spec.get("invalidation_stop", ""),
+            take_profit_targets=trade_spec.get("take_profit_targets", []),
+            technical_indicators=trade_spec.get("technical_indicators", []),
+            structural_confluences=trade_spec.get("structural_confluences", []),
+            step_by_step_rules=trade_spec.get("step_by_step_rules", []),
+            transcript_summary=trade_spec.get("market_context", "")
+        )
+        synthesized = MultiStrategyBreakdown(
+            video_id=video_id,
+            total_strategies=1,
+            strategies=[strat_entry]
+        )
+        try:
+            with open(strat_path, "w", encoding="utf-8") as f:
+                json.dump(synthesized.model_dump(), f, indent=2)
+        except Exception as e:
+            logger.warning(f"Failed to persist synthesized breakdown: {e}")
+        return synthesized
 
     engine = MultiStrategyBreakdownEngine()
     try:

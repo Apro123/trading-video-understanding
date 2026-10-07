@@ -117,28 +117,6 @@
       box-shadow: 0 0 8px var(--accent-green);
     }
 
-    .btn-orchestrate-header {
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2));
-      border: 1px solid var(--accent-green);
-      color: var(--accent-green);
-      padding: 0.45rem 1rem;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 0.825rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: all 0.2s ease;
-      font-family: var(--font-sans);
-    }
-
-    .btn-orchestrate-header:hover {
-      background: var(--accent-green);
-      color: #000;
-      box-shadow: 0 0 14px rgba(16, 185, 129, 0.4);
-    }
-
     /* Container */
     .container {
       max-width: 1650px;
@@ -700,6 +678,198 @@
       display: block;
     }
 
+    /* Live Strategy Execution HUD Banner */
+    .live-strategy-banner {
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(16, 185, 129, 0.08));
+      border: 1px solid var(--accent-cyan);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 0 16px rgba(6, 182, 212, 0.15);
+      transition: all 0.25s ease;
+    }
+
+    .live-strat-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.65rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .live-strat-badge {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      background: rgba(6, 182, 212, 0.2);
+      color: #67e8f9;
+      border: 1px solid rgba(6, 182, 212, 0.4);
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    .live-strat-name {
+      font-weight: 700;
+      color: #fff;
+      font-size: 0.95rem;
+    }
+
+    .live-strat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.6rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .live-strat-box {
+      border-radius: 6px;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .box-entry {
+      background: rgba(16, 185, 129, 0.08);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .box-stop {
+      background: rgba(239, 68, 68, 0.08);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .box-target {
+      background: rgba(245, 158, 11, 0.08);
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .live-box-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.2rem;
+    }
+
+    .box-entry .live-box-label { color: var(--accent-green); }
+    .box-stop .live-box-label { color: #ef4444; }
+    .box-target .live-box-label { color: var(--accent-amber); }
+
+    .live-box-val {
+      font-size: 0.8rem;
+      color: #fff;
+      font-weight: 500;
+      line-height: 1.35;
+    }
+
+    .live-rule-row {
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 6px;
+      padding: 0.55rem 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      font-size: 0.8rem;
+      flex-wrap: wrap;
+      border-left: 3px solid var(--accent-green);
+    }
+
+    .live-rule-tag {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--accent-cyan);
+      white-space: nowrap;
+    }
+
+    .live-rule-cond {
+      color: var(--text-muted);
+    }
+
+    .live-rule-arrow {
+      color: var(--accent-green);
+      font-weight: bold;
+    }
+
+    .live-rule-action {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* Strategy Breakdown Cards */
+    .strategy-card {
+      border-left: 4px solid var(--accent-cyan);
+      transition: all 0.25s ease;
+    }
+
+    .strategy-card.active-strategy {
+      border-left-color: var(--accent-green) !important;
+      border-color: rgba(16, 185, 129, 0.6) !important;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.2) !important;
+      background-color: rgba(16, 185, 129, 0.03);
+    }
+
+    .spec-section-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+
+    .spec-section-heading {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .rule-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+    }
+
+    .rule-table th, .rule-table td {
+      border: 1px solid var(--border);
+      padding: 0.75rem 0.85rem;
+      text-align: left;
+    }
+
+    .rule-table th {
+      background-color: var(--bg-card);
+      color: var(--text-dim);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.5px;
+    }
+
+    .rule-table tr.active-rule {
+      background: rgba(16, 185, 129, 0.15) !important;
+      border-left: 3px solid var(--accent-green);
+    }
+
+    .rule-table tr.active-rule td strong {
+      color: var(--accent-green) !important;
+    }
+
+    .rule-code {
+      font-family: var(--font-mono);
+      background: rgba(0, 0, 0, 0.4);
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      color: var(--accent-cyan);
+    }
+
+    .strategy-nav-chip.active {
+      border-color: var(--accent-green) !important;
+      background: rgba(16, 185, 129, 0.25) !important;
+      color: #fff !important;
+    }
+
     /* Teleprompter Tab */
     .teleprompter-controls {
       display: flex;
@@ -795,275 +965,6 @@
       color: var(--text-muted);
       line-height: 1.45;
       flex: 1;
-    }
-
-    /* Orchestrator Tab & Modal Styles */
-    .orchestrator-box {
-      background-color: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1.25rem;
-      margin-bottom: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
-
-    .mode-select-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-    }
-
-    .mode-card {
-      background: var(--bg-card);
-      border: 2px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .mode-card:hover {
-      border-color: var(--accent-cyan);
-    }
-
-    .mode-card.active {
-      border-color: var(--accent-green);
-      background: rgba(16, 185, 129, 0.05);
-      box-shadow: 0 0 14px rgba(16, 185, 129, 0.15);
-    }
-
-    .mode-title {
-      font-weight: 700;
-      font-size: 0.95rem;
-      color: #fff;
-      margin-bottom: 0.35rem;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-
-    .mode-desc {
-      font-size: 0.78rem;
-      color: var(--text-dim);
-      line-height: 1.4;
-    }
-
-    .orchestrator-form-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 1rem;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-    }
-
-    .form-label {
-      font-size: 0.75rem;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-weight: 600;
-    }
-
-    .form-input, .form-select {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 0.55rem 0.85rem;
-      color: #fff;
-      font-size: 0.85rem;
-      outline: none;
-      font-family: var(--font-sans);
-    }
-
-    .form-input:focus, .form-select:focus {
-      border-color: var(--accent-green);
-    }
-
-    .orchestrator-actions {
-      display: flex;
-      gap: 0.75rem;
-      align-items: center;
-    }
-
-    .btn-run-orchestration {
-      background: linear-gradient(135deg, #10b981, #059669);
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      padding: 0.65rem 1.4rem;
-      font-weight: 600;
-      font-size: 0.9rem;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: all 0.15s;
-    }
-
-    .btn-run-orchestration:hover:not(:disabled) {
-      opacity: 0.9;
-      box-shadow: 0 0 14px rgba(16, 185, 129, 0.4);
-    }
-
-    .btn-run-orchestration:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .btn-cancel-orchestration {
-      background: rgba(239, 68, 68, 0.15);
-      border: 1px solid rgba(239, 68, 68, 0.4);
-      color: #ef4444;
-      border-radius: 6px;
-      padding: 0.65rem 1.2rem;
-      font-weight: 600;
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    .btn-cancel-orchestration:hover:not(:disabled) {
-      background: #ef4444;
-      color: #fff;
-    }
-
-    .btn-cancel-orchestration:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    /* Live Step Progress Display */
-    .steps-progress-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem;
-    }
-
-    .steps-progress-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.85rem;
-    }
-
-    .steps-progress-title {
-      font-weight: 700;
-      font-size: 0.9rem;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .steps-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-    }
-
-    .step-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(0, 0, 0, 0.25);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 6px;
-      padding: 0.6rem 0.85rem;
-      gap: 0.75rem;
-    }
-
-    .step-item.running {
-      border-color: var(--accent-cyan);
-      background: rgba(6, 182, 212, 0.08);
-    }
-
-    .step-item.success {
-      border-color: rgba(16, 185, 129, 0.4);
-      background: rgba(16, 185, 129, 0.04);
-    }
-
-    .step-item.failed {
-      border-color: rgba(239, 68, 68, 0.4);
-      background: rgba(239, 68, 68, 0.08);
-    }
-
-    .step-main {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      flex: 1;
-    }
-
-    .step-icon {
-      font-size: 0.95rem;
-      width: 22px;
-      text-align: center;
-    }
-
-    .step-title {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #fff;
-    }
-
-    .step-desc {
-      font-size: 0.75rem;
-      color: var(--text-dim);
-    }
-
-    .step-status-tag {
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
-      padding: 0.15rem 0.45rem;
-      border-radius: 4px;
-      text-transform: uppercase;
-      font-weight: 600;
-    }
-
-    .overall-progress-bar-container {
-      width: 100%;
-      height: 8px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 4px;
-      overflow: hidden;
-      margin-top: 0.85rem;
-    }
-
-    .overall-progress-fill {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #10b981, #06b6d4);
-      transition: width 0.3s ease;
-    }
-
-    /* Jobs History Table */
-    .jobs-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 0.75rem;
-      font-size: 0.8rem;
-    }
-
-    .jobs-table th, .jobs-table td {
-      border: 1px solid var(--border);
-      padding: 0.55rem 0.75rem;
-      text-align: left;
-    }
-
-    .jobs-table th {
-      background-color: var(--bg-card);
-      color: var(--text-dim);
-      font-weight: 600;
-      text-transform: uppercase;
-      font-size: 0.7rem;
-      letter-spacing: 0.5px;
     }
 
     /* Search Tab */
@@ -1243,110 +1144,34 @@
       border-radius: 4px;
     }
 
-    /* Strategy Breakdown */
-    .strategy-card {
-      border-left: 4px solid var(--accent-cyan);
-      transition: all 0.25s ease;
-    }
-
-    .strategy-card:hover {
-      border-left-color: var(--accent-green);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    }
-
-    .spec-section-card {
+    /* Jobs Tab */
+    .jobs-box {
       background-color: var(--bg-secondary);
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 1.25rem;
     }
 
-    .spec-section-heading {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #fff;
-      margin-bottom: 0.75rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .rule-table {
+    .jobs-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 0.5rem;
-      font-size: 0.85rem;
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
     }
 
-    .rule-table th, .rule-table td {
+    .jobs-table th, .jobs-table td {
       border: 1px solid var(--border);
-      padding: 0.75rem 0.85rem;
+      padding: 0.55rem 0.75rem;
       text-align: left;
     }
 
-    .rule-table th {
+    .jobs-table th {
       background-color: var(--bg-card);
       color: var(--text-dim);
       font-weight: 600;
       text-transform: uppercase;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       letter-spacing: 0.5px;
-    }
-
-    .rule-code {
-      font-family: var(--font-mono);
-      background: rgba(0, 0, 0, 0.4);
-      padding: 0.2rem 0.4rem;
-      border-radius: 4px;
-      color: var(--accent-cyan);
-    }
-
-    /* Modal Overlay */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(10, 14, 23, 0.85);
-      backdrop-filter: blur(4px);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      padding: 1rem;
-    }
-
-    .modal-overlay.active {
-      display: flex;
-    }
-
-    .modal-content {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      max-width: 820px;
-      width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
-      padding: 1.75rem;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-      position: relative;
-    }
-
-    .modal-close-btn {
-      position: absolute;
-      top: 1.25rem;
-      right: 1.25rem;
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      font-size: 1.25rem;
-      cursor: pointer;
-    }
-
-    .modal-close-btn:hover {
-      color: #fff;
     }
 
     /* Toast Notification */
@@ -1388,9 +1213,10 @@
       <div class="status-pill">
         <span style="color: var(--accent-cyan);" id="active-video-badge">Selected: NVDA (1W)</span>
       </div>
-      <button class="btn-orchestrate-header" onclick="openOrchestratorModal()">
-        <span>⚡</span> Pipeline Orchestrator (DBOS)
-      </button>
+      <div class="status-pill" id="pipeline-status-pill">
+        <div class="status-dot" id="pipeline-status-dot"></div>
+        <span id="pipeline-status-text">Pipeline: Cached & Ready</span>
+      </div>
     </div>
   </header>
 
@@ -1522,13 +1348,13 @@
         </div>
       </div>
 
-      <!-- Right: Tabs (Strategy Breakdown, Teleprompter, Semantic Search, Orchestrator) -->
+      <!-- Right: Tabs (Strategy Breakdown, Teleprompter, Semantic Search, Jobs) -->
       <div class="content-panel">
         <div class="tab-header">
           <button class="tab-btn active" onclick="switchTab('strategies')">📑 Strategy Breakdown <span class="tab-count-badge" id="strategies-badge">0</span></button>
           <button class="tab-btn" onclick="switchTab('teleprompter')">🎙️ Live Teleprompter <span class="tab-count-badge" id="teleprompter-badge">0</span></button>
           <button class="tab-btn" onclick="switchTab('search')">🔍 Semantic Video Search</button>
-          <button class="tab-btn" onclick="switchTab('orchestrator')">⚡ Durable Orchestrator</button>
+          <button class="tab-btn" onclick="switchTab('jobs')">⚡ Pipeline Jobs</button>
         </div>
 
         <!-- TAB 0: Multi-Strategy Breakdown Across Video -->
@@ -1575,141 +1401,47 @@
           </div>
         </div>
 
-        <!-- TAB 3: Durable Pipeline Orchestrator (Synchronous vs Asynchronous) -->
-        <div class="tab-content" id="tab-orchestrator">
-          <div class="orchestrator-box">
-            <div style="font-size: 1.05rem; font-weight: 700; color: #fff;">
-              ⚡ Ingestion & Analysis Orchestration Engine (DBOS-Inspired)
-            </div>
-            <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
-              Execute full multi-stage ingestion, keyframe extraction, VLM visual grounding, and strategy synthesis with durable SQLite step-checkpointing.
-            </div>
-
-            <!-- Execution Mode Selection -->
-            <div class="form-group">
-              <span class="form-label">Execution Mode</span>
-              <div class="mode-select-grid">
-                <div class="mode-card active" id="mode-card-async" onclick="selectOrchestratorMode('async')">
-                  <div class="mode-title">
-                    <span>🔄</span> Asynchronous Worker
-                  </div>
-                  <div class="mode-desc">
-                    Dispatches background thread with HTTP 202 Accepted. Streams live Server-Sent Events (SSE) directly to browser with step checkpoints.
-                  </div>
+        <!-- TAB 3: Pipeline Jobs & Durable SQLite Storage -->
+        <div class="tab-content" id="tab-jobs">
+          <div class="jobs-box">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+              <div>
+                <div style="font-size: 1rem; font-weight: 700; color: #fff;">
+                  ⚡ Durable Orchestrator Executions (SQLite WAL)
                 </div>
-                <div class="mode-card" id="mode-card-sync" onclick="selectOrchestratorMode('sync')">
-                  <div class="mode-title">
-                    <span>⚡</span> Synchronous Pipeline
-                  </div>
-                  <div class="mode-desc">
-                    Executes pipeline in a single blocking HTTP request with durable checkpoints. Recommended for fast local clips or automated testing.
-                  </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">
+                  Automatic background ingestion & analysis runs with durable step checkpoints.
                 </div>
               </div>
-            </div>
-
-            <!-- Config Form -->
-            <div class="orchestrator-form-row">
-              <div class="form-group">
-                <span class="form-label">Target Video</span>
-                <select id="orch-target-video" class="form-select">
-                  <option value="clip_1">clip_1: NVDA Market Structure Shift (2m 37s)</option>
-                  <option value="clip_2">clip_2: RSI Momentum vs Reversal (1m 53s)</option>
-                  <option value="video_1">video_1: Master Technical Charts (39m 29s)</option>
-                  <option value="video_2">video_2: RSI Trading Strategy Masterclass (22m 35s)</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <span class="form-label">Chunk Duration (s)</span>
-                <input type="number" id="orch-chunk-duration" class="form-input" value="35" min="10" max="120">
-              </div>
-
-              <div class="form-group">
-                <span class="form-label">Chunk Overlap (s)</span>
-                <input type="number" id="orch-chunk-overlap" class="form-input" value="5" min="0" max="30">
-              </div>
-
-              <div class="form-group" style="justify-content: flex-end;">
-                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-muted); cursor: pointer; padding-bottom: 0.6rem;">
-                  <input type="checkbox" id="orch-skip-model" checked>
-                  <span>Skip VLM (Fast Mock Mode)</span>
-                </label>
+              <div style="display: flex; gap: 0.5rem;">
+                <button class="speed-btn" onclick="triggerReindex()" style="color: var(--accent-cyan); border-color: rgba(6, 182, 212, 0.4);">
+                  🔄 Force Re-Index
+                </button>
+                <button class="speed-btn" onclick="fetchWorkflowHistory()">
+                  🔄 Refresh
+                </button>
               </div>
             </div>
 
-            <!-- Actions -->
-            <div class="orchestrator-actions">
-              <button class="btn-run-orchestration" id="btn-start-orchestration" onclick="startOrchestration()">
-                <span>🚀</span> Start Pipeline Run
-              </button>
-              <button class="btn-cancel-orchestration" id="btn-cancel-orchestration" onclick="cancelCurrentWorkflow()" disabled>
-                <span>🛑</span> Cancel Active Job
-              </button>
-            </div>
-
-            <!-- Live Progress Card -->
-            <div class="steps-progress-card" id="orchestrator-progress-card">
-              <div class="steps-progress-header">
-                <div class="steps-progress-title">
-                  <span id="orch-live-icon">⏳</span>
-                  <span id="orch-workflow-header-title">Pipeline Steps (0/6 Complete)</span>
-                </div>
-                <div style="font-family: var(--font-mono); font-size: 0.8rem;" id="orch-live-timer">0.0s</div>
-              </div>
-
-              <div class="overall-progress-bar-container">
-                <div class="overall-progress-fill" id="orch-progress-fill"></div>
-              </div>
-
-              <div class="steps-list" id="orch-steps-list" style="margin-top: 0.85rem;">
-                <!-- Populated via JS with 6 DBOS pipeline steps -->
-              </div>
-            </div>
-
-            <!-- Recent Durable Jobs List -->
-            <div style="margin-top: 1rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                <span class="section-title">Durable Workflow Storage (SQLite WAL)</span>
-                <button class="speed-btn" onclick="fetchWorkflowHistory()">🔄 Refresh Jobs</button>
-              </div>
-              <div style="overflow-x: auto;">
-                <table class="jobs-table">
-                  <thead>
-                    <tr>
-                      <th>Job ID</th>
-                      <th>Video</th>
-                      <th>Mode</th>
-                      <th>Status</th>
-                      <th>Created</th>
-                      <th>Duration</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody id="orch-jobs-tbody">
-                    <!-- Populated via fetchWorkflowHistory -->
-                  </tbody>
-                </table>
-              </div>
+            <div style="overflow-x: auto;">
+              <table class="jobs-table">
+                <thead>
+                  <tr>
+                    <th>Job ID</th>
+                    <th>Video</th>
+                    <th>Mode</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Duration</th>
+                  </tr>
+                </thead>
+                <tbody id="orch-jobs-tbody">
+                  <!-- Populated via fetchWorkflowHistory -->
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Orchestrator Modal Overlay (Can be opened from anywhere) -->
-  <div class="modal-overlay" id="orchestrator-modal">
-    <div class="modal-content">
-      <button class="modal-close-btn" onclick="closeOrchestratorModal()">&times;</button>
-      <div style="font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">
-        ⚡ Ingestion & Analysis Orchestrator
-      </div>
-      <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
-        Trigger synchronous or asynchronous analysis runs across all 4 masterclasses and grounded clips.
-      </div>
-      <div id="modal-orchestrator-mount">
-        <!-- Cloned or synced orchestrator content -->
       </div>
     </div>
   </div>
@@ -1720,11 +1452,7 @@
     let currentVideoId = "clip_1";
     let videoList = [];
     let currentVideoData = null;
-    let orchestratorMode = "async";
-    let activeWorkflowId = null;
     let activeEventSource = null;
-    let workflowTimerInterval = null;
-    let workflowStartTime = null;
 
     const player = document.getElementById("video-player");
     const videoSource = document.getElementById("video-source");
@@ -1773,6 +1501,9 @@
 
       // 5. Active milestone highlighting
       syncActiveMilestone(cur);
+
+      // 6. Sync Strategy Breakdown & Active Rule Execution
+      syncStrategyBreakdown(cur);
     });
 
     function setSpeed(speed) {
@@ -1810,6 +1541,7 @@
         player.play().catch(e => console.warn("Playback interrupted:", e));
       }
       player.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      syncStrategyBreakdown(targetSec);
     }
 
     function seekByTimelineClick(e) {
@@ -1833,7 +1565,6 @@
       timelineTooltip.style.display = "block";
       timelineTooltip.style.left = `${clickX}px`;
 
-      // Find closest milestone
       let label = formatTime(hoverTime);
       if (currentVideoData && currentVideoData.milestones) {
         const ms = currentVideoData.milestones.find(m => Math.abs((m.timestamp_s || 0) - hoverTime) < 15);
@@ -1937,10 +1668,6 @@
         document.getElementById("meta-duration").textContent = vid.duration_str;
         document.getElementById("meta-chunks").textContent = `${vid.indexed_chunks} Chunks`;
 
-        // Update target video in orchestrator dropdown
-        const orchSelect = document.getElementById("orch-target-video");
-        if (orchSelect) orchSelect.value = videoId;
-
         // Update video source & track
         const newStreamUrl = `/api/videos/stream/${videoId}`;
         const targetFullUrl = window.location.origin + newStreamUrl;
@@ -1963,6 +1690,23 @@
         const data = await res.json();
         currentVideoData = data;
 
+        // Pipeline Status Management
+        const statusPillText = document.getElementById("pipeline-status-text");
+        const statusDot = document.getElementById("pipeline-status-dot");
+
+        if (data.pipeline_status === "running") {
+          statusPillText.textContent = "Auto-analyzing in background...";
+          statusPillText.style.color = "var(--accent-amber)";
+          statusDot.style.backgroundColor = "var(--accent-amber)";
+          statusDot.style.boxShadow = "0 0 8px var(--accent-amber)";
+          listenToPipelineStream(data.stream_url, videoId);
+        } else {
+          statusPillText.textContent = "Pipeline: Cached & Ready";
+          statusPillText.style.color = "var(--text-main)";
+          statusDot.style.backgroundColor = "var(--accent-green)";
+          statusDot.style.boxShadow = "0 0 8px var(--accent-green)";
+        }
+
         // 1. Render Multi-Segment Timeline
         renderTimelineSegments(data);
 
@@ -1972,8 +1716,9 @@
         // 3. Render Multi-Strategy Breakdown
         renderMultiStrategyBreakdown(data.strategies);
 
-        // 4. Initial Grounding HUD state
+        // 4. Initial Grounding HUD & Strategy Sync
         syncVisualGroundingHUD(0.0);
+        syncStrategyBreakdown(0.0);
 
         // 5. Update Quick Search Chips
         updateQuickChips(videoId);
@@ -1981,6 +1726,30 @@
       } catch (err) {
         console.error("Failed to load unified video data:", err);
       }
+    }
+
+    function listenToPipelineStream(streamUrl, videoId) {
+      if (activeEventSource) activeEventSource.close();
+      if (!streamUrl) return;
+
+      activeEventSource = new EventSource(streamUrl);
+      activeEventSource.addEventListener("progress", (e) => {
+        try {
+          const rec = JSON.parse(e.data);
+          const statusPillText = document.getElementById("pipeline-status-text");
+          if (rec.status === "RUNNING") {
+            const stepNum = rec.current_step_id || 1;
+            statusPillText.textContent = `Analyzing Step ${stepNum}/6...`;
+          } else if (rec.status === "SUCCESS") {
+            activeEventSource.close();
+            activeEventSource = null;
+            showToast("Video analysis complete! Updating intelligence...");
+            loadVideoUnifiedData(videoId);
+          }
+        } catch (err) {
+          console.warn("SSE error:", err);
+        }
+      });
     }
 
     function renderTimelineSegments(data) {
@@ -1995,7 +1764,6 @@
         return;
       }
 
-      // Sort milestones by timestamp
       const sorted = [...milestones].sort((a, b) => (a.timestamp_s || 0) - (b.timestamp_s || 0));
 
       sorted.forEach((m, idx) => {
@@ -2004,17 +1772,16 @@
         const leftPercent = Math.max(0, Math.min(100, (start / duration) * 100));
         const widthPercent = Math.max(1, Math.min(100 - leftPercent, ((next - start) / duration) * 100));
 
-        // Color coding by milestone type
         const text = (m.event + " " + (m.implication || "")).toLowerCase();
-        let bg = "rgba(6, 182, 212, 0.4)"; // default cyan
+        let bg = "rgba(6, 182, 212, 0.4)";
         if (text.includes("breakout") || text.includes("entry") || text.includes("buy")) {
-          bg = "rgba(16, 185, 129, 0.5)"; // green
+          bg = "rgba(16, 185, 129, 0.5)";
         } else if (text.includes("stop") || text.includes("invalidation") || text.includes("bear")) {
-          bg = "rgba(239, 68, 68, 0.5)"; // red
+          bg = "rgba(239, 68, 68, 0.5)";
         } else if (text.includes("retest") || text.includes("consolidation") || text.includes("divergence")) {
-          bg = "rgba(245, 158, 11, 0.5)"; // amber
+          bg = "rgba(245, 158, 11, 0.5)";
         } else if (text.includes("structure") || text.includes("choch")) {
-          bg = "rgba(139, 92, 246, 0.5)"; // purple
+          bg = "rgba(139, 92, 246, 0.5)";
         }
 
         const block = document.createElement("div");
@@ -2026,7 +1793,7 @@
         container.appendChild(block);
       });
 
-      // Pinpoint grounding markers for chunks with detected levels
+      // Pinpoint grounding markers
       (data.chunks || []).forEach(chunk => {
         if (chunk.detected_price_levels && chunk.detected_price_levels.length > 0) {
           const pin = document.createElement("div");
@@ -2062,7 +1829,6 @@
         chunkLabel.textContent = `Chunk #${activeChunk.chunk_id} [${activeChunk.start_time} - ${activeChunk.end_time}]`;
         chunkDuration.textContent = `Duration: ${(activeChunk.end_s - activeChunk.start_s).toFixed(1)}s`;
 
-        // Price Levels with coordinates
         if (activeChunk.detected_price_levels && activeChunk.detected_price_levels.length > 0) {
           levelsList.innerHTML = activeChunk.detected_price_levels.map(pl => {
             const b = pl.bounding_box || {};
@@ -2088,7 +1854,6 @@
           levelsList.innerHTML = `<div style="color: var(--text-dim); font-size: 0.75rem;">Consolidation interval — no breakout levels triggered</div>`;
         }
 
-        // Deictic Anchors
         if (activeChunk.deictic_anchors && activeChunk.deictic_anchors.length > 0) {
           anchorsRow.innerHTML = activeChunk.deictic_anchors.map(a => `
             <span class="hud-anchor-pill">${escapeHtml(a.phrase || a)}</span>
@@ -2097,7 +1862,6 @@
           anchorsRow.innerHTML = `<span class="hud-anchor-pill" style="opacity: 0.7;">Active chart frame</span>`;
         }
 
-        // Trade Signals
         if (activeChunk.signals && activeChunk.signals.length > 0) {
           signalsRow.innerHTML = activeChunk.signals.map(s => `
             <span class="hud-signal-pill">${escapeHtml(s)}</span>
@@ -2107,7 +1871,6 @@
         }
 
       } else {
-        // Between indexed chunks or video end
         statusBadge.style.background = "rgba(148, 163, 184, 0.15)";
         statusBadge.style.color = "var(--text-muted)";
         statusBadge.style.borderColor = "rgba(148, 163, 184, 0.3)";
@@ -2181,7 +1944,6 @@
     function syncActiveMilestone(currentTime) {
       if (!currentVideoData || !currentVideoData.milestones) return;
       const ms = currentVideoData.milestones;
-      // Find current or nearest preceding milestone
       let active = null;
       for (const m of ms) {
         if ((m.timestamp_s || 0) <= currentTime + 1.0) {
@@ -2195,317 +1957,78 @@
       }
     }
 
-    // Orchestrator Logic (Sync vs Async, SSE live updates)
-    function selectOrchestratorMode(mode) {
-      orchestratorMode = mode;
-      document.getElementById("mode-card-async").classList.toggle("active", mode === "async");
-      document.getElementById("mode-card-sync").classList.toggle("active", mode === "sync");
-    }
+    // Dynamic Strategy Breakdown Sync & Live Execution Banner
+    function syncStrategyBreakdown(currentTime) {
+      const strats = currentVideoData?.strategies?.strategies || [];
+      if (strats.length === 0) return;
 
-    const PIPELINE_STEPS_DEF = [
-      { id: 1, name: "Subtitle Ingestion & 0:00 Normalization", desc: "Offset alignment, SRT/VTT parsing, clean text indexing" },
-      { id: 2, name: "Video Chunking & Keyframe Sampling", desc: "FFmpeg keyframe extraction, 35s windowing with 5s overlap" },
-      { id: 3, name: "VLM Perception & Visual Grounding", desc: "Cosmos-3 Nano + YOLO-World hybrid bounding boxes & price coordinates" },
-      { id: 4, name: "Multimodal Vector & Keyword Search Indexing", desc: "Cosine similarity embeddings, BM25 keyword index formulation" },
-      { id: 5, name: "Long Video Summary & Milestone Formulation", desc: "Nemotron 3.5 structured reasoning, chronological key events" },
-      { id: 6, name: "Algorithmic Strategy Specification Synthesis", desc: "Formal execution rules, R:R calculation, TradeIdeaSpec export" }
-    ];
-
-    function renderInitialOrchestratorSteps() {
-      const container = document.getElementById("orch-steps-list");
-      container.innerHTML = "";
-
-      PIPELINE_STEPS_DEF.forEach(step => {
-        const item = document.createElement("div");
-        item.className = "step-item";
-        item.id = `orch-step-row-${step.id}`;
-
-        item.innerHTML = `
-          <div class="step-main">
-            <span class="step-icon" id="orch-step-icon-${step.id}">⏳</span>
-            <div>
-              <div class="step-title">Step ${step.id}: ${step.name}</div>
-              <div class="step-desc" id="orch-step-desc-${step.id}">${step.desc}</div>
-            </div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <span style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-dim);" id="orch-step-time-${step.id}">--</span>
-            <span class="step-status-tag tag-neutral" id="orch-step-badge-${step.id}">PENDING</span>
-          </div>
-        `;
-        container.appendChild(item);
-      });
-    }
-
-    async function startOrchestration() {
-      const videoId = document.getElementById("orch-target-video").value;
-      const chunkDur = parseFloat(document.getElementById("orch-chunk-duration").value) || 35.0;
-      const chunkOverlap = parseFloat(document.getElementById("orch-chunk-overlap").value) || 5.0;
-      const skipModel = document.getElementById("orch-skip-model").checked;
-
-      const btnStart = document.getElementById("btn-start-orchestration");
-      const btnCancel = document.getElementById("btn-cancel-orchestration");
-
-      btnStart.disabled = true;
-      btnCancel.disabled = false;
-
-      renderInitialOrchestratorSteps();
-      document.getElementById("orch-progress-fill").style.width = "5%";
-      document.getElementById("orch-workflow-header-title").textContent = `Running Pipeline on ${videoId} (${orchestratorMode.toUpperCase()})...`;
-
-      workflowStartTime = Date.now();
-      if (workflowTimerInterval) clearInterval(workflowTimerInterval);
-      workflowTimerInterval = setInterval(() => {
-        const elapsed = ((Date.now() - workflowStartTime) / 1000).toFixed(1);
-        document.getElementById("orch-live-timer").textContent = `${elapsed}s`;
-      }, 100);
-
-      try {
-        const res = await fetch("/api/orchestrate/run", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            video_id: videoId,
-            mode: orchestratorMode,
-            chunk_duration_s: chunkDur,
-            chunk_overlap_s: chunkOverlap,
-            skip_model: skipModel,
-            skip_llm: false
-          })
-        });
-
-        if (!res.ok) {
-          throw new Error(`Orchestration failed: HTTP ${res.status}`);
-        }
-
-        const data = await res.json();
-        activeWorkflowId = data.workflow_id;
-
-        if (orchestratorMode === "sync") {
-          // Synchronous mode returns completed workflow record
-          handleWorkflowRecordUpdate(data);
-          finalizeOrchestration(data);
-        } else {
-          // Asynchronous mode returns HTTP 202 with stream_url
-          listenToWorkflowSSE(data.workflow_id, data.stream_url);
-        }
-
-      } catch (err) {
-        console.error("Orchestration error:", err);
-        showToast(`Orchestration error: ${err.message}`);
-        clearInterval(workflowTimerInterval);
-        btnStart.disabled = false;
-        btnCancel.disabled = true;
-      }
-    }
-
-    function listenToWorkflowSSE(workflowId, streamUrl) {
-      if (activeEventSource) {
-        activeEventSource.close();
+      // Find active strategy covering currentTime
+      let activeStrat = strats.find(s => currentTime >= s.start_s && currentTime <= s.end_s);
+      if (!activeStrat) {
+        activeStrat = strats[0];
       }
 
-      const url = streamUrl || `/api/orchestrate/jobs/${workflowId}/stream`;
-      activeEventSource = new EventSource(url);
+      // Update Live Strategy HUD Banner
+      const liveTime = document.getElementById("live-strat-time");
+      const liveTitle = document.getElementById("live-strat-title");
+      const liveTrigger = document.getElementById("live-strat-trigger");
+      const liveStop = document.getElementById("live-strat-stop");
+      const liveTarget = document.getElementById("live-strat-target");
+      const liveRuleTag = document.getElementById("live-rule-tag");
+      const liveRuleCond = document.getElementById("live-rule-cond");
+      const liveRuleAction = document.getElementById("live-rule-action");
 
-      activeEventSource.addEventListener("progress", (e) => {
-        try {
-          const rec = JSON.parse(e.data);
-          handleWorkflowRecordUpdate(rec);
-
-          if (rec.status === "SUCCESS" || rec.status === "FAILED" || rec.status === "CANCELLED") {
-            activeEventSource.close();
-            activeEventSource = null;
-            finalizeOrchestration(rec);
-          }
-        } catch (err) {
-          console.warn("Error parsing SSE event:", err);
-        }
-      });
-
-      activeEventSource.onerror = (err) => {
-        console.warn("SSE connection closed or error, falling back to polling:", err);
-        if (activeEventSource) {
-          activeEventSource.close();
-          activeEventSource = null;
-        }
-        pollWorkflowStatus(workflowId);
-      };
-    }
-
-    async function pollWorkflowStatus(workflowId) {
-      const pollTimer = setInterval(async () => {
-        try {
-          const res = await fetch(`/api/orchestrate/jobs/${workflowId}`);
-          if (res.ok) {
-            const rec = await res.json();
-            handleWorkflowRecordUpdate(rec);
-            if (rec.status === "SUCCESS" || rec.status === "FAILED" || rec.status === "CANCELLED") {
-              clearInterval(pollTimer);
-              finalizeOrchestration(rec);
-            }
-          }
-        } catch (e) {
-          console.warn("Polling error:", e);
-        }
-      }, 1000);
-    }
-
-    function handleWorkflowRecordUpdate(rec) {
-      const steps = rec.steps || [];
-      let completedCount = 0;
-
-      steps.forEach((step, idx) => {
-        const stepNum = idx + 1;
-        const row = document.getElementById(`orch-step-row-${stepNum}`);
-        const icon = document.getElementById(`orch-step-icon-${stepNum}`);
-        const desc = document.getElementById(`orch-step-desc-${stepNum}`);
-        const timeEl = document.getElementById(`orch-step-time-${stepNum}`);
-        const badge = document.getElementById(`orch-step-badge-${stepNum}`);
-
-        if (!row) return;
-
-        row.className = `step-item ${step.status.toLowerCase()}`;
-        if (badge) {
-          badge.textContent = step.status;
-          badge.className = `step-status-tag ${step.status === 'SUCCESS' ? 'tag-green' : (step.status === 'RUNNING' ? 'tag-cyan' : (step.status === 'FAILED' ? 'tag-red' : 'tag-neutral'))}`;
-        }
-
-        if (step.status === "RUNNING") {
-          if (icon) icon.textContent = "⚡";
-        } else if (step.status === "SUCCESS") {
-          if (icon) icon.textContent = "✓";
-          completedCount++;
-        } else if (step.status === "FAILED") {
-          if (icon) icon.textContent = "❌";
-        }
-
-        if (step.duration_s !== null && step.duration_s !== undefined && timeEl) {
-          timeEl.textContent = `${step.duration_s}s`;
-        }
-
-        if (step.description && desc) {
-          desc.textContent = step.description;
-        }
-      });
-
-      const fillPercent = Math.round((completedCount / PIPELINE_STEPS_DEF.length) * 100);
-      document.getElementById("orch-progress-fill").style.width = `${fillPercent}%`;
-      document.getElementById("orch-workflow-header-title").textContent = `Pipeline Steps (${completedCount}/6 Complete) - ${rec.status}`;
-    }
-
-    async function finalizeOrchestration(rec) {
-      if (workflowTimerInterval) clearInterval(workflowTimerInterval);
-      document.getElementById("btn-start-orchestration").disabled = false;
-      document.getElementById("btn-cancel-orchestration").disabled = true;
-
-      if (rec.status === "SUCCESS") {
-        showToast("Workflow succeeded! Reloading video intelligence...");
-        document.getElementById("orch-progress-fill").style.width = "100%";
-        // Reload current video data if matching
-        if (rec.video_id === currentVideoId) {
-          await loadVideoUnifiedData(currentVideoId);
-        }
-      } else if (rec.status === "CANCELLED") {
-        showToast("Workflow was cancelled.");
-      } else {
-        showToast(`Workflow ended with status: ${rec.status}`);
+      if (liveTime) liveTime.textContent = formatTime(currentTime);
+      if (liveTitle) liveTitle.textContent = activeStrat.name;
+      if (liveTrigger) liveTrigger.textContent = activeStrat.entry_trigger || "--";
+      if (liveStop) liveStop.textContent = activeStrat.invalidation_stop || "--";
+      if (liveTarget) {
+        liveTarget.textContent = Array.isArray(activeStrat.take_profit_targets) ? activeStrat.take_profit_targets.join(' | ') : (activeStrat.take_profit_targets || "--");
       }
 
-      fetchWorkflowHistory();
-    }
+      // Highlight active rule based on current timestamp within strategy duration
+      const rules = activeStrat.step_by_step_rules || [];
+      if (rules.length > 0) {
+        const stratDur = Math.max(1, activeStrat.duration_s || (activeStrat.end_s - activeStrat.start_s) || 60);
+        const relTime = Math.max(0, Math.min(stratDur, currentTime - (activeStrat.start_s || 0)));
+        const ruleIdx = Math.min(rules.length - 1, Math.floor((relTime / stratDur) * rules.length));
+        const activeRule = rules[ruleIdx];
 
-    async function cancelCurrentWorkflow() {
-      if (!activeWorkflowId) return;
-      try {
-        const res = await fetch(`/api/orchestrate/jobs/${activeWorkflowId}/cancel`, { method: "POST" });
-        if (res.ok) {
-          showToast(`Cancellation requested for ${activeWorkflowId}`);
-        }
-      } catch (err) {
-        console.error("Failed to cancel workflow:", err);
+        if (liveRuleTag) liveRuleTag.textContent = `Rule ${activeRule.rule_id}: ${activeRule.name}`;
+        if (liveRuleCond) liveRuleCond.textContent = activeRule.condition;
+        if (liveRuleAction) liveRuleAction.textContent = activeRule.action;
+
+        // Highlight table row
+        document.querySelectorAll(".rule-table tr").forEach(tr => tr.classList.remove("active-rule"));
+        const rowEl = document.getElementById(`rule-row-${activeStrat.strategy_id}-${activeRule.rule_id}`);
+        if (rowEl) rowEl.classList.add("active-rule");
       }
+
+      // Highlight active strategy card
+      document.querySelectorAll(".strategy-card").forEach(c => c.classList.remove("active-strategy"));
+      const activeCard = document.getElementById(`strategy-card-${activeStrat.strategy_id}`);
+      if (activeCard) activeCard.classList.add("active-strategy");
+
+      // Highlight active nav chip
+      document.querySelectorAll(".strategy-nav-chip").forEach(c => c.classList.remove("active"));
+      const activeChip = document.getElementById(`strat-nav-chip-${activeStrat.strategy_id}`);
+      if (activeChip) activeChip.classList.add("active");
     }
 
-    async function fetchWorkflowHistory() {
-      try {
-        const res = await fetch("/api/orchestrate/jobs?limit=8");
-        if (!res.ok) return;
-        const jobs = await res.json();
-        const tbody = document.getElementById("orch-jobs-tbody");
-        if (!tbody) return;
-
-        if (jobs.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim);">No previous workflow records stored in SQLite yet.</td></tr>`;
-          return;
-        }
-
-        tbody.innerHTML = jobs.map(j => {
-          const isSuccess = j.status === "SUCCESS";
-          const isRunning = j.status === "RUNNING";
-          const badgeClass = isSuccess ? 'tag-green' : (isRunning ? 'tag-cyan' : (j.status === 'CANCELLED' ? 'tag-amber' : 'tag-red'));
-          const durStr = j.total_duration_s ? `${j.total_duration_s.toFixed(1)}s` : '--';
-
-          return `
-            <tr>
-              <td><span style="font-family: var(--font-mono); color: var(--accent-cyan);">${j.workflow_id.slice(0, 8)}...</span></td>
-              <td><strong>${j.video_id}</strong></td>
-              <td><span class="video-tag tag-neutral">${(j.mode || 'async').toUpperCase()}</span></td>
-              <td><span class="step-status-tag ${badgeClass}">${j.status}</span></td>
-              <td>${new Date(j.created_at * 1000).toLocaleTimeString()}</td>
-              <td style="font-family: var(--font-mono);">${durStr}</td>
-              <td>
-                <button class="speed-btn" onclick="inspectWorkflow('${j.workflow_id}')">Inspect</button>
-              </td>
-            </tr>
-          `;
-        }).join('');
-
-      } catch (err) {
-        console.warn("Failed to fetch workflow history:", err);
-      }
-    }
-
-    async function inspectWorkflow(workflowId) {
-      try {
-        const res = await fetch(`/api/orchestrate/jobs/${workflowId}`);
-        if (!res.ok) return;
-        const rec = await res.json();
-        switchTab('orchestrator');
-        handleWorkflowRecordUpdate(rec);
-        showToast(`Loaded details for job ${workflowId.slice(0, 8)}`);
-      } catch (e) {
-        console.error("Error inspecting workflow:", e);
-      }
-    }
-
-    // Modal open/close
-    function openOrchestratorModal() {
-      switchTab('orchestrator');
-      const card = document.getElementById("tab-orchestrator");
-      if (card) {
-        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-      showToast("Opened Pipeline Orchestrator tab");
-    }
-
-    function closeOrchestratorModal() {
-      document.getElementById("orchestrator-modal").classList.remove("active");
-    }
-
-    // Strategy Breakdown Rendering (reused from existing template)
+    // Render Strategy Breakdown
     function renderMultiStrategyBreakdown(breakdown) {
       const container = document.getElementById("strategies-container");
       const badge = document.getElementById("strategies-badge");
       if (!breakdown || !breakdown.strategies || breakdown.strategies.length === 0) {
         if (badge) badge.textContent = "0";
-        container.innerHTML = `<div style="color: var(--text-dim); padding: 2rem 0;">No multi-strategy breakdown available for this video yet.</div>`;
+        container.innerHTML = `<div style="color: var(--text-dim); padding: 2rem 0;">Analyzing trading strategies for this video...</div>`;
         return;
       }
 
       if (badge) badge.textContent = breakdown.total_strategies;
 
       const navChips = breakdown.strategies.map(s => `
-        <button class="chip" onclick="scrollToStrategy(${s.strategy_id}, ${s.start_s})" title="${escapeHtml(s.name)}">
+        <button class="chip strategy-nav-chip" id="strat-nav-chip-${s.strategy_id}" onclick="scrollToStrategy(${s.strategy_id}, ${s.start_s})" title="${escapeHtml(s.name)}">
           ▶ [${s.timestamp_range}] ${escapeHtml(s.name.replace(/ Strategy$/i, ''))}
         </button>
       `).join('');
@@ -2534,7 +2057,7 @@
                 </thead>
                 <tbody>
                   ${s.step_by_step_rules.map(r => `
-                    <tr>
+                    <tr id="rule-row-${s.strategy_id}-${r.rule_id}">
                       <td><strong style="color: var(--accent-cyan);">Rule ${r.rule_id}</strong></td>
                       <td><strong>${escapeHtml(r.name)}</strong></td>
                       <td><span class="rule-code">${escapeHtml(r.condition)}</span></td>
@@ -2642,6 +2165,34 @@
       }).join('');
 
       container.innerHTML = `
+        <!-- Live Strategy HUD Banner -->
+        <div class="live-strategy-banner" id="live-strategy-banner">
+          <div class="live-strat-top">
+            <span class="live-strat-badge">⚡ ACTIVE STRATEGY AT <span id="live-strat-time">00:00</span></span>
+            <span class="live-strat-name" id="live-strat-title">Loading strategy...</span>
+          </div>
+          <div class="live-strat-grid">
+            <div class="live-strat-box box-entry">
+              <div class="live-box-label">CURRENT TRIGGER</div>
+              <div class="live-box-val" id="live-strat-trigger">--</div>
+            </div>
+            <div class="live-strat-box box-stop">
+              <div class="live-box-label">INVALIDATION STOP</div>
+              <div class="live-box-val" id="live-strat-stop">--</div>
+            </div>
+            <div class="live-strat-box box-target">
+              <div class="live-box-label">PROFIT TARGETS</div>
+              <div class="live-box-val" id="live-strat-target">--</div>
+            </div>
+          </div>
+          <div class="live-rule-row" id="live-rule-row">
+            <span class="live-rule-tag" id="live-rule-tag">Rule 1</span>
+            <span class="live-rule-cond" id="live-rule-cond">Condition logic</span>
+            <span class="live-rule-arrow">➔</span>
+            <span class="live-rule-action" id="live-rule-action">Action</span>
+          </div>
+        </div>
+
         <div class="spec-section-card" style="margin-bottom: 1.25rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
             <div class="spec-section-heading" style="margin-bottom: 0;">
@@ -2667,8 +2218,6 @@
       const card = document.getElementById(`strategy-card-${strategyId}`);
       if (card) {
         card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        card.style.borderColor = 'var(--accent-cyan)';
-        setTimeout(() => { card.style.borderColor = ''; }, 2000);
       }
     }
 
@@ -2789,6 +2338,65 @@
       }).join('');
     }
 
+    // Job History Management
+    async function fetchWorkflowHistory() {
+      try {
+        const res = await fetch("/api/orchestrate/jobs?limit=8");
+        if (!res.ok) return;
+        const jobs = await res.json();
+        const tbody = document.getElementById("orch-jobs-tbody");
+        if (!tbody) return;
+
+        if (jobs.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-dim);">No previous workflow records stored in SQLite yet.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = jobs.map(j => {
+          const isSuccess = j.status === "SUCCESS";
+          const isRunning = j.status === "RUNNING";
+          const badgeClass = isSuccess ? 'tag-green' : (isRunning ? 'tag-cyan' : (j.status === 'CANCELLED' ? 'tag-amber' : 'tag-red'));
+          const durStr = j.total_duration_s ? `${j.total_duration_s.toFixed(1)}s` : '--';
+
+          return `
+            <tr>
+              <td><span style="font-family: var(--font-mono); color: var(--accent-cyan);">${j.workflow_id.slice(0, 8)}...</span></td>
+              <td><strong>${j.video_id}</strong></td>
+              <td><span class="video-tag tag-neutral">${(j.mode || 'async').toUpperCase()}</span></td>
+              <td><span class="video-tag ${badgeClass}">${j.status}</span></td>
+              <td>${new Date(j.created_at * 1000).toLocaleTimeString()}</td>
+              <td style="font-family: var(--font-mono);">${durStr}</td>
+            </tr>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.warn("Failed to fetch workflow history:", err);
+      }
+    }
+
+    async function triggerReindex() {
+      try {
+        showToast(`Triggering re-index for ${currentVideoId}...`);
+        const res = await fetch("/api/orchestrate/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            video_id: currentVideoId,
+            mode: "async",
+            skip_model: true
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          listenToPipelineStream(data.stream_url, currentVideoId);
+          fetchWorkflowHistory();
+        }
+      } catch (e) {
+        console.error("Failed to trigger re-index:", e);
+      }
+    }
+
     function showToast(msg) {
       const t = document.getElementById("toast");
       if (t) {
@@ -2811,7 +2419,6 @@
     // Initialize on page load
     window.addEventListener("DOMContentLoaded", () => {
       loadVideos();
-      renderInitialOrchestratorSteps();
       fetchWorkflowHistory();
     });
   </script>
