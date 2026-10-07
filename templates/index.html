@@ -124,7 +124,7 @@
       padding: 1.5rem 2rem;
     }
 
-    /* Video Selector & Filter Bar */
+    /* Video Selector: Split by Video (2 Master Video Cards) */
     .video-section-header {
       display: flex;
       justify-content: space-between;
@@ -142,73 +142,98 @@
       font-weight: 600;
     }
 
-    .filter-pills {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .filter-btn {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      padding: 0.25rem 0.65rem;
-      border-radius: 14px;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    .filter-btn:hover, .filter-btn.active {
-      color: #fff;
-      border-color: var(--accent-cyan);
-      background-color: var(--bg-card-hover);
-    }
-
-    .video-grid {
+    .video-grid-split {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-      gap: 1rem;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
       margin-bottom: 1.75rem;
     }
 
-    .video-card {
+    @media (max-width: 900px) {
+      .video-grid-split {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .video-master-card {
       background-color: var(--bg-secondary);
       border: 2px solid var(--border);
       border-radius: 10px;
-      padding: 1rem;
-      cursor: pointer;
+      padding: 1rem 1.25rem;
       transition: all 0.2s ease;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      position: relative;
+      gap: 0.65rem;
     }
 
-    .video-card:hover {
-      border-color: #3b82f6;
-      background-color: var(--bg-card);
-      transform: translateY(-2px);
-    }
-
-    .video-card.active {
+    .video-master-card.active {
       border-color: var(--accent-green);
       box-shadow: 0 0 16px rgba(16, 185, 129, 0.2);
-      background-color: rgba(16, 185, 129, 0.04);
+      background-color: rgba(16, 185, 129, 0.03);
     }
 
-    .video-card-header {
+    .video-master-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       gap: 0.75rem;
-      margin-bottom: 0.5rem;
     }
 
-    .video-card-title {
-      font-size: 0.925rem;
-      font-weight: 600;
+    .video-master-title {
+      font-size: 0.95rem;
+      font-weight: 700;
       color: #fff;
       line-height: 1.35;
+    }
+
+    .video-master-desc {
+      font-size: 0.775rem;
+      color: var(--text-dim);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .video-version-selector {
+      display: flex;
+      gap: 0.5rem;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 0.3rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .video-version-btn {
+      flex: 1;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-family: var(--font-sans);
+      padding: 0.4rem 0.6rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      font-weight: 600;
+    }
+
+    .video-version-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .video-version-btn.active {
+      background: rgba(16, 185, 129, 0.2);
+      color: #fff;
+      border-color: var(--accent-green);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
     }
 
     .video-tag {
@@ -254,27 +279,6 @@
       background: rgba(148, 163, 184, 0.15);
       color: #94a3b8;
       border: 1px solid rgba(148, 163, 184, 0.3);
-    }
-
-    .video-card-meta {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      font-family: var(--font-mono);
-      margin-bottom: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    .video-card-desc {
-      font-size: 0.775rem;
-      color: var(--text-dim);
-      line-height: 1.4;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
     }
 
     /* Main Workspace Layout */
@@ -910,7 +914,7 @@
     }
 
     .teleprompter-container {
-      max-height: 600px;
+      max-height: 550px;
       overflow-y: auto;
       padding: 0.5rem;
       background: var(--bg-secondary);
@@ -1144,36 +1148,6 @@
       border-radius: 4px;
     }
 
-    /* Jobs Tab */
-    .jobs-box {
-      background-color: var(--bg-secondary);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1.25rem;
-    }
-
-    .jobs-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 0.75rem;
-      font-size: 0.8rem;
-    }
-
-    .jobs-table th, .jobs-table td {
-      border: 1px solid var(--border);
-      padding: 0.55rem 0.75rem;
-      text-align: left;
-    }
-
-    .jobs-table th {
-      background-color: var(--bg-card);
-      color: var(--text-dim);
-      font-weight: 600;
-      text-transform: uppercase;
-      font-size: 0.7rem;
-      letter-spacing: 0.5px;
-    }
-
     /* Toast Notification */
     .toast {
       position: fixed;
@@ -1211,7 +1185,7 @@
         <span>Nemotron 3.5 Reasoner: Online</span>
       </div>
       <div class="status-pill">
-        <span style="color: var(--accent-cyan);" id="active-video-badge">Selected: NVDA (1W)</span>
+        <span style="color: var(--accent-cyan);" id="active-video-badge">Selected: NVDA (1D)</span>
       </div>
       <div class="status-pill" id="pipeline-status-pill">
         <div class="status-dot" id="pipeline-status-dot"></div>
@@ -1221,17 +1195,12 @@
   </header>
 
   <div class="container">
-    <!-- Video Selection & Filters -->
+    <!-- Video Selection: Split by Video -->
     <div class="video-section-header">
-      <div class="section-title">Select Trading Masterclass or Grounded Clip</div>
-      <div class="filter-pills">
-        <button class="filter-btn active" onclick="filterVideos('all')">All Videos (4)</button>
-        <button class="filter-btn" onclick="filterVideos('clips')">Local Grounded Clips (2)</button>
-        <button class="filter-btn" onclick="filterVideos('masterclasses')">Full Masterclasses (2)</button>
-      </div>
+      <div class="section-title">Trading Masterclasses (Split by Video Topic)</div>
     </div>
-    <div class="video-grid" id="video-grid">
-      <!-- Populated via JS -->
+    <div class="video-grid-split" id="video-grid-split">
+      <!-- Populated dynamically via JS: Video 1 vs Video 2 with clip toggles -->
     </div>
 
     <!-- Main Workspace -->
@@ -1348,13 +1317,12 @@
         </div>
       </div>
 
-      <!-- Right: Tabs (Strategy Breakdown, Teleprompter, Semantic Search, Jobs) -->
+      <!-- Right: Tabs (Strategy Breakdown, Teleprompter, Semantic Search) -->
       <div class="content-panel">
         <div class="tab-header">
           <button class="tab-btn active" onclick="switchTab('strategies')">📑 Strategy Breakdown <span class="tab-count-badge" id="strategies-badge">0</span></button>
           <button class="tab-btn" onclick="switchTab('teleprompter')">🎙️ Live Teleprompter <span class="tab-count-badge" id="teleprompter-badge">0</span></button>
           <button class="tab-btn" onclick="switchTab('search')">🔍 Semantic Video Search</button>
-          <button class="tab-btn" onclick="switchTab('jobs')">⚡ Pipeline Jobs</button>
         </div>
 
         <!-- TAB 0: Multi-Strategy Breakdown Across Video -->
@@ -1370,7 +1338,7 @@
             <input type="text" id="teleprompter-search" class="teleprompter-search" placeholder="Search transcript spoken phrases in real-time..." oninput="filterTeleprompter()">
             <label class="teleprompter-scroll-toggle">
               <input type="checkbox" id="teleprompter-autoscroll" checked>
-              <span>Auto-scroll to active sentence</span>
+              <span>Auto-scroll with playback</span>
             </label>
           </div>
           <div class="teleprompter-container" id="teleprompter-container">
@@ -1400,48 +1368,6 @@
             <!-- Search items loaded dynamically -->
           </div>
         </div>
-
-        <!-- TAB 3: Pipeline Jobs & Durable SQLite Storage -->
-        <div class="tab-content" id="tab-jobs">
-          <div class="jobs-box">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
-              <div>
-                <div style="font-size: 1rem; font-weight: 700; color: #fff;">
-                  ⚡ Durable Orchestrator Executions (SQLite WAL)
-                </div>
-                <div style="font-size: 0.8rem; color: var(--text-muted);">
-                  Automatic background ingestion & analysis runs with durable step checkpoints.
-                </div>
-              </div>
-              <div style="display: flex; gap: 0.5rem;">
-                <button class="speed-btn" onclick="triggerReindex()" style="color: var(--accent-cyan); border-color: rgba(6, 182, 212, 0.4);">
-                  🔄 Force Re-Index
-                </button>
-                <button class="speed-btn" onclick="fetchWorkflowHistory()">
-                  🔄 Refresh
-                </button>
-              </div>
-            </div>
-
-            <div style="overflow-x: auto;">
-              <table class="jobs-table">
-                <thead>
-                  <tr>
-                    <th>Job ID</th>
-                    <th>Video</th>
-                    <th>Mode</th>
-                    <th>Status</th>
-                    <th>Created</th>
-                    <th>Duration</th>
-                  </tr>
-                </thead>
-                <tbody id="orch-jobs-tbody">
-                  <!-- Populated via fetchWorkflowHistory -->
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -1453,6 +1379,31 @@
     let videoList = [];
     let currentVideoData = null;
     let activeEventSource = null;
+
+    const VIDEO_GROUPS = [
+      {
+        id: "video_1",
+        title: "Video 1: NVDA Market Structure Shift & Breakout",
+        asset: "NVDA",
+        timeframe: "1D / 1W",
+        desc: "Bullish change of character (CHoCH), pivot level breakout validation at $1927, demand zone retest, and weekly consolidation expansion.",
+        versions: [
+          { video_id: "clip_1", label: "📹 Grounded Clip", duration: "2m 37s", type: "Grounded" },
+          { video_id: "video_1", label: "🎬 Full Masterclass", duration: "39m 29s", type: "Masterclass" }
+        ]
+      },
+      {
+        id: "video_2",
+        title: "Video 2: RSI Momentum vs Reversal Masterclass",
+        asset: "BTC/USD & Multi-Asset",
+        timeframe: "Daily / 4H",
+        desc: "RSI indicator dynamics: overcoming overbought/oversold misconceptions, exploiting momentum divergence at key resistance, and candlestick confirmation.",
+        versions: [
+          { video_id: "clip_2", label: "📹 Grounded Clip", duration: "1m 53s", type: "Grounded" },
+          { video_id: "video_2", label: "🎬 Full Masterclass", duration: "22m 35s", type: "Masterclass" }
+        ]
+      }
+    ];
 
     const player = document.getElementById("video-player");
     const videoSource = document.getElementById("video-source");
@@ -1496,7 +1447,7 @@
       // 3. Sync Visual Grounding HUD
       syncVisualGroundingHUD(cur);
 
-      // 4. Sync Teleprompter
+      // 4. Sync Teleprompter (Scrolls ONLY the inner container)
       syncTeleprompter(cur);
 
       // 5. Active milestone highlighting
@@ -1540,7 +1491,6 @@
         player.currentTime = targetSec;
         player.play().catch(e => console.warn("Playback interrupted:", e));
       }
-      player.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       syncStrategyBreakdown(targetSec);
     }
 
@@ -1594,59 +1544,36 @@
       if (targetContent) targetContent.classList.add("active");
     }
 
-    // Load available videos
-    async function loadVideos() {
-      try {
-        const res = await fetch("/api/videos");
-        videoList = await res.json();
-        renderVideoCards(videoList);
-        // Default to first video (clip_1)
-        if (videoList.length > 0) {
-          selectVideo(videoList[0].video_id);
-        }
-      } catch (err) {
-        console.error("Failed to load videos:", err);
-      }
-    }
-
-    function filterVideos(filter) {
-      document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
-      event.target.classList.add("active");
-
-      if (filter === "all") {
-        renderVideoCards(videoList);
-      } else if (filter === "clips") {
-        renderVideoCards(videoList.filter(v => v.video_id.startsWith("clip_")));
-      } else if (filter === "masterclasses") {
-        renderVideoCards(videoList.filter(v => !v.video_id.startsWith("clip_")));
-      }
-    }
-
-    function renderVideoCards(videos) {
-      const container = document.getElementById("video-grid");
+    // Render Split-by-Video master cards
+    function renderVideoGroups() {
+      const container = document.getElementById("video-grid-split");
+      if (!container) return;
       container.innerHTML = "";
 
-      videos.forEach(v => {
-        const isClip = v.video_id.startsWith("clip_");
+      VIDEO_GROUPS.forEach(g => {
+        const isGroupActive = g.versions.some(v => v.video_id === currentVideoId);
         const card = document.createElement("div");
-        card.className = `video-card ${v.video_id === currentVideoId ? 'active' : ''}`;
-        card.id = `card-${v.video_id}`;
-        card.onclick = () => selectVideo(v.video_id);
+        card.className = `video-master-card ${isGroupActive ? 'active' : ''}`;
+        card.id = `group-card-${g.id}`;
+
+        const buttonsHtml = g.versions.map(v => `
+          <button class="video-version-btn ${v.video_id === currentVideoId ? 'active' : ''}" 
+                  id="btn-version-${v.video_id}" 
+                  onclick="selectVideo('${v.video_id}')">
+            ${v.label} <span style="font-family: var(--font-mono); font-size: 0.7rem; opacity: 0.85;">(${v.duration})</span>
+          </button>
+        `).join('');
 
         card.innerHTML = `
           <div>
-            <div class="video-card-header">
-              <div class="video-card-title">${v.title}</div>
-              <span class="video-tag ${isClip ? 'tag-purple' : 'tag-cyan'}">${isClip ? 'Grounded Clip' : 'Masterclass'}</span>
+            <div class="video-master-header">
+              <div class="video-master-title">${g.title}</div>
+              <span class="video-tag ${g.asset === 'NVDA' ? 'tag-green' : 'tag-cyan'}">${g.asset} • ${g.timeframe}</span>
             </div>
-            <div class="video-card-meta">
-              <span>⏱ ${v.duration_str}</span>
-              <span>•</span>
-              <span>📊 ${v.asset} (${v.timeframe})</span>
-              <span>•</span>
-              <span style="color: var(--accent-green);">✓ ${v.indexed_chunks} Chunks</span>
-            </div>
-            <div class="video-card-desc">${v.description}</div>
+            <div class="video-master-desc" style="margin-top: 0.35rem;">${g.desc}</div>
+          </div>
+          <div class="video-version-selector">
+            ${buttonsHtml}
           </div>
         `;
         container.appendChild(card);
@@ -1656,31 +1583,46 @@
     // Select Video & Fetch Unified Playback Data
     async function selectVideo(videoId) {
       currentVideoId = videoId;
-      document.querySelectorAll(".video-card").forEach(c => c.classList.remove("active"));
-      const activeCard = document.getElementById(`card-${videoId}`);
-      if (activeCard) activeCard.classList.add("active");
 
-      const vid = videoList.find(v => v.video_id === videoId);
-      if (vid) {
-        document.getElementById("active-video-badge").textContent = `Selected: ${vid.asset} (${vid.timeframe})`;
-        document.getElementById("meta-asset").textContent = vid.asset;
-        document.getElementById("meta-tf").textContent = vid.timeframe;
-        document.getElementById("meta-duration").textContent = vid.duration_str;
-        document.getElementById("meta-chunks").textContent = `${vid.indexed_chunks} Chunks`;
+      // Update button & card states
+      document.querySelectorAll(".video-master-card").forEach(c => c.classList.remove("active"));
+      document.querySelectorAll(".video-version-btn").forEach(b => b.classList.remove("active"));
 
-        // Update video source & track
-        const newStreamUrl = `/api/videos/stream/${videoId}`;
-        const targetFullUrl = window.location.origin + newStreamUrl;
-        if (!player.src || (player.src !== targetFullUrl && !player.src.endsWith(newStreamUrl))) {
-          player.src = newStreamUrl;
-          if (videoSource) videoSource.src = newStreamUrl;
-          if (videoTrack) videoTrack.src = `/api/videos/subtitles/${videoId}`;
-          player.load();
-        }
+      const activeBtn = document.getElementById(`btn-version-${videoId}`);
+      if (activeBtn) activeBtn.classList.add("active");
 
-        // Fetch unified data: subtitles, chunks with grounding, milestones, strategies
-        await loadVideoUnifiedData(videoId);
+      const activeGroup = VIDEO_GROUPS.find(g => g.versions.some(v => v.video_id === videoId));
+      if (activeGroup) {
+        const groupCard = document.getElementById(`group-card-${activeGroup.id}`);
+        if (groupCard) groupCard.classList.add("active");
       }
+
+      const vid = (videoList || []).find(v => v.video_id === videoId) || {
+        video_id: videoId,
+        asset: activeGroup ? activeGroup.asset : "Asset",
+        timeframe: activeGroup ? activeGroup.timeframe : "1D",
+        duration_str: "--",
+        indexed_chunks: "--"
+      };
+
+      document.getElementById("active-video-badge").textContent = `Selected: ${vid.asset} (${vid.timeframe})`;
+      document.getElementById("meta-asset").textContent = vid.asset;
+      document.getElementById("meta-tf").textContent = vid.timeframe;
+      if (vid.duration_str) document.getElementById("meta-duration").textContent = vid.duration_str;
+      if (vid.indexed_chunks) document.getElementById("meta-chunks").textContent = `${vid.indexed_chunks} Chunks`;
+
+      // Update video source & track
+      const newStreamUrl = `/api/videos/stream/${videoId}`;
+      const targetFullUrl = window.location.origin + newStreamUrl;
+      if (!player.src || (player.src !== targetFullUrl && !player.src.endsWith(newStreamUrl))) {
+        player.src = newStreamUrl;
+        if (videoSource) videoSource.src = newStreamUrl;
+        if (videoTrack) videoTrack.src = `/api/videos/subtitles/${videoId}`;
+        player.load();
+      }
+
+      // Fetch unified data: subtitles, chunks with grounding, milestones, strategies
+      await loadVideoUnifiedData(videoId);
     }
 
     async function loadVideoUnifiedData(videoId) {
@@ -1882,7 +1824,7 @@
       }
     }
 
-    // Teleprompter Logic
+    // Teleprompter Logic (Smooth internal scroll ONLY)
     let allSubtitles = [];
 
     function renderTeleprompter(subtitles) {
@@ -1925,7 +1867,12 @@
           activeEl.classList.add("active");
           const autoscroll = document.getElementById("teleprompter-autoscroll");
           if (autoscroll && autoscroll.checked) {
-            activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const container = document.getElementById("teleprompter-container");
+            if (container) {
+              const elTop = activeEl.offsetTop - container.offsetTop;
+              const targetScroll = elTop - (container.clientHeight / 2) + (activeEl.clientHeight / 2);
+              container.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
+            }
           }
         }
       }
@@ -1962,7 +1909,6 @@
       const strats = currentVideoData?.strategies?.strategies || [];
       if (strats.length === 0) return;
 
-      // Find active strategy covering currentTime
       let activeStrat = strats.find(s => currentTime >= s.start_s && currentTime <= s.end_s);
       if (!activeStrat) {
         activeStrat = strats[0];
@@ -2338,65 +2284,6 @@
       }).join('');
     }
 
-    // Job History Management
-    async function fetchWorkflowHistory() {
-      try {
-        const res = await fetch("/api/orchestrate/jobs?limit=8");
-        if (!res.ok) return;
-        const jobs = await res.json();
-        const tbody = document.getElementById("orch-jobs-tbody");
-        if (!tbody) return;
-
-        if (jobs.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-dim);">No previous workflow records stored in SQLite yet.</td></tr>`;
-          return;
-        }
-
-        tbody.innerHTML = jobs.map(j => {
-          const isSuccess = j.status === "SUCCESS";
-          const isRunning = j.status === "RUNNING";
-          const badgeClass = isSuccess ? 'tag-green' : (isRunning ? 'tag-cyan' : (j.status === 'CANCELLED' ? 'tag-amber' : 'tag-red'));
-          const durStr = j.total_duration_s ? `${j.total_duration_s.toFixed(1)}s` : '--';
-
-          return `
-            <tr>
-              <td><span style="font-family: var(--font-mono); color: var(--accent-cyan);">${j.workflow_id.slice(0, 8)}...</span></td>
-              <td><strong>${j.video_id}</strong></td>
-              <td><span class="video-tag tag-neutral">${(j.mode || 'async').toUpperCase()}</span></td>
-              <td><span class="video-tag ${badgeClass}">${j.status}</span></td>
-              <td>${new Date(j.created_at * 1000).toLocaleTimeString()}</td>
-              <td style="font-family: var(--font-mono);">${durStr}</td>
-            </tr>
-          `;
-        }).join('');
-
-      } catch (err) {
-        console.warn("Failed to fetch workflow history:", err);
-      }
-    }
-
-    async function triggerReindex() {
-      try {
-        showToast(`Triggering re-index for ${currentVideoId}...`);
-        const res = await fetch("/api/orchestrate/run", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            video_id: currentVideoId,
-            mode: "async",
-            skip_model: true
-          })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          listenToPipelineStream(data.stream_url, currentVideoId);
-          fetchWorkflowHistory();
-        }
-      } catch (e) {
-        console.error("Failed to trigger re-index:", e);
-      }
-    }
-
     function showToast(msg) {
       const t = document.getElementById("toast");
       if (t) {
@@ -2418,8 +2305,8 @@
 
     // Initialize on page load
     window.addEventListener("DOMContentLoaded", () => {
-      loadVideos();
-      fetchWorkflowHistory();
+      renderVideoGroups();
+      selectVideo(currentVideoId);
     });
   </script>
 </body>
