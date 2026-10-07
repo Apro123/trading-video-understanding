@@ -534,7 +534,7 @@ def stream_video(video_id: str):
     vpath = get_video_file_path(video_id)
     if not vpath or not os.path.exists(vpath):
         raise HTTPException(status_code=404, detail="Video file not found")
-    return FileResponse(vpath, media_type="video/mp4")
+    return FileResponse(vpath, media_type="video/mp4", headers={"Cache-Control": "no-cache, must-revalidate"})
 
 def format_vtt_timestamp(seconds: float) -> str:
     secs_int = int(seconds)

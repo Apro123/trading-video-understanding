@@ -400,6 +400,27 @@
       z-index: 5;
     }
 
+    .timeline-saved-stop-pin {
+      position: absolute;
+      top: -3px;
+      bottom: -3px;
+      width: 3px;
+      background: var(--accent-amber);
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.85);
+      transform: translateX(-50%);
+      z-index: 9;
+      cursor: pointer;
+      border-radius: 2px;
+    }
+
+    .timeline-saved-stop-pin::after {
+      content: '📌';
+      position: absolute;
+      top: -15px;
+      left: -6px;
+      font-size: 11px;
+    }
+
     .timeline-playhead-line {
       position: absolute;
       top: 0;
@@ -835,8 +856,7 @@
       <!-- Left: Player, Timeline Scrubber, & Visual Grounding HUD -->
       <div class="player-panel">
         <div class="video-wrapper">
-          <video id="video-player" controls preload="metadata" playsinline crossorigin="anonymous" src="/api/videos/stream/video_1">
-            <source id="video-source" src="/api/videos/stream/video_1" type="video/mp4">
+          <video id="video-player" controls preload="metadata" playsinline crossorigin="anonymous" src="/api/videos/stream/video_1?v=full">
             <track id="video-track" label="English" kind="subtitles" srclang="en" src="/api/videos/subtitles/video_1" default>
             Your browser does not support HTML5 video.
           </video>
@@ -865,6 +885,8 @@
         <div class="player-controls">
           <div class="time-display" id="time-display">00:00:00 / 00:00:00</div>
           <div class="playback-actions">
+            <button class="speed-btn" id="resume-stop-btn" style="display: none; color: var(--accent-cyan); border-color: rgba(6, 182, 212, 0.4); font-weight: 600;" onclick="resumeSavedPosition()" title="Resume where you left off on this video">▶ Resume</button>
+            <button class="speed-btn" onclick="seekTo(0)" title="Reset playback to 0:00">↺ 00:00</button>
             <button class="speed-btn" onclick="jumpRelative(-5)" title="Jump back 5s">⏪ -5s</button>
             <button class="speed-btn" onclick="jumpRelative(5)" title="Jump forward 5s">+5s ⏩</button>
             <button class="speed-btn" onclick="setSpeed(0.75)">0.75x</button>
@@ -923,6 +945,10 @@
     let currentVideoData = null;
     let activeEventSource = null;
     let currentRevealedStrategyIds = null;
+    const videoPlaybackPositions = {
+      "video_1": 0.0,
+      "video_2": 0.0
+    };
 
     const VIDEOS = [
       {
@@ -944,7 +970,6 @@
     ];
 
     const player = document.getElementById("video-player");
-    const videoSource = document.getElementById("video-source");
     const videoTrack = document.getElementById("video-track");
     const timeDisplay = document.getElementById("time-display");
     const timelineActiveMilestone = document.getElementById("timeline-active-milestone");
@@ -965,11 +990,35 @@
       return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
     }
 
+    function updateResumeButton(videoId) {
+      const resumeBtn = document.getElementById("resume-stop-btn");
+      if (!resumeBtn) return;
+      const saved = videoPlaybackPositions[videoId] || 0.0;
+      if (saved > 3.0) {
+        resumeBtn.textContent = `▶ Resume (${formatTime(saved)})`;
+        resumeBtn.style.display = "inline-block";
+      } else {
+        resumeBtn.style.display = "none";
+      }
+    }
+
+    function resumeSavedPosition() {
+      const saved = videoPlaybackPositions[currentVideoId] || 0.0;
+      if (saved > 0) {
+        seekTo(saved);
+      }
+    }
+
     // Video Playback Event Listeners
     player.addEventListener("timeupdate", () => {
       const cur = player.currentTime;
       const dur = player.duration || 1;
       const percent = Math.min(100, Math.max(0, (cur / dur) * 100));
+
+      // Keep track of where you left off on this video
+      if (currentVideoId && !isNaN(cur) && cur > 1.0) {
+        videoPlaybackPositions[currentVideoId] = cur;
+      }
 
       // 1. Time displays
       timeDisplay.textContent = `${formatTime(cur)} / ${formatTime(dur)}`;
@@ -1008,12 +1057,11 @@
       const targetSec = parseFloat(seconds);
       if (isNaN(targetSec)) return;
 
-      const currentStreamUrl = `/api/videos/stream/${currentVideoId}`;
+      const currentStreamUrl = `/api/videos/stream/${currentVideoId}?v=full`;
       const targetFullUrl = window.location.origin + currentStreamUrl;
 
       if (!player.src || (player.src !== targetFullUrl && !player.src.endsWith(currentStreamUrl))) {
         player.src = currentStreamUrl;
-        if (videoSource) videoSource.src = currentStreamUrl;
         player.load();
         player.addEventListener('loadedmetadata', function onLoaded() {
           player.currentTime = targetSec;
@@ -1106,6 +1154,11 @@
 
     // Select Video & Fetch Unified Playback Data
     async function selectVideo(videoId) {
+      // 1. Save playback position of the previous video before switching
+      if (currentVideoId && player && !isNaN(player.currentTime) && player.currentTime > 1.0) {
+        videoPlaybackPositions[currentVideoId] = player.currentTime;
+      }
+
       currentVideoId = videoId;
 
       // Update card states
@@ -1133,14 +1186,21 @@
       if (activeBadge) activeBadge.textContent = `Selected: ${vid.asset} (${vid.timeframe})`;
       currentRevealedStrategyIds = null;
 
-      // Update video source & subtitles track
-      const newStreamUrl = `/api/videos/stream/${videoId}`;
+      // Reset playback time to 0.0 on video flip
+      player.currentTime = 0.0;
+      if (timelinePlayhead) timelinePlayhead.style.left = "0%";
+      if (timeDisplay) timeDisplay.textContent = "00:00:00 / 00:00:00";
+
+      // Show/update resume button if user has watched this video before
+      updateResumeButton(videoId);
+
+      // Update video source with cache-buster & subtitles track
+      const newStreamUrl = `/api/videos/stream/${videoId}?v=full`;
       const newSubUrl = `/api/videos/subtitles/${videoId}`;
       const targetFullUrl = window.location.origin + newStreamUrl;
 
       if (!player.src || (player.src !== targetFullUrl && !player.src.endsWith(newStreamUrl))) {
         player.src = newStreamUrl;
-        if (videoSource) videoSource.src = newStreamUrl;
 
         // Cleanly recreate subtitle track for immediate browser closed-captioning
         const oldTrack = document.getElementById("video-track");
@@ -1155,6 +1215,7 @@
         player.appendChild(newTrack);
 
         player.load();
+        player.currentTime = 0.0;
         setTimeout(() => {
           if (player.textTracks && player.textTracks.length > 0) {
             for (let i = 0; i < player.textTracks.length; i++) {
@@ -1281,6 +1342,21 @@
           container.appendChild(pin);
         }
       });
+
+      // Saved timeline stop bookmark pin
+      const savedStop = videoPlaybackPositions[data.video_id || currentVideoId] || 0.0;
+      if (savedStop > 3.0 && savedStop < duration) {
+        const pin = document.createElement("div");
+        pin.className = "timeline-saved-stop-pin";
+        const pos = Math.max(0, Math.min(100, (savedStop / duration) * 100));
+        pin.style.left = `${pos}%`;
+        pin.title = `Left off here: [${formatTime(savedStop)}] (Click to resume)`;
+        pin.onclick = (e) => {
+          e.stopPropagation();
+          seekTo(savedStop);
+        };
+        container.appendChild(pin);
+      }
     }
 
     function syncActiveMilestone(currentTime) {
@@ -1381,7 +1457,7 @@
               Awaiting Strategy Introduction on Timeline
             </div>
             <div style="font-size: 0.85rem; max-width: 520px; margin: 0 auto; line-height: 1.5;">
-              Strategies will automatically appear here as they are covered in the video timeline. The first strategy begins at <strong style="color: var(--accent-cyan);">${nextTimeStr}</strong>.
+              Strategies will automatically appear here (with the latest on top) as they are covered in the video timeline. The first strategy begins at <strong style="color: var(--accent-cyan);">${nextTimeStr}</strong>.
             </div>
             ${firstStrat ? `
               <button class="speed-btn" onclick="seekTo(${firstStrat.start_s})" style="margin-top: 1.25rem; color: var(--accent-cyan); border-color: rgba(6, 182, 212, 0.4); padding: 0.45rem 1rem;">
@@ -1393,13 +1469,16 @@
         return;
       }
 
-      const navChips = revealed.map(s => `
+      // Reverse so the latest strategy reached on the timeline is displayed on top
+      const reversed = [...revealed].reverse();
+
+      const navChips = reversed.map(s => `
         <button class="chip strategy-nav-chip" id="strat-nav-chip-${s.strategy_id}" onclick="scrollToStrategy(${s.strategy_id}, ${s.start_s})" title="${escapeHtml(s.name)}">
           ▶ [${s.timestamp_range}] ${escapeHtml(s.name.replace(/ Strategy$/i, ''))}
         </button>
       `).join('');
 
-      const strategiesHtml = revealed.map(s => {
+      const strategiesHtml = reversed.map(s => {
         const isBull = (s.directional_bias || '').toLowerCase().includes("bull");
         const isBear = (s.directional_bias || '').toLowerCase().includes("bear");
         const isBoth = (s.directional_bias || '').toLowerCase().includes("both");
