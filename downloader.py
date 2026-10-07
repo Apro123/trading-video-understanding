@@ -60,8 +60,6 @@ KNOWN_VIDEOS: Dict[str, Dict[str, Any]] = {
         "timeframe": "1W (Weekly)",
         "duration_s": 2369.0,
         "duration_str": "39m 29s",
-        "clip_ref": "trading_lesson.clip.mp4",
-        "subtitles_ref": "subtitles_clip",
         "output_dir_ref": "outputs_video_1",
         "description": "Comprehensive institutional market structure breakdown, multi-year consolidation breakouts, and buy zone pullback entries on NVIDIA weekly charts."
     },
@@ -73,8 +71,6 @@ KNOWN_VIDEOS: Dict[str, Dict[str, Any]] = {
         "timeframe": "1D (Daily)",
         "duration_s": 4655.0,
         "duration_str": "1h 17m 35s",
-        "clip_ref": "trading_lesson_2.clip.mp4",
-        "subtitles_ref": "subtitles_clip_2",
         "output_dir_ref": "outputs_video_2",
         "description": "Complete technical analysis masterclass covering RSI momentum vs reversal, RSI divergence, structural support/resistance, and candlestick confirmation."
     }
@@ -88,15 +84,7 @@ def get_video_file_path(video_id: str) -> Optional[str]:
     if os.path.exists(video_id) and os.path.getsize(video_id) > 1024:
         return os.path.abspath(video_id)
         
-    # 2. Check clip_ref in KNOWN_VIDEOS
-    if video_id in KNOWN_VIDEOS and "clip_ref" in KNOWN_VIDEOS[video_id]:
-        clip_name = KNOWN_VIDEOS[video_id]["clip_ref"]
-        for base in [root_dir, VIDEOS_DIR]:
-            p = os.path.join(base, clip_name)
-            if os.path.exists(p) and os.path.getsize(p) > 1024:
-                return os.path.abspath(p)
-
-    # 3. Standard naming conventions
+    # 2. Standard naming conventions (full video prioritized)
     candidates = [
         os.path.join(VIDEOS_DIR, f"{video_id}.mp4"),
         os.path.join(VIDEOS_DIR, f"{video_id}.webm"),
@@ -107,6 +95,14 @@ def get_video_file_path(video_id: str) -> Optional[str]:
     for candidate in candidates:
         if os.path.exists(candidate) and os.path.getsize(candidate) > 1024:
             return os.path.abspath(candidate)
+
+    # 3. Check clip_ref in KNOWN_VIDEOS (fallback for test fixtures)
+    if video_id in KNOWN_VIDEOS and "clip_ref" in KNOWN_VIDEOS[video_id]:
+        clip_name = KNOWN_VIDEOS[video_id]["clip_ref"]
+        for base in [root_dir, VIDEOS_DIR]:
+            p = os.path.join(base, clip_name)
+            if os.path.exists(p) and os.path.getsize(p) > 1024:
+                return os.path.abspath(p)
 
     # 4. Search directory contents
     for d in [VIDEOS_DIR, root_dir]:
@@ -127,15 +123,7 @@ def get_subtitle_file_path(video_id: str) -> Optional[str]:
     if os.path.exists(video_id) and os.path.getsize(video_id) > 50:
         return os.path.abspath(video_id)
 
-    # 2. Check subtitles_ref in KNOWN_VIDEOS
-    if video_id in KNOWN_VIDEOS and "subtitles_ref" in KNOWN_VIDEOS[video_id]:
-        sub_name = KNOWN_VIDEOS[video_id]["subtitles_ref"]
-        for base in [root_dir, VIDEOS_DIR]:
-            p = os.path.join(base, sub_name)
-            if os.path.exists(p) and os.path.getsize(p) > 50:
-                return os.path.abspath(p)
-
-    # 3. Standard candidate paths
+    # 2. Standard candidate paths (full video subtitles prioritized)
     candidates = [
         os.path.join(VIDEOS_DIR, f"{video_id}.vtt"),
         os.path.join(VIDEOS_DIR, f"subtitles_{video_id}.en.vtt"),
@@ -148,6 +136,14 @@ def get_subtitle_file_path(video_id: str) -> Optional[str]:
         if os.path.exists(candidate) and os.path.getsize(candidate) > 50:
             return os.path.abspath(candidate)
 
+    # 3. Check subtitles_ref in KNOWN_VIDEOS (fallback)
+    if video_id in KNOWN_VIDEOS and "subtitles_ref" in KNOWN_VIDEOS[video_id]:
+        sub_name = KNOWN_VIDEOS[video_id]["subtitles_ref"]
+        for base in [root_dir, VIDEOS_DIR]:
+            p = os.path.join(base, sub_name)
+            if os.path.exists(p) and os.path.getsize(p) > 50:
+                return os.path.abspath(p)
+
     # 4. Search directory contents
     for fname in os.listdir(root_dir):
         if video_id in fname and fname.endswith((".vtt", ".srt")):
@@ -155,6 +151,8 @@ def get_subtitle_file_path(video_id: str) -> Optional[str]:
             if os.path.getsize(p) > 50:
                 return os.path.abspath(p)
     return None
+
+
 
 def get_video_status(video_id: str) -> Dict[str, Any]:
     """Returns the download and indexing status of a Video video or local clip."""

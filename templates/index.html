@@ -471,157 +471,6 @@
       border-color: var(--accent-cyan);
     }
 
-    /* Live Visual Grounding HUD */
-    .grounding-hud-card {
-      background-color: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 0.85rem 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-    }
-
-    .hud-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.8rem;
-    }
-
-    .hud-title {
-      font-weight: 700;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-
-    .hud-status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      font-size: 0.7rem;
-      font-family: var(--font-mono);
-      padding: 0.15rem 0.5rem;
-      border-radius: 12px;
-      background: rgba(16, 185, 129, 0.15);
-      color: var(--accent-green);
-      border: 1px solid rgba(16, 185, 129, 0.4);
-    }
-
-    .hud-status-pulse {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background-color: var(--accent-green);
-      animation: pulse-dot 1.5s infinite;
-    }
-
-    @keyframes pulse-dot {
-      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-    }
-
-    .hud-chunk-bar {
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      color: var(--text-dim);
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .hud-levels-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-    }
-
-    .hud-level-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
-      background: rgba(0, 0, 0, 0.3);
-      padding: 0.35rem 0.6rem;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      font-family: var(--font-mono);
-      border-left: 3px solid var(--accent-cyan);
-    }
-
-    .hud-level-coords {
-      font-size: 0.7rem;
-      color: var(--text-dim);
-      background: rgba(255, 255, 255, 0.05);
-      padding: 0.1rem 0.35rem;
-      border-radius: 3px;
-    }
-
-    .hud-anchors-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.35rem;
-      align-items: center;
-    }
-
-    .hud-anchor-pill {
-      font-size: 0.7rem;
-      background: rgba(139, 92, 246, 0.15);
-      color: #c4b5fd;
-      border: 1px solid rgba(139, 92, 246, 0.3);
-      padding: 0.15rem 0.45rem;
-      border-radius: 4px;
-      font-family: var(--font-mono);
-    }
-
-    .hud-signals-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.35rem;
-    }
-
-    .hud-signal-pill {
-      font-size: 0.7rem;
-      background: rgba(6, 182, 212, 0.15);
-      color: #67e8f9;
-      border: 1px solid rgba(6, 182, 212, 0.3);
-      padding: 0.15rem 0.45rem;
-      border-radius: 4px;
-      font-family: var(--font-mono);
-      font-weight: 600;
-    }
-
-    /* Player Meta Box */
-    .player-meta-box {
-      background-color: var(--bg-card);
-      border-radius: 8px;
-      padding: 0.85rem 1rem;
-      font-size: 0.8rem;
-    }
-
-    .meta-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 0.3rem 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .meta-row:last-child {
-      border-bottom: none;
-    }
-
-    .meta-label {
-      color: var(--text-dim);
-    }
-
-    .meta-val {
-      font-family: var(--font-mono);
-      color: var(--text-main);
-      font-weight: 500;
-    }
-
     /* Right Panel: Tabs */
     .tab-header {
       display: flex;
@@ -672,123 +521,6 @@
 
     .tab-content.active {
       display: block;
-    }
-
-    /* Live Strategy Execution HUD Banner */
-    .live-strategy-banner {
-      background: linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(16, 185, 129, 0.08));
-      border: 1px solid var(--accent-cyan);
-      border-radius: 8px;
-      padding: 1rem 1.25rem;
-      margin-bottom: 1.25rem;
-      box-shadow: 0 0 16px rgba(6, 182, 212, 0.15);
-      transition: all 0.25s ease;
-    }
-
-    .live-strat-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.65rem;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    .live-strat-badge {
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      background: rgba(6, 182, 212, 0.2);
-      color: #67e8f9;
-      border: 1px solid rgba(6, 182, 212, 0.4);
-      padding: 0.2rem 0.55rem;
-      border-radius: 4px;
-      font-weight: 700;
-    }
-
-    .live-strat-name {
-      font-weight: 700;
-      color: #fff;
-      font-size: 0.95rem;
-    }
-
-    .live-strat-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 0.6rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .live-strat-box {
-      border-radius: 6px;
-      padding: 0.5rem 0.75rem;
-      border: 1px solid var(--border);
-    }
-
-    .box-entry {
-      background: rgba(16, 185, 129, 0.08);
-      border-color: rgba(16, 185, 129, 0.3);
-    }
-
-    .box-stop {
-      background: rgba(239, 68, 68, 0.08);
-      border-color: rgba(239, 68, 68, 0.3);
-    }
-
-    .box-target {
-      background: rgba(245, 158, 11, 0.08);
-      border-color: rgba(245, 158, 11, 0.3);
-    }
-
-    .live-box-label {
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      margin-bottom: 0.2rem;
-    }
-
-    .box-entry .live-box-label { color: var(--accent-green); }
-    .box-stop .live-box-label { color: #ef4444; }
-    .box-target .live-box-label { color: var(--accent-amber); }
-
-    .live-box-val {
-      font-size: 0.8rem;
-      color: #fff;
-      font-weight: 500;
-      line-height: 1.35;
-    }
-
-    .live-rule-row {
-      background: rgba(0, 0, 0, 0.4);
-      border-radius: 6px;
-      padding: 0.55rem 0.85rem;
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      font-size: 0.8rem;
-      flex-wrap: wrap;
-      border-left: 3px solid var(--accent-green);
-    }
-
-    .live-rule-tag {
-      font-family: var(--font-mono);
-      font-weight: 700;
-      color: var(--accent-cyan);
-      white-space: nowrap;
-    }
-
-    .live-rule-cond {
-      color: var(--text-muted);
-    }
-
-    .live-rule-arrow {
-      color: var(--accent-green);
-      font-weight: bold;
-    }
-
-    .live-rule-action {
-      color: #fff;
-      font-weight: 600;
     }
 
     /* Strategy Breakdown Cards */
@@ -1139,75 +871,6 @@
             <button class="speed-btn active" onclick="setSpeed(1.0)">1x</button>
             <button class="speed-btn" onclick="setSpeed(1.25)">1.25x</button>
             <button class="speed-btn" onclick="setSpeed(1.5)">1.5x</button>
-            <button class="speed-btn" onclick="setSpeed(2.0)">2x</button>
-          </div>
-        </div>
-
-        <!-- Live Visual Grounding HUD (Cosmos-3 Nano + YOLO-World) -->
-        <div class="grounding-hud-card" id="grounding-hud">
-          <div class="hud-header">
-            <div class="hud-title">
-              <span>🎯 Live Visual Grounding HUD</span>
-            </div>
-            <div class="hud-status-badge" id="hud-status-badge">
-              <span class="hud-status-pulse"></span>
-              <span id="hud-status-text">TRACKING</span>
-            </div>
-          </div>
-
-          <div class="hud-chunk-bar">
-            <span id="hud-chunk-label">Chunk: --</span>
-            <span id="hud-chunk-duration">Interval: --</span>
-          </div>
-
-          <!-- Active Calibrated Price Levels -->
-          <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); font-weight: 600;">
-            Detected Chart Price Levels & Coordinates:
-          </div>
-          <div class="hud-levels-list" id="hud-levels-list">
-            <div style="color: var(--text-dim); font-size: 0.75rem; font-style: italic;">
-              Synchronizing with chart keyframe...
-            </div>
-          </div>
-
-          <!-- Active Deictic Spatial Anchors -->
-          <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); font-weight: 600; margin-top: 0.2rem;">
-            Visual & Spatial Deictic Anchors:
-          </div>
-          <div class="hud-anchors-row" id="hud-anchors-row">
-            <span class="hud-anchor-pill">Awaiting video playback</span>
-          </div>
-
-          <!-- Trade Signals -->
-          <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-dim); font-weight: 600; margin-top: 0.2rem;">
-            VLM Trade Signals:
-          </div>
-          <div class="hud-signals-row" id="hud-signals-row">
-            <span class="hud-signal-pill">None</span>
-          </div>
-        </div>
-
-        <!-- Player Metadata Box -->
-        <div class="player-meta-box">
-          <div class="meta-row">
-            <span class="meta-label">Selected Asset:</span>
-            <span class="meta-val" id="meta-asset">NVDA</span>
-          </div>
-          <div class="meta-row">
-            <span class="meta-label">Chart Timeframe:</span>
-            <span class="meta-val" id="meta-tf">1W (Weekly)</span>
-          </div>
-          <div class="meta-row">
-            <span class="meta-label">Duration:</span>
-            <span class="meta-val" id="meta-duration">39m 29s</span>
-          </div>
-          <div class="meta-row">
-            <span class="meta-label">VSS Grounded Chunks:</span>
-            <span class="meta-val" id="meta-chunks">79 Indexed</span>
-          </div>
-          <div class="meta-row">
-            <span class="meta-label">Grounding Pipeline:</span>
-            <span class="meta-val" style="color: var(--accent-green);">YOLO-World + Cosmos-3 Hybrid</span>
           </div>
         </div>
       </div>
@@ -1259,6 +922,7 @@
     let videoList = [];
     let currentVideoData = null;
     let activeEventSource = null;
+    let currentRevealedStrategyIds = null;
 
     const VIDEOS = [
       {
@@ -1318,13 +982,10 @@
         timelinePlayhead.style.left = `${percent}%`;
       }
 
-      // 3. Sync Visual Grounding HUD
-      syncVisualGroundingHUD(cur);
-
-      // 4. Active milestone highlighting
+      // 3. Active milestone highlighting
       syncActiveMilestone(cur);
 
-      // 5. Sync Strategy Breakdown & Active Rule Execution
+      // 4. Sync Strategy Breakdown & Active Rule Execution
       syncStrategyBreakdown(cur);
     });
 
@@ -1468,10 +1129,9 @@
         summary: ""
       };
 
-      document.getElementById("active-video-badge").textContent = `Selected: ${vid.asset} (${vid.timeframe})`;
-      document.getElementById("meta-asset").textContent = vid.asset;
-      document.getElementById("meta-tf").textContent = vid.timeframe;
-      if (vid.duration_str) document.getElementById("meta-duration").textContent = vid.duration_str;
+      const activeBadge = document.getElementById("active-video-badge");
+      if (activeBadge) activeBadge.textContent = `Selected: ${vid.asset} (${vid.timeframe})`;
+      currentRevealedStrategyIds = null;
 
       // Update video source & subtitles track
       const newStreamUrl = `/api/videos/stream/${videoId}`;
@@ -1532,21 +1192,13 @@
           statusDot.style.boxShadow = "0 0 8px var(--accent-green)";
         }
 
-        if (data.chunks) {
-          document.getElementById("meta-chunks").textContent = `${data.chunks.length} Chunks Indexed`;
-        }
-
         // 1. Render Multi-Segment Timeline
         renderTimelineSegments(data);
 
-        // 2. Render Multi-Strategy Breakdown
-        renderMultiStrategyBreakdown(data.strategies);
+        // 2. Strategy Breakdown & Timeline Sync at start
+        syncStrategyBreakdown(player ? player.currentTime : 0.0);
 
-        // 3. Initial Grounding HUD & Strategy Sync
-        syncVisualGroundingHUD(0.0);
-        syncStrategyBreakdown(0.0);
-
-        // 4. Update Quick Search Chips
+        // 3. Update Quick Search Chips
         updateQuickChips(videoId);
 
       } catch (err) {
@@ -1631,85 +1283,6 @@
       });
     }
 
-    // Sync Visual Grounding HUD on TimeUpdate
-    function syncVisualGroundingHUD(currentTime) {
-      if (!currentVideoData || !currentVideoData.chunks) return;
-
-      const chunks = currentVideoData.chunks;
-      const activeChunk = chunks.find(c => currentTime >= c.start_s && currentTime <= c.end_s);
-
-      const statusBadge = document.getElementById("hud-status-badge");
-      const statusText = document.getElementById("hud-status-text");
-      const chunkLabel = document.getElementById("hud-chunk-label");
-      const chunkDuration = document.getElementById("hud-chunk-duration");
-      const levelsList = document.getElementById("hud-levels-list");
-      const anchorsRow = document.getElementById("hud-anchors-row");
-      const signalsRow = document.getElementById("hud-signals-row");
-
-      if (activeChunk) {
-        statusBadge.style.background = "rgba(16, 185, 129, 0.15)";
-        statusBadge.style.color = "var(--accent-green)";
-        statusBadge.style.borderColor = "rgba(16, 185, 129, 0.4)";
-        statusText.textContent = "TRACKING ACTIVE";
-
-        chunkLabel.textContent = `Chunk #${activeChunk.chunk_id} [${activeChunk.start_time} - ${activeChunk.end_time}]`;
-        chunkDuration.textContent = `Duration: ${(activeChunk.end_s - activeChunk.start_s).toFixed(1)}s`;
-
-        if (activeChunk.detected_price_levels && activeChunk.detected_price_levels.length > 0) {
-          levelsList.innerHTML = activeChunk.detected_price_levels.map(pl => {
-            const b = pl.bounding_box || {};
-            const coordsStr = b.ymin !== undefined ? `[${b.ymin}, ${b.xmin}, ${b.ymax}, ${b.xmax}]` : `[chart y-axis]`;
-            const isEntry = (pl.level_type || '').includes('breakout') || (pl.level_type || '').includes('entry');
-            const isStop = (pl.level_type || '').includes('stop') || (pl.level_type || '').includes('invalidation');
-            const color = isEntry ? 'var(--accent-green)' : (isStop ? '#ef4444' : 'var(--accent-cyan)');
-
-            return `
-              <div class="hud-level-item" style="border-left-color: ${color};">
-                <div style="display: flex; align-items: center; gap: 0.4rem;">
-                  <strong style="color: ${color};">$${pl.price}</strong>
-                  <span style="color: var(--text-main);">${escapeHtml(pl.label || pl.level_type)}</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.4rem;">
-                  <span class="hud-level-coords">${coordsStr}</span>
-                  <span style="font-size: 0.65rem; color: var(--accent-green);">${Math.round((pl.confidence || 0.85) * 100)}%</span>
-                </div>
-              </div>
-            `;
-          }).join('');
-        } else {
-          levelsList.innerHTML = `<div style="color: var(--text-dim); font-size: 0.75rem;">Consolidation interval — no breakout levels triggered</div>`;
-        }
-
-        if (activeChunk.deictic_anchors && activeChunk.deictic_anchors.length > 0) {
-          anchorsRow.innerHTML = activeChunk.deictic_anchors.map(a => `
-            <span class="hud-anchor-pill">${escapeHtml(a.phrase || a)}</span>
-          `).join('');
-        } else {
-          anchorsRow.innerHTML = `<span class="hud-anchor-pill" style="opacity: 0.7;">Active chart frame</span>`;
-        }
-
-        if (activeChunk.signals && activeChunk.signals.length > 0) {
-          signalsRow.innerHTML = activeChunk.signals.map(s => `
-            <span class="hud-signal-pill">${escapeHtml(s)}</span>
-          `).join('');
-        } else {
-          signalsRow.innerHTML = `<span class="hud-signal-pill" style="opacity: 0.6;">Structure Monitoring</span>`;
-        }
-
-      } else {
-        statusBadge.style.background = "rgba(148, 163, 184, 0.15)";
-        statusBadge.style.color = "var(--text-muted)";
-        statusBadge.style.borderColor = "rgba(148, 163, 184, 0.3)";
-        statusText.textContent = "STANDBY";
-
-        chunkLabel.textContent = `Time: ${formatTime(currentTime)}`;
-        chunkDuration.textContent = `Standby`;
-        levelsList.innerHTML = `<div style="color: var(--text-dim); font-size: 0.75rem; font-style: italic;">Seeking to closest indexed frame...</div>`;
-      }
-    }
-
-
-
     function syncActiveMilestone(currentTime) {
       if (!currentVideoData || !currentVideoData.milestones) return;
       const ms = currentVideoData.milestones;
@@ -1726,82 +1299,107 @@
       }
     }
 
-    // Dynamic Strategy Breakdown Sync & Live Execution Banner
+    // Dynamic Strategy Breakdown Sync: only add strategies as they come up in timeline
     function syncStrategyBreakdown(currentTime) {
-      const strats = currentVideoData?.strategies?.strategies || [];
-      if (strats.length === 0) return;
-
-      let activeStrat = strats.find(s => currentTime >= s.start_s && currentTime <= s.end_s);
-      if (!activeStrat) {
-        activeStrat = strats[0];
-      }
-
-      // Update Live Strategy HUD Banner
-      const liveTime = document.getElementById("live-strat-time");
-      const liveTitle = document.getElementById("live-strat-title");
-      const liveTrigger = document.getElementById("live-strat-trigger");
-      const liveStop = document.getElementById("live-strat-stop");
-      const liveTarget = document.getElementById("live-strat-target");
-      const liveRuleTag = document.getElementById("live-rule-tag");
-      const liveRuleCond = document.getElementById("live-rule-cond");
-      const liveRuleAction = document.getElementById("live-rule-action");
-
-      if (liveTime) liveTime.textContent = formatTime(currentTime);
-      if (liveTitle) liveTitle.textContent = activeStrat.name;
-      if (liveTrigger) liveTrigger.textContent = activeStrat.entry_trigger || "--";
-      if (liveStop) liveStop.textContent = activeStrat.invalidation_stop || "--";
-      if (liveTarget) {
-        liveTarget.textContent = Array.isArray(activeStrat.take_profit_targets) ? activeStrat.take_profit_targets.join(' | ') : (activeStrat.take_profit_targets || "--");
-      }
-
-      // Highlight active rule based on current timestamp within strategy duration
-      const rules = activeStrat.step_by_step_rules || [];
-      if (rules.length > 0) {
-        const stratDur = Math.max(1, activeStrat.duration_s || (activeStrat.end_s - activeStrat.start_s) || 60);
-        const relTime = Math.max(0, Math.min(stratDur, currentTime - (activeStrat.start_s || 0)));
-        const ruleIdx = Math.min(rules.length - 1, Math.floor((relTime / stratDur) * rules.length));
-        const activeRule = rules[ruleIdx];
-
-        if (liveRuleTag) liveRuleTag.textContent = `Rule ${activeRule.rule_id}: ${activeRule.name}`;
-        if (liveRuleCond) liveRuleCond.textContent = activeRule.condition;
-        if (liveRuleAction) liveRuleAction.textContent = activeRule.action;
-
-        // Highlight table row
-        document.querySelectorAll(".rule-table tr").forEach(tr => tr.classList.remove("active-rule"));
-        const rowEl = document.getElementById(`rule-row-${activeStrat.strategy_id}-${activeRule.rule_id}`);
-        if (rowEl) rowEl.classList.add("active-rule");
-      }
-
-      // Highlight active strategy card
-      document.querySelectorAll(".strategy-card").forEach(c => c.classList.remove("active-strategy"));
-      const activeCard = document.getElementById(`strategy-card-${activeStrat.strategy_id}`);
-      if (activeCard) activeCard.classList.add("active-strategy");
-
-      // Highlight active nav chip
-      document.querySelectorAll(".strategy-nav-chip").forEach(c => c.classList.remove("active"));
-      const activeChip = document.getElementById(`strat-nav-chip-${activeStrat.strategy_id}`);
-      if (activeChip) activeChip.classList.add("active");
-    }
-
-    // Render Strategy Breakdown
-    function renderMultiStrategyBreakdown(breakdown) {
-      const container = document.getElementById("strategies-container");
+      const breakdown = currentVideoData?.strategies;
+      const allStrats = breakdown?.strategies || [];
       const badge = document.getElementById("strategies-badge");
-      if (!breakdown || !breakdown.strategies || breakdown.strategies.length === 0) {
+      const container = document.getElementById("strategies-container");
+      if (!container) return;
+
+      if (allStrats.length === 0) {
         if (badge) badge.textContent = "0";
         container.innerHTML = `<div style="color: var(--text-dim); padding: 2rem 0;">Analyzing trading strategies for this video...</div>`;
         return;
       }
 
-      if (badge) badge.textContent = breakdown.total_strategies;
+      // Filter strategies that have already started on the timeline
+      const revealed = allStrats.filter(s => currentTime >= (s.start_s || 0));
+      const revealedKey = revealed.map(s => s.strategy_id).join(',');
 
-      const navChips = breakdown.strategies.map(s => `
+      if (badge) badge.textContent = revealed.length;
+
+      // Re-render strategy DOM only when the set of revealed strategies changes
+      if (revealedKey !== currentRevealedStrategyIds) {
+        currentRevealedStrategyIds = revealedKey;
+        renderRevealedStrategies(revealed, allStrats);
+      }
+
+      // If no strategies revealed yet, nothing to highlight
+      if (revealed.length === 0) return;
+
+      // Find the strategy active at currentTime, or fallback to the most recently revealed
+      const activeStrat = revealed.find(s => currentTime >= s.start_s && currentTime <= s.end_s) || revealed[revealed.length - 1];
+
+      // Highlight active strategy card
+      document.querySelectorAll(".strategy-card").forEach(c => c.classList.remove("active-strategy"));
+      if (activeStrat) {
+        const activeCard = document.getElementById(`strategy-card-${activeStrat.strategy_id}`);
+        if (activeCard) activeCard.classList.add("active-strategy");
+
+        // Highlight active rule based on current timestamp within strategy duration
+        const rules = activeStrat.step_by_step_rules || [];
+        if (rules.length > 0) {
+          const stratDur = Math.max(1, activeStrat.duration_s || (activeStrat.end_s - activeStrat.start_s) || 60);
+          const relTime = Math.max(0, Math.min(stratDur, currentTime - (activeStrat.start_s || 0)));
+          const ruleIdx = Math.min(rules.length - 1, Math.floor((relTime / stratDur) * rules.length));
+          const activeRule = rules[ruleIdx];
+
+          document.querySelectorAll(".rule-table tr").forEach(tr => tr.classList.remove("active-rule"));
+          const rowEl = document.getElementById(`rule-row-${activeStrat.strategy_id}-${activeRule.rule_id}`);
+          if (rowEl) rowEl.classList.add("active-rule");
+        }
+      }
+
+      // Highlight active nav chip
+      document.querySelectorAll(".strategy-nav-chip").forEach(c => c.classList.remove("active"));
+      if (activeStrat) {
+        const activeChip = document.getElementById(`strat-nav-chip-${activeStrat.strategy_id}`);
+        if (activeChip) activeChip.classList.add("active");
+      }
+    }
+
+    // Render only the strategies that have come up in the timeline
+    function renderRevealedStrategies(revealed, allStrats) {
+      const container = document.getElementById("strategies-container");
+      if (!container) return;
+
+      if (revealed.length === 0) {
+        const firstStrat = allStrats[0];
+        const nextTimeStr = firstStrat ? formatTime(firstStrat.start_s || 0) : "00:00";
+        container.innerHTML = `
+          <div class="spec-section-card" style="margin-bottom: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+              <div class="spec-section-heading" style="margin-bottom: 0;">
+                <span>📑 Distinct Strategies Deconstructed Across Video Timeline</span>
+                <span class="video-tag tag-neutral" style="font-size: 0.8rem;">0 of ${allStrats.length} Revealed</span>
+              </div>
+            </div>
+          </div>
+          <div style="background: var(--bg-card); border: 1px dashed var(--border); border-radius: 8px; padding: 2.5rem 1.5rem; text-align: center; color: var(--text-dim);">
+            <div style="font-size: 1.05rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-main);">
+              Awaiting Strategy Introduction on Timeline
+            </div>
+            <div style="font-size: 0.85rem; max-width: 520px; margin: 0 auto; line-height: 1.5;">
+              Strategies will automatically appear here as they are covered in the video timeline. The first strategy begins at <strong style="color: var(--accent-cyan);">${nextTimeStr}</strong>.
+            </div>
+            ${firstStrat ? `
+              <button class="speed-btn" onclick="seekTo(${firstStrat.start_s})" style="margin-top: 1.25rem; color: var(--accent-cyan); border-color: rgba(6, 182, 212, 0.4); padding: 0.45rem 1rem;">
+                ▶ Jump to Strategy 1 (${nextTimeStr})
+              </button>
+            ` : ''}
+          </div>
+        `;
+        return;
+      }
+
+      const navChips = revealed.map(s => `
         <button class="chip strategy-nav-chip" id="strat-nav-chip-${s.strategy_id}" onclick="scrollToStrategy(${s.strategy_id}, ${s.start_s})" title="${escapeHtml(s.name)}">
           ▶ [${s.timestamp_range}] ${escapeHtml(s.name.replace(/ Strategy$/i, ''))}
         </button>
       `).join('');
 
-      const strategiesHtml = breakdown.strategies.map(s => {
+      const strategiesHtml = revealed.map(s => {
         const isBull = (s.directional_bias || '').toLowerCase().includes("bull");
         const isBear = (s.directional_bias || '').toLowerCase().includes("bear");
         const isBoth = (s.directional_bias || '').toLowerCase().includes("both");
@@ -1933,39 +1531,11 @@
       }).join('');
 
       container.innerHTML = `
-        <!-- Live Strategy HUD Banner -->
-        <div class="live-strategy-banner" id="live-strategy-banner">
-          <div class="live-strat-top">
-            <span class="live-strat-badge">⚡ ACTIVE STRATEGY AT <span id="live-strat-time">00:00</span></span>
-            <span class="live-strat-name" id="live-strat-title">Loading strategy...</span>
-          </div>
-          <div class="live-strat-grid">
-            <div class="live-strat-box box-entry">
-              <div class="live-box-label">CURRENT TRIGGER</div>
-              <div class="live-box-val" id="live-strat-trigger">--</div>
-            </div>
-            <div class="live-strat-box box-stop">
-              <div class="live-box-label">INVALIDATION STOP</div>
-              <div class="live-box-val" id="live-strat-stop">--</div>
-            </div>
-            <div class="live-strat-box box-target">
-              <div class="live-box-label">PROFIT TARGETS</div>
-              <div class="live-box-val" id="live-strat-target">--</div>
-            </div>
-          </div>
-          <div class="live-rule-row" id="live-rule-row">
-            <span class="live-rule-tag" id="live-rule-tag">Rule 1</span>
-            <span class="live-rule-cond" id="live-rule-cond">Condition logic</span>
-            <span class="live-rule-arrow">➔</span>
-            <span class="live-rule-action" id="live-rule-action">Action</span>
-          </div>
-        </div>
-
         <div class="spec-section-card" style="margin-bottom: 1.25rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
             <div class="spec-section-heading" style="margin-bottom: 0;">
               <span>📑 Distinct Strategies Deconstructed Across Video Timeline</span>
-              <span class="video-tag tag-cyan" style="font-size: 0.8rem;">${breakdown.total_strategies} Strategies</span>
+              <span class="video-tag tag-cyan" style="font-size: 0.8rem;">${revealed.length} of ${allStrats.length} Strategies</span>
             </div>
             <div style="font-size: 0.8rem; color: var(--text-dim); font-family: var(--font-mono);">
               Interactive Timeline Sync
