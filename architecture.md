@@ -17,10 +17,18 @@ Comprehensive architectural specification and design decisions for the **NVIDIA 
    - [4.5 Durable Orchestration & Background Execution](#45-durable-orchestration--background-execution)
    - [4.6 Interactive Timeline & Live Playback Sync](#46-interactive-timeline--live-playback-sync)
    - [4.7 Semantic Search & Vector/BM25 Hybrid Retrieval](#47-semantic-search--vectorbm25-hybrid-retrieval)
-5. [Key Design Decisions & Trade-Offs](#5-key-design-decisions--trade-offs)
-6. [Recent Improvements & Optimizations](#6-recent-improvements--optimizations)
-7. [Deployment & Infrastructure Topology](#7-deployment--infrastructure-topology)
-8. [File Structure & Component Directory](#8-file-structure--component-directory)
+5. [User Interface Architecture & Component Breakdown](#5-user-interface-architecture--component-breakdown)
+   - [5.1 Visual Layout & Wireframe Schematic](#51-visual-layout--wireframe-schematic)
+   - [5.2 Header & Global Status Bar](#52-header--global-status-bar)
+   - [5.3 Masterclass Video Selector Grid](#53-masterclass-video-selector-grid)
+   - [5.4 Left Column: Video Player & Timeline Scrubber](#54-left-column-video-player--timeline-scrubber)
+   - [5.5 Right Column: Strategy Breakdown Tab](#55-right-column-strategy-breakdown-tab)
+   - [5.6 Right Column: Semantic Video Search Tab](#56-right-column-semantic-video-search-tab)
+   - [5.7 Intentional Minimalist Design Exclusions](#57-intentional-minimalist-design-exclusions)
+6. [Key Design Decisions & Trade-Offs](#6-key-design-decisions--trade-offs)
+7. [Recent Improvements & Optimizations](#7-recent-improvements--optimizations)
+8. [Deployment & Infrastructure Topology](#8-deployment--infrastructure-topology)
+9. [File Structure & Component Directory](#9-file-structure--component-directory)
 
 ---
 
@@ -207,7 +215,146 @@ sequenceDiagram
 
 ---
 
-## 5. Key Design Decisions & Trade-Offs
+## 5. User Interface Architecture & Component Breakdown
+
+The presentation layer is implemented as an ultra-fast, zero-dependency single-page application ([`templates/index.html`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/templates/index.html)) using HTML5, modern CSS Grid/Flexbox, and vanilla JavaScript. It is designed around two core principles: **zero cognitive friction** (minimalist, bare-bones UI with no redundant telemetry clutter) and **sub-second timeline interactivity** (keyed DOM updates maintaining 60fps playback without layout thrashing).
+
+### 5.1 Visual Layout & Wireframe Schematic
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ HEADER: VSS Logo | Cosmos 3 Nano: Active | Nemotron 3.5: Online | Selected: NVDA (1W) | Status ● │
+├──────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ VIDEO SELECTOR GRID (2 Masterclass Cards)                                                        │
+│ ┌───────────────────────────────────────────────┐  ┌───────────────────────────────────────────┐ │
+│ │ [● Active] Video 1: NVDA Market Structure...  │  │ Video 2: RSI Momentum vs Reversal...      │ │
+│ │ ⏱ 39m 29s • NVDA • 1W (Weekly)               │  │ ⏱ 1h 17m • Forex/Multi • 1D/4H           │ │
+│ └───────────────────────────────────────────────┘  └───────────────────────────────────────────┘ │
+├──────────────────────────────────────────────────┬───────────────────────────────────────────────┤
+│ LEFT PANEL: Video Player & Timeline Scrubber    │ RIGHT PANEL: Dynamic Intelligence Hub         │
+│ ┌──────────────────────────────────────────────┐ │ ┌───────────────────────────────────────────┐ │
+│ │                                              │ │ │ [📑 Strategy Breakdown (3/7)]  [🔍 Search]│ │
+│ │               HTML5 Video Player             │ │ ├───────────────────────────────────────────┤ │
+│ │       (HTTP 206 Streaming + WebVTT CC)       │ │ │ Quick Chips: [▶ S3] [▶ S2] [▶ S1]         │ │
+│ │                                              │ │ │ ┌───────────────────────────────────────┐ │ │
+│ └──────────────────────────────────────────────┘ │ │ │ STRATEGY #3: Ascending Trend (LATEST) │ │ │
+│ ┌──────────────────────────────────────────────┐ │ │ │ Bias: BULLISH | Timeframe: 1W        │ │ │
+│ │ ⏱ Timeline Milestones: [▶ Retest Pivot]      │ │ │ │ Core Thesis: Breakout validation...   │ │ │
+│ │ ──[Green]──[Red]──[Amber]──📌──[Purple]──────│ │ │ │ ┌───────────┬───────────┬───────────┐ │ │ │
+│ │ 04:12 / 39:29 (Playhead & Tooltip)           │ │ │ │ │ Entry     │ Stop Loss │ Targets   │ │ │ │
+│ └──────────────────────────────────────────────┘ │ │ │ └───────────┴───────────┴───────────┘ │ │ │
+│ ┌──────────────────────────────────────────────┐ │ │ │ ⚡ Formal Execution Rules Table       │ │ │ │
+│ │ 00:04:12 / 00:39:29                          │ │ │ │ ▶ [Rule 1] Active Rule Highlighted... │ │ │ │
+│ │ [▶ Resume (14:20)] [↺ 00:00] [⏪ -5s] [+5s ⏩]│ │ │ │   [Rule 2] Invalidation check...    │ │ │ │
+│ │ Speed: [0.75x] [1x*] [1.25x] [1.5x]          │ │ │ └───────────────────────────────────────┘ │ │ │
+│ └──────────────────────────────────────────────┘ │ │ ┌───────────────────────────────────────┐ │ │ │
+│                                                  │ │ │ STRATEGY #2: (Previous Strategy)      │ │ │ │
+│                                                  │ │ └───────────────────────────────────────┘ │ │ │
+└──────────────────────────────────────────────────┴───────────────────────────────────────────────┘
+```
+
+### 5.2 Header & Global Status Bar
+- **Branding & Identity**: Displays the platform logo badge `VSS`, title `NVIDIA Video Search & Summarization (VSS)`, and engine descriptor `Cosmos 3 Nano VLM + Nemotron 3.5 Lightning | Algorithmic Trading Intelligence`.
+- **Inference Engine Health Pills**:
+  - `Cosmos 3 Nano: Active`: Live visual confirmation of the multimodal vision-language model.
+  - `Nemotron 3.5 Reasoner: Online`: Live confirmation of the reasoning LLM endpoint.
+- **Active Video Selection Badge (`#active-video-badge`)**: Displays current ticker and timeframe (e.g., `Selected: NVDA (1W (Weekly))`).
+- **Reactive Pipeline Status Pill (`#pipeline-status-pill`)**:
+  - Displays `Pipeline: Cached & Ready` with a glowing green dot when pre-computed artifacts are loaded from disk.
+  - Automatically transitions to an amber glowing dot displaying `Auto-analyzing in background... Step X/6` via Server-Sent Events (SSE) when background ingestion runs.
+
+### 5.3 Masterclass Video Selector Grid (`#video-grid`)
+- Clean, toggle-free grid rendering cards for the two masterclasses:
+  - **Video 1**: *NVDA Market Structure Shift & Breakout Masterclass* (39m 29s, Weekly timeframe, NVDA equity).
+  - **Video 2**: *RSI Momentum vs Reversal & Full Technical Analysis Course* (1h 17m, Daily/4H timeframe, Forex/Multi-Asset).
+- **Card Anatomy**:
+  - Header: Video title and color-coded asset tag (`tag-green` for NVDA, `tag-cyan` for Forex/Multi-Asset).
+  - Body: Educational summary outlining technical concepts covered.
+  - Footer: Duration counter (`⏱ 39m 29s` / `⏱ 1h 17m`) and selection status (`● Active` with green accent border or `Click to select`).
+- **Interactive Video Switching**:
+  - Clicking an inactive card immediately swaps the active video.
+  - Automatically stores the playback position of the previous video.
+  - Resets playback to `0:00` for the newly selected video to prevent timestamp bleed across different lessons.
+  - Dynamically updates the timeline bookmark pin (`📌`) and displays the `▶ Resume (MM:SS)` button.
+
+### 5.4 Left Column: Video Player & Timeline Scrubber (`.player-panel`)
+Sticky 600px sidebar on desktop (responsive full-width on mobile):
+1. **HTML5 Video Player Container (`.video-wrapper`)**:
+   - 16:9 responsive container with high-contrast, rounded WebVTT subtitle cue styling (`video::cue`).
+   - Direct streaming from `/api/videos/stream/${videoId}?v=full`.
+   - Native `<track>` element delivering synchronized WebVTT subtitles (`/api/videos/subtitles/${videoId}`) with closed-captioning support.
+2. **Interactive Multi-Segment Timeline Scrubber (`.timeline-container`)**:
+   - **Header Bar**: Timeline title, active milestone event label (`▶ Structural Pivot Validation`), and elapsed/total duration label (`00:00 / 39:29`).
+   - **Segmented Milestone Bar (`.timeline-track-wrapper`)**:
+     - Visual breakdown of the video into colored temporal milestone blocks:
+       - **Green** (`rgba(16, 185, 129, 0.5)`): Breakout validation, trade entry triggers, demand zone buys.
+       - **Red** (`rgba(239, 68, 68, 0.5)`): Stop loss invalidation, protected swing lows, bearish rejections.
+       - **Amber** (`rgba(245, 158, 11, 0.5)`): Retest, consolidation, RSI divergence setups.
+       - **Purple** (`rgba(139, 92, 246, 0.5)`): Market structure shifts, change of character (CHoCH).
+     - **Price Level Markers (`.timeline-marker-pin`)**: Cyan pins indicating exact timestamps where the VLM detected visual chart price coordinates.
+     - **Saved Stop Bookmark Pin (`📌 .timeline-saved-stop-pin`)**: Amber vertical pin with a pushpin icon marking where the user left off watching this specific video. Clicking the pin instantly seeks to that position.
+     - **Playhead Line (`.timeline-playhead-line`)**: White line with cyan glow tracking playback at 60fps.
+     - **Hover Tooltip (`.timeline-tooltip`)**: Floating timestamp and milestone event label following mouse cursor position along the scrubber track.
+3. **Player Controls Bar (`.player-controls`)**:
+   - Precise time display (`HH:MM:SS / HH:MM:SS`).
+   - `▶ Resume (MM:SS)` button: Conditionally shown if a saved position > 3.0s exists for the active video.
+   - `↺ 00:00` button: One-click playback reset to start.
+   - Relative seek buttons: `⏪ -5s` and `+5s ⏩`.
+   - Speed selector pills: `0.75x`, `1x` (active default), `1.25x`, and `1.5x`.
+
+### 5.5 Right Column: Strategy Breakdown Tab (`#tab-strategies`)
+Displays algorithmic trading strategies synthesized by the VLM and reasoning engine:
+1. **Dynamic Revelation Along Timeline**:
+   - **Awaiting State (at 00:00)**: If playback is prior to Strategy 1's starting timestamp (e.g. before 02:30 in Video 2), a dashed container explains that strategies will automatically appear as covered in the video, with a `▶ Jump to Strategy 1 (MM:SS)` action button.
+   - **Timeline-Gated Visibility**: As playback reaches `strategy.start_s`, that strategy is unlocked and revealed.
+2. **Reverse Chronological Ordering**:
+   - Revealed strategies are rendered in reverse order (`[...revealed].reverse()`).
+   - The **newest strategy reached on the timeline is always placed at the very top of the list**, eliminating scrolling.
+3. **Quick Jump Nav Chips**: Top row of chip buttons for all revealed strategies allowing instant smooth-scrolling and video seeking.
+4. **Strategy Card Anatomy**:
+   - **Header Bar**: Strategy ID badge (`Strategy #1`), clickable timestamp badge (`▶ [02:30 - 05:45]`), directional bias pill (`BULLISH` in green, `BEARISH` in red, `NEUTRAL` in gray), and action buttons:
+     - `▶ Jump Video`: Seeks video to `start_s`.
+     - `📋 JSON`: Copies the complete structured JSON payload to the clipboard.
+     - `📄 Markdown`: Copies a formatted trading strategy brief in Markdown.
+   - **Title & Metadata**: Strategy name, Asset, Timeframe, and Risk/Reward ratio (e.g., `1:2.5`).
+   - **Core Thesis Callout**: Cyan-accented callout box detailing the fundamental and structural market logic.
+   - **3-Parameter Execution Grid**:
+     - ⚡ **Entry Trigger**: Specific candlestick close or price level condition.
+     - 🛑 **Invalidation Stop**: Structural stop-loss placement.
+     - 🎯 **Take Profit Targets**: Target price levels / R-multiples.
+   - **Signal Pills**: Badges for technical indicators (e.g. `14-period RSI`) and structural confluences (e.g. `✓ Prior Support Confluence`).
+   - **⚡ Formal Execution Rules Table**:
+     - Columns: `Rule #`, `Rule Name`, `Condition Logic` (rendered in monospace syntax), and `Execution Action`.
+     - **Live Active Rule Sync (`.active-rule`)**: The UI calculates the relative playback position within the strategy duration and applies a glowing green highlight to the exact rule currently being demonstrated by the presenter.
+
+### 5.6 Right Column: Semantic Video Search Tab (`#tab-search`)
+1. **Search Input Bar**: Full-width search box with placeholder for natural-language trading queries and Enter key execution.
+2. **Quick Concept Search Chips**: One-click preset search queries:
+   - `Breakout above resistance`
+   - `Demand zone support retest`
+   - `Stop loss below swing low`
+   - `RSI divergence overbought`
+   - `Bullish market structure`
+3. **Results Feed**:
+   - Result count badge (`Showing X indexed results`).
+   - **Result Cards**:
+     - Clickable timestamp interval badge (`▶ [14:20 - 14:40]`) that immediately jumps the video player.
+     - Semantic relevance match percentage score (`94% Match`).
+     - Synchronized transcript excerpt with query terms highlighted (`<span class="highlight">`).
+     - Grounded trade signal tags (`signal-pill`).
+     - VLM chart perception rationale explaining visual chart cues detected during that chunk.
+
+### 5.7 Intentional Minimalist Design Exclusions
+In accordance with user requirements for a bare-bones, high-signal workspace, several components were deliberately stripped:
+- **Removed 2x Speed Button**: Capped playback speed at 1.5x to prevent audio pitch distortion and dropped frames during technical analysis.
+- **Removed Redundant HUD Card**: Eliminated the duplicate "Live Visual Grounding HUD" card below the player; all milestone grounding is cleanly integrated into the scrubber track and strategy cards.
+- **Removed Extraneous Telemetry Box**: Stripped raw coordinates, video bitrates, and JSON debug panels from the left panel.
+- **Removed Separate Teleprompter Tab**: Subtitles are delivered directly as native closed captions on the video player rather than forcing page scroll in a dedicated text box.
+- **Removed Manual Pipeline Mode Toggles**: Eliminated manual radio switches between synchronous and asynchronous modes; pipeline execution is automated, durable, and cached.
+
+---
+
+## 6. Key Design Decisions & Trade-Offs
 
 | Decision | Alternative Considered | Rationale & Trade-Off |
 |---|---|---|
@@ -220,7 +367,7 @@ sequenceDiagram
 
 ---
 
-## 6. Recent Improvements & Optimizations
+## 7. Recent Improvements & Optimizations
 
 1. **Full-Length Video Playback Resolution**:
    - Replaced short 2-minute clips (`trading_lesson.clip.mp4`) with full masterclasses (`videos/video_1.mp4`, 39m 29s and `videos/video_2.mp4`, 1h 17m 35s).
@@ -245,7 +392,7 @@ sequenceDiagram
 
 ---
 
-## 7. Deployment & Infrastructure Topology
+## 8. Deployment & Infrastructure Topology
 
 ```
 ┌────────────────────────────────────────────────────────┐
@@ -267,7 +414,7 @@ sequenceDiagram
 
 ---
 
-## 8. File Structure & Component Directory
+## 9. File Structure & Component Directory
 
 ```
 trading-video-understanding/
