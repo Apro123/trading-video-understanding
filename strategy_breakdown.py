@@ -316,6 +316,24 @@ def clean_rolling_transcript(text: str) -> str:
             i += 1
     return " ".join(out)
 
+def validate_and_refine_strategy_segment(seg: StrategySegment) -> StrategySegment:
+    """Validates structural and price sanity for synthesized strategies."""
+    num_pat = re.compile(r'\$?(\d+(?:\.\d{1,2})?)')
+    entry_nums = [float(x) for x in num_pat.findall(seg.entry_trigger)]
+    stop_nums = [float(x) for x in num_pat.findall(seg.invalidation_stop)]
+    target_nums = [float(x) for x in num_pat.findall(" ".join(seg.take_profit_targets))]
+
+    if entry_nums and stop_nums and target_nums:
+        e = entry_nums[0]
+        s = stop_nums[0]
+        t = target_nums[0]
+        if abs(e - s) > 1e-4:
+            rr = abs(t - e) / abs(e - s)
+            seg.risk_reward_ratio = f"1:{rr:.2f}"
+
+    return seg
+
+
 class MultiStrategyBreakdownEngine:
     """
     Analyzes video transcripts and chapters to extract all distinct trading strategies
@@ -503,12 +521,12 @@ class MultiStrategyBreakdownEngine:
                     transcript=clean_transcript
                 )
                 if seg:
-                    return seg
+                    return validate_and_refine_strategy_segment(seg)
             except Exception as e:
                 logger.warning(f"Nemotron strategy segment synthesis failed: {e}. Using generic fallback.")
 
         # 2. Generic Algorithmic Fallback
-        return self._synthesize_segment_generic(
+        gen_seg = self._synthesize_segment_generic(
             strategy_id=strategy_id,
             title=title,
             start_s=start_s,
@@ -516,6 +534,7 @@ class MultiStrategyBreakdownEngine:
             ts_range=ts_range,
             transcript=clean_transcript
         )
+        return validate_and_refine_strategy_segment(gen_seg)
 
     def _synthesize_segment_nemotron(
         self,

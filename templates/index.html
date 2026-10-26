@@ -860,6 +860,9 @@
             <track id="video-track" label="English" kind="subtitles" srclang="en" src="/api/videos/subtitles/video_1" default>
             Your browser does not support HTML5 video.
           </video>
+          <div id="grounding-overlay-layer" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;">
+            <img id="grounding-overlay-img" style="width: 100%; height: 100%; object-fit: contain;" />
+          </div>
         </div>
 
         <!-- Interactive Multi-Segment Timeline Scrubber -->
@@ -885,6 +888,7 @@
         <div class="player-controls">
           <div class="time-display" id="time-display">00:00:00 / 00:00:00</div>
           <div class="playback-actions">
+            <button class="speed-btn" id="btn-grounding-overlay" onclick="toggleGroundingOverlay()" title="Toggle deterministic visual grounding overlay on the chart frame" style="color: var(--accent-cyan); border-color: rgba(6, 182, 212, 0.4);">⌗ Grounding</button>
             <button class="speed-btn" id="resume-stop-btn" style="display: none; color: var(--accent-cyan); border-color: rgba(6, 182, 212, 0.4); font-weight: 600;" onclick="resumeSavedPosition()" title="Resume where you left off on this video">▶ Resume</button>
             <button class="speed-btn" onclick="seekTo(0)" title="Reset playback to 0:00">↺ 00:00</button>
             <button class="speed-btn" onclick="jumpRelative(-5)" title="Jump back 5s">⏪ -5s</button>
@@ -1036,6 +1040,59 @@
 
       // 4. Sync Strategy Breakdown & Active Rule Execution
       syncStrategyBreakdown(cur);
+
+      // 5. Update grounding overlay if active and paused
+      if (groundingOverlayActive && player.paused) {
+        updateGroundingOverlay();
+      }
+    });
+
+    let groundingOverlayActive = false;
+    let lastOverlayTimestamp = -1;
+
+    function toggleGroundingOverlay() {
+      groundingOverlayActive = !groundingOverlayActive;
+      const btn = document.getElementById("btn-grounding-overlay");
+      const layer = document.getElementById("grounding-overlay-layer");
+      if (btn) {
+        if (groundingOverlayActive) {
+          btn.classList.add("active");
+          btn.style.backgroundColor = "rgba(6, 182, 212, 0.2)";
+          btn.style.color = "var(--accent-cyan)";
+          updateGroundingOverlay();
+        } else {
+          btn.classList.remove("active");
+          btn.style.backgroundColor = "";
+          btn.style.color = "";
+          if (layer) layer.style.display = "none";
+        }
+      }
+    }
+
+    function updateGroundingOverlay() {
+      if (!groundingOverlayActive || !player) return;
+      const layer = document.getElementById("grounding-overlay-layer");
+      const img = document.getElementById("grounding-overlay-img");
+      if (!layer || !img) return;
+
+      const t = player.currentTime || 0;
+      if (Math.abs(t - lastOverlayTimestamp) < 0.5 && layer.style.display === "block") return;
+      lastOverlayTimestamp = t;
+
+      img.src = `/api/videos/overlay/${currentVideoId}?t=${t.toFixed(1)}&_r=${Date.now()}`;
+      layer.style.display = "block";
+    }
+
+    player.addEventListener('pause', () => {
+      if (groundingOverlayActive) {
+        updateGroundingOverlay();
+      }
+    });
+
+    player.addEventListener('seeked', () => {
+      if (groundingOverlayActive) {
+        updateGroundingOverlay();
+      }
     });
 
     function setSpeed(speed) {

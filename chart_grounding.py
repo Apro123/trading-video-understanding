@@ -9,6 +9,7 @@ import re
 import logging
 from typing import List, Dict, Any, Optional, Tuple
 from PIL import Image
+import numpy as np
 
 try:
     from .schemas import (
@@ -20,6 +21,7 @@ try:
         VideoChunk
     )
     from .utils import extract_ticker_symbol, extract_timeframe
+    from .grounding.ground import ground_frame, GroundedFrame
 except (ImportError, ValueError):
     from schemas import (
         BoundingBox,
@@ -30,6 +32,10 @@ except (ImportError, ValueError):
         VideoChunk
     )
     from utils import extract_ticker_symbol, extract_timeframe
+    try:
+        from grounding.ground import ground_frame, GroundedFrame
+    except ImportError:
+        ground_frame = None
 
 logger = logging.getLogger(__name__)
 
@@ -392,14 +398,75 @@ class HybridChartGroundingPipeline:
         ticker = extract_ticker_symbol(transcript) or "ASSET"
         timeframe = extract_timeframe(transcript) or "Daily"
 
-        # 3. Establish price coordinate mapping
-        min_p, max_p = self.estimate_price_range_from_text_and_context(transcript, ticker)
+        # 3. Deterministic CV grounding over real frame if available
+        gf_levels: List[GroundedPriceLevel] = []
+        cv_price_range: Optional[Tuple[float, float]] = None
+
+        if first_frame is not None and ground_frame is not None:
+            try:
+                np_frame = np.array(first_frame)
+                if np_frame.ndim == 3 and np_frame.shape[2] >= 3:
+                    bgr = np_frame[:, :, :3][:, :, ::-1]
+                    gf = ground_frame(bgr, t=chunk.start_s, video_id=str(chunk.chunk_id))
+                    if gf and not gf.skipped_reason:
+                        if gf.context.ticker and ticker == "ASSET":
+                            ticker = gf.context.ticker
+                        if gf.context.timeframe and timeframe == "Daily":
+                            timeframe = gf.context.timeframe
+                        if gf.axis and gf.axis.ok:
+                            h, w = bgr.shape[:2]
+                            p_top = gf.axis.price(lay_y := float(gf.axis.y_range_px[0]))
+                            p_bot = gf.axis.price(float(gf.axis.y_range_px[1]))
+                            cv_price_range = (round(min(p_top, p_bot), 2), round(max(p_top, p_bot), 2))
+
+                        for lv in gf.levels:
+                            bbox = None
+                            if lv.bbox_px:
+                                x0, y0, x1, y1 = lv.bbox_px
+                                h, w = bgr.shape[:2]
+                                bbox = BoundingBox(
+                                    ymin=round(y0 / max(h, 1), 4),
+                                    xmin=round(x0 / max(w, 1), 4),
+                                    ymax=round(y1 / max(h, 1), 4),
+                                    xmax=round(x1 / max(w, 1), 4)
+                                )
+                            ltype = "support"
+                            if "stop" in lv.kind:
+                                ltype = "stop_loss"
+                            elif "target" in lv.kind:
+                                ltype = "target"
+                            elif "entry" in lv.kind:
+                                ltype = "breakout"
+                            elif "zone" in lv.kind:
+                                ltype = "demand_zone" if lv.color == "green" else "supply_zone"
+                            gf_levels.append(GroundedPriceLevel(
+                                price=round(lv.price, 2),
+                                level_type=ltype,
+                                confidence=round(lv.confidence, 2),
+                                bounding_box=bbox,
+                                label=f"{lv.kind} [CV: {lv.price_source}]"
+                            ))
+            except Exception as e:
+                logger.debug(f"Deterministic CV grounding skipped on frame: {e}")
+
+        # 4. Establish price coordinate mapping
+        if cv_price_range:
+            min_p, max_p = cv_price_range
+        else:
+            min_p, max_p = self.estimate_price_range_from_text_and_context(transcript, ticker)
         mapper = PriceCoordinateMapper(min_price=min_p, max_price=max_p)
 
-        # 4. Detect grounded price levels
+        # 5. Detect grounded price levels from transcript and merge with CV detections
         detected_levels = self.extract_price_levels(transcript, mapper)
+        if gf_levels:
+            # Combine without duplicating identical prices
+            existing_prices = {round(l.price, 2) for l in detected_levels}
+            for gl in gf_levels:
+                if round(gl.price, 2) not in existing_prices:
+                    detected_levels.append(gl)
+                    existing_prices.add(round(gl.price, 2))
 
-        # 5. Resolve deictic spoken references to visual coordinates
+        # 6. Resolve deictic spoken references to visual coordinates
         deictic_anchors = self.deictic_grounder.ground_transcript(transcript, mapper, detected_levels)
 
         # 6. Extract timeline labels

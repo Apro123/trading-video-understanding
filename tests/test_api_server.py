@@ -102,3 +102,19 @@ def test_api_video_strategies():
     assert data2["total_strategies"] >= 1
 
 
+def test_api_video_grounding():
+    res = client.get("/api/videos/grounding/video_1")
+    assert res.status_code == 200
+    data = res.json()
+    assert "video_id" in data
+    assert "levels" in data
+
+
+def test_api_video_frame_overlay():
+    res = client.get("/api/videos/overlay/clip_1?t=5.0")
+    assert res.status_code == 200
+    assert res.headers["content-type"] == "image/png"
+    assert len(res.content) > 100
+
+
+

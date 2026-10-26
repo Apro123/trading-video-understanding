@@ -68,16 +68,28 @@ class SubtitleSyncManager:
         )
         matches = list(vtt_pattern.finditer(content))
         if matches:
-            prev_clean = ""
+            last_plain = None
             for m in matches:
                 start_s = time_str_to_seconds(m.group(1))
                 end_s = time_str_to_seconds(m.group(2))
                 raw_text = m.group(3)
-                clean_text = re.sub(r"<[^>]+>", "", raw_text)
-                clean_text = " ".join([l.strip() for l in clean_text.splitlines() if l.strip()])
-                if clean_text and clean_text != prev_clean:
+                body = [l.strip() for l in raw_text.splitlines() if l.strip()]
+                if not body:
+                    continue
+
+                # Handle Video rolling duplicate lines with word-level <c> tags
+                tagged = [l for l in body if "<c>" in l]
+                if tagged:
+                    # The active newly spoken line has <c> tags
+                    line = tagged[-1]
+                    clean_text = re.sub(r"<[^>]+>", "", line).strip()
+                else:
+                    # Pick the newest line from the cue body
+                    clean_text = re.sub(r"<[^>]+>", "", body[-1]).strip()
+
+                if clean_text and clean_text != last_plain:
                     raw_blocks.append((start_s, end_s, seconds_to_time_str(start_s), clean_text))
-                    prev_clean = clean_text
+                    last_plain = clean_text
 
         # 2. Fallback to legacy format: "18:40 \n text"
         if not raw_blocks:

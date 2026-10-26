@@ -164,25 +164,26 @@ sequenceDiagram
 - **Overlap-Aware Temporal Chunking**: Splits continuous video streams into discrete analysis windows (default: 20s chunks with 2s overlap), preventing trade entry triggers spanning window boundaries from being cut in half.
 - **Keyframe Extraction**: Extracts representative high-fidelity frames from the center and endpoints of each chunk for visual chart analysis.
 
-### 4.3 Multimodal Perception & Hybrid Visual Grounding
-- **Files**: [`chart_grounding.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/chart_grounding.py), [`vlm_reasoner.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/vlm_reasoner.py)
-- **Model Architecture**: Utilizes **NVIDIA Cosmos-3 Nano** (`Cosmos3OmniForConditionalGeneration` in BF16) paired with open-vocabulary detection (**YOLO-World**).
-- **Price Coordinate Calibration**:
-  - Translates normalized pixel bounding boxes `[ymin, xmin, ymax, xmax]` (scale 0–1000) to precise price coordinates on the chart's vertical y-axis.
-  - Automatically identifies chart layout segmentation (price candle pane, volume pane, RSI/MACD oscillator sub-panes).
+### 4.3 Multimodal Perception & Deterministic Pixel Visual Grounding
+- **Files**: [`grounding/`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/grounding/), [`chart_grounding.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/chart_grounding.py), [`vlm_reasoner.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/vlm_reasoner.py)
+- **Engine Architecture**: Combines deterministic classical computer vision (OpenCV & NumPy) with high-resolution zoomed-crop reading via **NVIDIA Cosmos 3 Nano**:
+  - `grounding/layout.py`: Dynamically locates the chart pane, price axis, time axis, and header symbol box, automatically adapting between light and dark themes.
+  - `grounding/drawings.py`: Deterministically detects horizontal price levels, colored green/red supply and demand zones, crosshairs, and TradingView long/short position tool boxes.
+  - `grounding/axis.py`: Discovers arithmetic price lattices and performs least-squares linear or logarithmic regression fits ($price = f(y)$) with $R^2 \ge 0.999$, cross-checking colored tags against pixel rows and dropping candle countdown timers (`08:53`).
+  - `grounding/reader.py`: Crops and upscales 3x zoomed crops of the price axis and 2x crops of the header, avoiding full-frame hallucinations.
+  - `grounding/viz.py`: Renders visual bounding box overlays for the web player and debugging.
 - **Deictic Spatial Grounding**:
-  - Filters out presenter references ("here", "at this candle", "this level") and matches them against detected chart price pivots and swing highs/lows.
+  - Resolves informal verbal pointers ("here", "at this candle", "this level", "boom") to grounded price levels and chart coordinates.
   - Detects trade signals: `BREAKOUT_LEVEL_VALIDATION`, `DEMAND_ZONE_RETEST`, `MOMENTUM_RSI_DIVERGENCE`, `PROTECTED_SWING_STOP`.
 
-### 4.4 Multi-Strategy Deconstruction Engine
-- **Files**: [`strategy_breakdown.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/strategy_breakdown.py), [`trade_strategy_agent.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/trade_strategy_agent.py)
-- **Discrete Strategy Identification**: Deconstructs long webinars into distinct, self-contained trading strategies, each characterized by:
-  - `name`: Strategy title (e.g., "Ascending Trend Following Strategy", "38.2% Candle Reversal Strategy").
-  - `start_s` & `end_s`: Temporal window within the video.
-  - `directional_bias`: BULLISH, BEARISH, or NEUTRAL.
-  - `core_thesis`: The structural and fundamental market thesis.
-  - `entry_trigger`, `invalidation_stop`, `take_profit_targets`, and `risk_reward_ratio`.
-  - `step_by_step_rules`: Formally structured algorithmic rules with condition logic and execution actions.
+### 4.4 Multi-Strategy Deconstruction & Hybrid Reasoning Engine
+- **Files**: [`strategy_breakdown.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/strategy_breakdown.py), [`nemotron_reasoner.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/nemotron_reasoner.py), [`trade_strategy_agent.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/trade_strategy_agent.py)
+- **Local Workhorse**: **Nemotron 3.5 Lightning** running in NVFP4 on the local GB10 GPU (`cd ~/Desktop/coding/recipes_sparkrun && sparkrun run nemotron3.5-nvfp4.yaml`) provides instant, zero-cost reasoning for per-chunk interpretation and regular rule synthesis.
+- **Sparing Ultra Cloud Reasoning**: When Weights & Biases credentials are configured, **Nemotron 3 Ultra 550B** (`nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B`) is invoked *sparingly* for whole-video global multi-strategy stitching where viewing the entire video timeline in a single prompt provides optimal boundary discovery.
+- **Strategy Validation & Price Sanity**:
+  - Automatically verifies directional integrity (stop below entry for Bullish setups, stop above entry for Bearish setups).
+  - Recalculates exact risk-to-reward ratios based on grounded entry, stop, and target levels.
+  - Re-prompts or cleanses invalidations and formats execution rules into machine-executable parameters.
 
 ### 4.5 Durable Orchestration & Background Execution
 - **Files**: [`orchestrator.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/orchestrator.py), [`server.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/server.py)

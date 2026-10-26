@@ -83,9 +83,33 @@ flowchart TD
 
 ---
 
-## 🚀 Running on NVIDIA DGX Spark GPU Server
+## 🚀 Running on NVIDIA DGX Spark GPU Server (GB10)
 
-The pipeline executes inside the Docker container on the NVIDIA DGX Spark GPU system (`ssh user@dgx-spark`).
+The pipeline executes locally on macOS for UI / lightweight dev, and leverages the NVIDIA DGX Spark GPU system (GB10 GPU) for high-performance inference.
+
+### ⚡ Setting Up Local Nemotron 3.5 Lightning on the GB10 GPU
+
+To start the local Nemotron 3.5 Lightning reasoning server using `sparkrun`:
+```bash
+cd ~/Desktop/coding/recipes_sparkrun && sparkrun run nemotron3.5-nvfp4.yaml
+```
+This serves Nemotron 3.5 Lightning in NVFP4 precision at `http://localhost:8000/v1` (or `http://localhost:8000/v1`), providing instant token streaming with zero cloud API cost.
+
+### 🧠 Hybrid LLM Hierarchy (Local Workhorse + Sparing Ultra Cloud Reasoning)
+1. **Local Workhorse (Default)**: **Nemotron 3.5 Lightning** handles all high-frequency reasoning tasks: per-chunk interpretation, narrative summaries, trade rule extraction, and interactive API requests.
+2. **Sparing Cloud High-Reasoning**: When Weights & Biases credentials are present (via `WANDB_API_KEY` or `wandb_ai_keys.txt`), **Nemotron 3 Ultra 550B** (`nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B`) is invoked *sparingly*—specifically for heavy whole-video global multi-strategy stitching where viewing the entire 40+ minute video context at once provides superior boundary delineation.
+3. **Resilient Disk Caching**: All VLM and LLM completions are hashed via SHA-256 and cached on disk (`.cache/llm/`, `.cache/crops/`), preventing redundant inference passes or token expenditures.
+
+---
+
+### 🎯 Deterministic Pixel Computer Vision Chart Grounding
+Instead of unreliable object detectors (like YOLO, which mistakes charts for "laptops" or "tv screens"), this repository uses a deterministic hybrid visual grounding engine:
+- **Pixel Geometry (`grounding/layout.py`, `drawings.py`)**: OpenCV and NumPy segmentation to locate the chart pane, price axis, time axis, colored demand/supply zones, horizontal price levels, and TradingView long/short position tools across light and dark themes.
+- **Axis Regression Calibration (`grounding/axis.py`)**: Automatically detects arithmetic tick lattices and performs linear or logarithmic least-squares fits ($price = f(y)$) with $R^2 \ge 0.999$, cross-checking colored axis tags against pixel rows and filtering countdown timers (e.g. `08:53`).
+- **3x Zoomed Crop VLM Reading (`grounding/reader.py`)**: Feeds high-resolution 3x zoomed crops of the price axis and 2x crops of the ticker header to the vision model, avoiding full-frame numerical hallucinations.
+- **Interactive UI Overlay (`⌗ Grounding`)**: The web player includes a Grounding Overlay toggle that renders detected price lines, zones, and position tools (with entry, stop, target, and risk-reward ratios) directly on top of the paused video.
+
+---
 
 ### 1. Run on Clip 1 (NVDA Market Structure & Demand Retest):
 ```bash

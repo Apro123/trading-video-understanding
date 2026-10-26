@@ -29,6 +29,8 @@ import time
 import json
 import logging
 import asyncio
+import cv2
+import numpy as np
 from typing import Dict, Any, Optional, List
 from fastapi import FastAPI, HTTPException, status, BackgroundTasks, Request, Response
 from fastapi.responses import JSONResponse, HTMLResponse, FileResponse, StreamingResponse
@@ -49,7 +51,7 @@ try:
     from .search_engine import VSSSearchIndex
     from .vlm_reasoner import VSSVLMReasoner
     from .subtitle_sync import SubtitleSyncManager, seconds_to_time_str
-    from .chunk_engine import VideoChunkManager
+    from .chunk_engine import VideoChunkManager, extract_frame_ffmpeg
     from .summarizer import VSSLVSSummarizer
     from .trade_strategy_agent import VSSTradeStrategyAgent
     from .strategy_breakdown import MultiStrategyBreakdownEngine
@@ -68,6 +70,7 @@ try:
         WorkflowStatus,
         StepStatus
     )
+    from .grounding import ground_frame, draw_overlay
 except (ImportError, ValueError):
     from config import DEFAULT_COSMOS3_PATH, DEFAULT_OUTPUT_DIR, VSSVLMConfig
     from schemas import (
@@ -83,7 +86,7 @@ except (ImportError, ValueError):
     from search_engine import VSSSearchIndex
     from vlm_reasoner import VSSVLMReasoner
     from subtitle_sync import SubtitleSyncManager, seconds_to_time_str
-    from chunk_engine import VideoChunkManager
+    from chunk_engine import VideoChunkManager, extract_frame_ffmpeg
     from summarizer import VSSLVSSummarizer
     from trade_strategy_agent import VSSTradeStrategyAgent
     from strategy_breakdown import MultiStrategyBreakdownEngine
@@ -102,6 +105,7 @@ except (ImportError, ValueError):
         WorkflowStatus,
         StepStatus
     )
+    from grounding import ground_frame, draw_overlay
 
 from contextlib import asynccontextmanager
 
@@ -566,6 +570,47 @@ def stream_subtitles(video_id: str):
     except Exception as e:
         logger.warning(f"Error converting subtitles to WebVTT for {video_id}: {e}")
         return FileResponse(spath, media_type="text/plain")
+
+@app.get("/api/videos/grounding/{video_id}", tags=["Visual Grounding"])
+def get_video_grounding(video_id: str):
+    """Retrieves grounded chart levels, zones, and positions for a video."""
+    meta = get_video_status(video_id)
+    out_dir = meta.get("output_dir", os.path.join(BASE_DIR, f"outputs_{video_id}"))
+    p = os.path.join(out_dir, "grounding_all.json")
+    data = safe_load_json(p)
+    if data:
+        return data
+
+    comp_path = os.path.join(out_dir, "vss_completion_response.json")
+    comp = safe_load_json(comp_path)
+    if comp and "chunk_captions" in comp:
+        levels = []
+        for cap in comp["chunk_captions"]:
+            gr = cap.get("grounding")
+            if gr and gr.get("detected_price_levels"):
+                levels.extend(gr["detected_price_levels"])
+        return {"video_id": video_id, "levels": levels}
+    return {"video_id": video_id, "levels": []}
+
+@app.get("/api/videos/overlay/{video_id}", tags=["Visual Grounding"])
+def get_video_frame_overlay(video_id: str, t: float = 0.0):
+    """Extracts frame at timestamp t, runs deterministic CV grounding, and returns rendered overlay PNG."""
+    vpath = get_video_file_path(video_id)
+    if not vpath or not os.path.exists(vpath):
+        raise HTTPException(status_code=404, detail="Video file not found")
+
+    pil_img = extract_frame_ffmpeg(vpath, t)
+    if pil_img is None:
+        raise HTTPException(status_code=500, detail=f"Could not extract frame at t={t}")
+
+    np_frame = np.array(pil_img)
+    bgr = np_frame[:, :, :3][:, :, ::-1] if np_frame.shape[2] >= 3 else np_frame
+    gf = ground_frame(bgr, t=t, video_id=video_id)
+    overlay = draw_overlay(bgr, gf)
+    success, encoded = cv2.imencode(".png", overlay)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to encode overlay image")
+    return Response(content=encoded.tobytes(), media_type="image/png")
 
 # ==========================================
 # Ingestion & Analysis Orchestration (DBOS)

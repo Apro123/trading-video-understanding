@@ -13,4 +13,8 @@ __pycache__/
 .DS_Store
 outputs_clip_*/
 outputs_vss*/
+outputs_*/
 *.sqlite3*
+.cache/
+_cache/
+*wandb_ai_keys*

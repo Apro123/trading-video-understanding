@@ -29,8 +29,9 @@ try:
         TradeIdeaSpec,
         TradingRule
     )
-    from .config import DEFAULT_LLM_BASE_URL, DEFAULT_LLM_MODEL
+    from .config import DEFAULT_LLM_BASE_URL, DEFAULT_LLM_MODEL, WANDB_BASE_URL, NEMOTRON_ULTRA_MODEL, get_wandb_credentials
     from .utils import clean_json_markdown
+    from .cache import DiskCache, stable_hash
 except (ImportError, ValueError):
     from schemas import (
         VideoChunk,
@@ -39,8 +40,9 @@ except (ImportError, ValueError):
         TradeIdeaSpec,
         TradingRule
     )
-    from config import DEFAULT_LLM_BASE_URL, DEFAULT_LLM_MODEL
+    from config import DEFAULT_LLM_BASE_URL, DEFAULT_LLM_MODEL, WANDB_BASE_URL, NEMOTRON_ULTRA_MODEL, get_wandb_credentials
     from utils import clean_json_markdown
+    from cache import DiskCache, stable_hash
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +74,7 @@ class NemotronReasoner:
         self.model_name = model_name
         self.timeout_s = timeout_s
         self.base_url = self._resolve_base_url(base_url)
+        self._cache = DiskCache("llm")
 
     @classmethod
     def _resolve_base_url(cls, explicit_url: Optional[str]) -> str:
@@ -112,9 +115,11 @@ class NemotronReasoner:
         return cls._cached_base_url
 
     def is_available(self) -> bool:
-        """Checks if the Nemotron server is reachable."""
+        """Checks if the local Nemotron server or remote Ultra is reachable."""
         if not httpx:
             return False
+        if self.is_ultra_available():
+            return True
         if NemotronReasoner._cached_available is not None:
             return NemotronReasoner._cached_available
 
@@ -126,16 +131,74 @@ class NemotronReasoner:
 
         return NemotronReasoner._cached_available
 
+    def is_ultra_available(self) -> bool:
+        """Checks if Weights & Biases Inference credentials are available for Nemotron Ultra."""
+        return get_wandb_credentials() is not None
+
     def chat_completion(
         self,
         messages: List[Dict[str, str]],
         max_tokens: int = 5000,
-        temperature: float = 0.1
+        temperature: float = 0.1,
+        prefer_ultra: bool = False
     ) -> Optional[str]:
-        """Sends a chat completion request to Nemotron."""
-        if not self.is_available() or not httpx:
+        """
+        Sends a chat completion request to Nemotron with persistent disk caching.
+        Defaults to local Nemotron 3.5 Lightning on the GB10 GPU.
+        Uses Nemotron 3 Ultra sparingly via W&B Inference when prefer_ultra=True and credentials exist.
+        """
+        if not httpx:
             return None
 
+        # Check cache first
+        target_model = NEMOTRON_ULTRA_MODEL if (prefer_ultra and self.is_ultra_available()) else self.model_name
+        cache_key = stable_hash(target_model, messages, max_tokens, temperature)
+        cached = self._cache.get(cache_key)
+        if cached is not None and isinstance(cached, dict) and "content" in cached:
+            return cached["content"]
+
+        # Option 1: Sparing use of Nemotron 3 Ultra via W&B Serverless Inference
+        wandb_key = get_wandb_credentials()
+        if prefer_ultra and wandb_key:
+            try:
+                headers = {
+                    "Authorization": f"Bearer {wandb_key}",
+                    "Content-Type": "application/json"
+                }
+                project = os.environ.get("WANDB_PROJECT")
+                team = os.environ.get("WANDB_TEAM")
+                if team and project:
+                    headers["OpenAI-Project"] = f"{team}/{project}"
+
+                payload = {
+                    "model": NEMOTRON_ULTRA_MODEL,
+                    "messages": messages,
+                    "max_tokens": max_tokens,
+                    "temperature": temperature
+                }
+                logger.info(f"Calling Nemotron 3 Ultra (sparingly) via W&B Inference...")
+                r = httpx.post(
+                    f"{WANDB_BASE_URL}/chat/completions",
+                    headers=headers,
+                    json=payload,
+                    timeout=self.timeout_s
+                )
+                if r.status_code == 200:
+                    data = r.json()
+                    choices = data.get("choices", [])
+                    if choices:
+                        msg = choices[0].get("message", {})
+                        content = msg.get("content") or msg.get("reasoning")
+                        if content:
+                            res_str = content.strip()
+                            self._cache.set(cache_key, {"content": res_str})
+                            return res_str
+                else:
+                    logger.warning(f"W&B Nemotron Ultra error {r.status_code}: {r.text[:200]}. Falling back to local Nemotron.")
+            except Exception as e:
+                logger.warning(f"Nemotron Ultra request failed: {e}. Falling back to local.")
+
+        # Option 2: Default local Nemotron 3.5 Lightning on GB10
         payload = {
             "model": self.model_name,
             "messages": messages,
@@ -157,14 +220,19 @@ class NemotronReasoner:
                     msg = choices[0].get("message", {})
                     content = msg.get("content")
                     if not content:
-                        # Fallback if content was placed in reasoning
                         content = msg.get("reasoning") or msg.get("reasoning_content")
                     if content:
-                        return content.strip()
+                        res_str = content.strip()
+                        self._cache.set(cache_key, {"content": res_str})
+                        return res_str
             else:
                 logger.warning(f"Nemotron API error {r.status_code}: {r.text[:200]}")
         except Exception as e:
-            logger.warning(f"Nemotron request failed: {e}")
+            logger.warning(f"Nemotron local request failed: {e}")
+
+        # Option 3: If local was down but W&B is available, fallback to Ultra as last resort
+        if not prefer_ultra and wandb_key:
+            return self.chat_completion(messages, max_tokens=max_tokens, temperature=temperature, prefer_ultra=True)
 
         return None
 

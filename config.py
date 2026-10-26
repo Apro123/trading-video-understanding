@@ -15,8 +15,38 @@ DEFAULT_COSMOS3_PATH = os.environ.get(
 )
 
 # Nemotron 3.5 Lightning reasoning endpoint on NVIDIA DGX Spark
+# Can be launched locally on the GB10 GPU with:
+# cd ~/Desktop/coding/recipes_sparkrun && sparkrun run nemotron3.5-nvfp4.yaml
+LOCAL_SPARKRUN_SETUP_CMD = "cd ~/Desktop/coding/recipes_sparkrun && sparkrun run nemotron3.5-nvfp4.yaml"
 DEFAULT_LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "http://localhost:8000/v1")
 DEFAULT_LLM_MODEL = os.environ.get("LLM_MODEL", "nemotron-3.5-lightning")
+
+# Weights & Biases Inference for sparing use of Nemotron 3 Ultra (550B)
+WANDB_BASE_URL = os.environ.get("WANDB_BASE_URL", "https://api.inference.wandb.ai/v1")
+NEMOTRON_ULTRA_MODEL = os.environ.get("NEMOTRON_ULTRA_MODEL", "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B")
+
+
+def get_wandb_credentials() -> Optional[str]:
+    """Finds W&B API key from env or wandb_ai_keys.txt if available."""
+    if os.environ.get("WANDB_API_KEY"):
+        return os.environ["WANDB_API_KEY"].strip()
+    
+    # Check potential key files
+    candidates = [
+        os.path.join(os.path.dirname(__file__), "wandb_ai_keys.txt"),
+        os.path.expanduser("~/Desktop/coding/trading-website-detection/wandb_ai_keys.txt"),
+        os.path.expanduser("~/.wandb_api_key")
+    ]
+    for p in candidates:
+        if os.path.exists(p):
+            try:
+                with open(p, "r") as f:
+                    key = f.read().strip()
+                    if key:
+                        return key
+            except Exception:
+                pass
+    return None
 
 DEFAULT_OUTPUT_DIR = os.environ.get("VSS_OUTPUT_DIR", "/workspace/outputs_vss")
 

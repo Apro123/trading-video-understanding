@@ -15,10 +15,10 @@ logger = logging.getLogger(__name__)
 
 try:
     from .schemas import VideoChunk
-    from .subtitle_sync import SubtitleSyncManager, seconds_to_time_str
+    from .subtitle_sync import SubtitleSyncManager, seconds_to_time_str, DEICTIC_KEYWORDS
 except (ImportError, ValueError):
     from schemas import VideoChunk
-    from subtitle_sync import SubtitleSyncManager, seconds_to_time_str
+    from subtitle_sync import SubtitleSyncManager, seconds_to_time_str, DEICTIC_KEYWORDS
 
 def get_video_duration_ffprobe(video_path: str) -> float:
     """Retrieves exact video duration in seconds via ffprobe."""
@@ -110,16 +110,36 @@ class VideoChunkManager:
             end_s = min(self.video_duration_s, start_s + self.chunk_duration_s)
             dur_s = end_s - start_s
 
-            # Calculate frame sampling timestamps within the chunk
-            if self.frames_per_chunk == 1:
-                frame_ts = [start_s + (dur_s / 2.0)]
-            else:
-                step = dur_s / float(self.frames_per_chunk + 1)
-                frame_ts = [round(start_s + step * (i + 1), 2) for i in range(self.frames_per_chunk)]
-
             # Synchronize subtitles
             matched_subs = self.subtitle_mgr.get_entries_in_window(start_s, end_s)
             transcript_text = self.subtitle_mgr.format_transcript_window(start_s, end_s)
+
+            # Smart cue-aware frame sampling (prioritizes speech cues pointing to chart)
+            cue_ts = []
+            for sub in matched_subs:
+                low = sub.text.lower()
+                if any(kw in low for kw in DEICTIC_KEYWORDS):
+                    t_cand = max(start_s, min(end_s - 0.5, sub.clip_timestamp_s))
+                    if all(abs(t_cand - p) >= 2.5 for p in cue_ts):
+                        cue_ts.append(round(t_cand, 2))
+
+            if cue_ts:
+                frame_ts = sorted(cue_ts[:self.frames_per_chunk])
+                # Fill remaining frame slots evenly if needed
+                step = dur_s / float(self.frames_per_chunk + 1)
+                for i in range(self.frames_per_chunk):
+                    if len(frame_ts) >= self.frames_per_chunk:
+                        break
+                    cand = round(start_s + step * (i + 1), 2)
+                    if all(abs(cand - f) >= 1.5 for f in frame_ts):
+                        frame_ts.append(cand)
+                frame_ts = sorted(frame_ts)
+            else:
+                if self.frames_per_chunk == 1:
+                    frame_ts = [round(start_s + (dur_s / 2.0), 2)]
+                else:
+                    step = dur_s / float(self.frames_per_chunk + 1)
+                    frame_ts = [round(start_s + step * (i + 1), 2) for i in range(self.frames_per_chunk)]
 
             chunk = VideoChunk(
                 chunk_id=chunk_idx,
