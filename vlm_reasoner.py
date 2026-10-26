@@ -7,12 +7,19 @@ https://github.com/NVIDIA-AI-Blueprints/video-search-and-summarization
 
 import os
 import re
+import io
 import json
 import time
+import base64
 import subprocess
 import logging
 from typing import List, Dict, Any, Optional, Tuple
 from PIL import Image
+
+try:
+    import httpx
+except ImportError:
+    httpx = None
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +27,12 @@ try:
     from .config import DEFAULT_COSMOS3_PATH, VSSVLMConfig
     from .schemas import VideoChunk, VlmCaptionResponse, ChartGroundingData
     from .chart_grounding import HybridChartGroundingPipeline
+    from .cache import DiskCache, stable_hash
 except (ImportError, ValueError):
     from config import DEFAULT_COSMOS3_PATH, VSSVLMConfig
     from schemas import VideoChunk, VlmCaptionResponse, ChartGroundingData
     from chart_grounding import HybridChartGroundingPipeline
+    from cache import DiskCache, stable_hash
 
 # VSS Reasoning Prompt Template for Trading Video Understanding
 VSS_CHUNK_REASONING_PROMPT = """You are the NVIDIA Video Search and Summarization (VSS) Trading AI Agent analyzing a technical trading video clip.
@@ -93,7 +102,9 @@ class VSSVLMReasoner:
         self.processor = None
         self.grounding_pipeline = HybridChartGroundingPipeline()
         self._is_loaded = False
+        self._has_endpoint = False
         self._has_cuda = False
+        self._cache = DiskCache("cosmos")
 
         try:
             import torch
@@ -120,10 +131,23 @@ class VSSVLMReasoner:
             return {"allocated_gb": 0.0, "reserved_gb": 0.0, "peak_allocated_gb": 0.0, "peak_reserved_gb": 0.0, "system_used_gb": 0.0}
 
     def load_model(self):
-        """Loads Cosmos 3 Nano model on GPU if available and not skipped."""
+        """Loads Cosmos 3 Nano Reasoner endpoint or local weights if available."""
         if self._is_loaded or self.config.skip_model:
             return
 
+        # 1. Prefer lightweight Cosmos 3 Nano Reasoner endpoint (Zero in-process VRAM)
+        if self.config.endpoint_url and httpx:
+            try:
+                r = httpx.get(f"{self.config.endpoint_url}/v1/models", timeout=2.0)
+                if r.status_code == 200:
+                    self._has_endpoint = True
+                    self._is_loaded = True
+                    logger.info(f"Connected to Cosmos 3 Nano Reasoner microservice at {self.config.endpoint_url} (0 MB Python in-process VRAM)")
+                    return
+            except Exception as e:
+                logger.info(f"Could not connect to Cosmos 3 Reasoner endpoint: {e}. Checking local weights...")
+
+        # 2. Local in-process HuggingFace fallback
         if not self._has_cuda:
             logger.info("CUDA not available; running in CPU fallback/mock mode.")
             return
@@ -154,6 +178,41 @@ class VSSVLMReasoner:
             logger.warning(f"Failed to load Cosmos 3 Nano on GPU: {e}. Switching to fallback mode.")
             self._is_loaded = False
 
+    def read_image(self, prompt: str, image_bytes: bytes, max_tokens: int = 1500) -> str:
+        """Sends an image crop to the Cosmos 3 Nano Reasoner endpoint."""
+        if not self.config.endpoint_url or not httpx:
+            return ""
+
+        mime = "image/png"
+        b64 = base64.b64encode(image_bytes).decode("utf-8")
+        data_uri = f"data:{mime};base64,{b64}"
+
+        payload = {
+            "model": self.config.model_name,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": data_uri}}
+                    ]
+                }
+            ],
+            "max_tokens": max_tokens,
+            "temperature": 0.0
+        }
+
+        try:
+            r = httpx.post(f"{self.config.endpoint_url}/v1/chat/completions", json=payload, timeout=45.0)
+            if r.status_code == 200:
+                data = r.json()
+                choices = data.get("choices", [])
+                if choices:
+                    return choices[0].get("message", {}).get("content", "").strip()
+        except Exception as e:
+            logger.warning(f"Cosmos read_image request failed: {e}")
+        return ""
+
     def reason_over_chunk(
         self,
         chunk: VideoChunk,
@@ -179,7 +238,30 @@ class VSSVLMReasoner:
         answer_content = ""
 
         # GPU Model Inference
-        if self._is_loaded and self.model is not None and self.processor is not None and frames:
+        if self._has_endpoint and httpx and frames:
+            try:
+                content = [{"type": "text", "text": prompt}]
+                for img in frames[:self.config.frames_per_chunk]:
+                    buf = io.BytesIO()
+                    img.save(buf, format="PNG")
+                    b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+                    content.append({"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}})
+
+                payload = {
+                    "model": self.config.model_name,
+                    "messages": [{"role": "user", "content": content}],
+                    "max_tokens": self.config.max_new_tokens,
+                    "temperature": self.config.temperature
+                }
+                r = httpx.post(f"{self.config.endpoint_url}/v1/chat/completions", json=payload, timeout=60.0)
+                if r.status_code == 200:
+                    choices = r.json().get("choices", [])
+                    if choices:
+                        raw_output = choices[0].get("message", {}).get("content", "").strip()
+            except Exception as e:
+                logger.warning(f"Endpoint inference failed on chunk {chunk.chunk_id}: {e}")
+
+        elif self._is_loaded and self.model is not None and self.processor is not None and frames:
             try:
                 import torch
                 # Build chat template structure

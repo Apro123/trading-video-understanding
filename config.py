@@ -61,9 +61,10 @@ class VSSChunkConfig:
 
 @dataclass
 class VSSVLMConfig:
-    """Configuration for the Vision-Language Model (Cosmos 3 Nano)."""
-    model_name: str = "nvidia/Cosmos3-Nano"
+    """Configuration for the Vision-Language Model (Cosmos 3 Nano Reasoner)."""
+    model_name: str = os.environ.get("COSMOS3_MODEL_NAME", "nvidia/cosmos3-nano-reasoner")
     model_path: str = DEFAULT_COSMOS3_PATH
+    endpoint_url: Optional[str] = os.environ.get("COSMOS3_REASON_URL")  # Remote/local vLLM endpoint (e.g. http://localhost:8001)
     device: str = "cuda"
     torch_dtype: str = "bfloat16"
     enable_reasoning: bool = True
