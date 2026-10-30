@@ -579,6 +579,12 @@ def get_video_grounding(video_id: str):
     p = os.path.join(out_dir, "grounding_all.json")
     data = safe_load_json(p)
     if data:
+        if isinstance(data, list):
+            flat_levels = []
+            for f in data:
+                if isinstance(f, dict) and "levels" in f:
+                    flat_levels.extend(f["levels"])
+            return {"video_id": video_id, "levels": flat_levels, "frames": data, "total_frames": len(data)}
         return data
 
     comp_path = os.path.join(out_dir, "vss_completion_response.json")
