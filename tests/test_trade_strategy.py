@@ -18,7 +18,7 @@ def test_trade_strategy_agent_synthesis():
     summarizer = VSSLVSSummarizer()
     completion = summarizer.summarize(chunks, captions)
 
-    spec = agent.synthesize_trade_idea(completion)
+    spec = agent.synthesize_trade_idea(completion, chunks=chunks)
 
     assert "NVDA" in spec.asset
     assert spec.directional_bias == "Bullish"

@@ -2,7 +2,7 @@
 
 import cv2
 import numpy as np
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Tuple
 
 from .layout import Layout, crop
 from cache import extract_json, stable_hash, DiskCache

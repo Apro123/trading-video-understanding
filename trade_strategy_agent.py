@@ -65,10 +65,21 @@ class VSSTradeStrategyAgent:
         Prioritizes Nemotron 3.5 reasoning, with generic algorithmic fallback.
         """
         # 1. Attempt LLM Reasoning via Nemotron 3.5 Lightning
-        if self.nemotron and self.nemotron.is_available() and chunks:
+        if self.nemotron and self.nemotron.is_available():
             try:
+                effective_chunks = chunks or [
+                    VideoChunk(
+                        chunk_id=c.chunk_id,
+                        start_s=c.start_s,
+                        end_s=c.end_s,
+                        duration_s=c.end_s - c.start_s,
+                        start_str=c.start_time,
+                        end_str=c.end_time,
+                        synchronized_transcript=c.content
+                    ) for c in completion.chunk_captions
+                ]
                 spec = self.nemotron.synthesize_trade_idea(
-                    chunks=chunks,
+                    chunks=effective_chunks,
                     chunk_captions=completion.chunk_captions,
                     key_events=completion.key_events
                 )

@@ -6,12 +6,27 @@ Extracts video frames via FFmpeg streaming pipes with native support for AV1, VP
 
 import os
 import io
+import shutil
 import subprocess
 import logging
 from typing import List, Optional, Tuple
 from PIL import Image
+import cv2
 
 logger = logging.getLogger(__name__)
+
+def _find_binary(name: str) -> str:
+    found = shutil.which(name)
+    if found:
+        return found
+    for cand in [
+        os.path.expanduser(f"~/.local/bin/{name}"),
+        f"/usr/local/bin/{name}",
+        f"/usr/bin/{name}"
+    ]:
+        if os.path.exists(cand) and os.access(cand, os.X_OK):
+            return cand
+    return name
 
 try:
     from .schemas import VideoChunk
@@ -21,12 +36,13 @@ except (ImportError, ValueError):
     from subtitle_sync import SubtitleSyncManager, seconds_to_time_str, DEICTIC_KEYWORDS
 
 def get_video_duration_ffprobe(video_path: str) -> float:
-    """Retrieves exact video duration in seconds via ffprobe."""
+    """Retrieves exact video duration in seconds via ffprobe or cv2 fallback."""
     if not os.path.exists(video_path):
         raise FileNotFoundError(f"Video file not found: {video_path}")
+    bin_path = _find_binary("ffprobe")
     try:
         cmd = [
-            "ffprobe", "-v", "error",
+            bin_path, "-v", "error",
             "-show_entries", "format=duration",
             "-of", "default=noprint_wrappers=1:nokey=1",
             video_path
@@ -34,8 +50,20 @@ def get_video_duration_ffprobe(video_path: str) -> float:
         out = subprocess.check_output(cmd, stderr=subprocess.DEVNULL).decode("utf-8").strip()
         return float(out)
     except Exception as e:
-        logger.warning(f"ffprobe failed to get duration: {e}. Fallback to 120s.")
-        return 120.0
+        logger.debug(f"ffprobe failed to get duration: {e}. Trying cv2 fallback.")
+
+    try:
+        cap = cv2.VideoCapture(video_path)
+        if cap.isOpened():
+            fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+            frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+            cap.release()
+            if frame_count > 0 and fps > 0:
+                return float(frame_count / fps)
+    except Exception:
+        pass
+
+    return 120.0
 
 def extract_frame_ffmpeg(
     video_path: str,
@@ -43,12 +71,13 @@ def extract_frame_ffmpeg(
     max_dimension: int = 1280
 ) -> Optional[Image.Image]:
     """
-    Extracts a single RGB frame from a video file at a given timestamp using an in-memory FFmpeg pipe.
-    Supports arbitrary codecs including AV1, VP9, and H.264.
+    Extracts a single RGB frame from a video file at a given timestamp using an in-memory FFmpeg pipe
+    with cv2 fallback.
     """
+    bin_path = _find_binary("ffmpeg")
     try:
         cmd = [
-            "ffmpeg", "-ss", f"{timestamp_s:.3f}",
+            bin_path, "-ss", f"{timestamp_s:.3f}",
             "-i", video_path,
             "-vframes", "1",
             "-f", "image2pipe",
@@ -63,7 +92,6 @@ def extract_frame_ffmpeg(
         )
         if proc.returncode == 0 and len(proc.stdout) > 0:
             img = Image.open(io.BytesIO(proc.stdout)).convert("RGB")
-            # Downscale proportionally if larger than max_dimension
             w, h = img.size
             if max(w, h) > max_dimension:
                 scale = max_dimension / float(max(w, h))
@@ -71,7 +99,27 @@ def extract_frame_ffmpeg(
                 img = img.resize(new_size, Image.Resampling.LANCZOS)
             return img
     except Exception as e:
-        logger.warning(f"Frame extraction failed at {timestamp_s:.2f}s: {e}")
+        logger.debug(f"FFmpeg pipe extraction failed at {timestamp_s:.2f}s: {e}")
+
+    # Fallback to OpenCV
+    try:
+        cap = cv2.VideoCapture(video_path)
+        if cap.isOpened():
+            cap.set(cv2.CAP_PROP_POS_MSEC, timestamp_s * 1000.0)
+            ret, frame = cap.read()
+            cap.release()
+            if ret and frame is not None:
+                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                img = Image.fromarray(rgb)
+                w, h = img.size
+                if max(w, h) > max_dimension:
+                    scale = max_dimension / float(max(w, h))
+                    new_size = (int(w * scale), int(h * scale))
+                    img = img.resize(new_size, Image.Resampling.LANCZOS)
+                return img
+    except Exception as e:
+        logger.warning(f"cv2 fallback extraction failed at {timestamp_s:.2f}s: {e}")
+
     return None
 
 class VideoChunkManager:
