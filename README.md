@@ -1,5 +1,8 @@
 # 🎬 NVIDIA Video Search and Summarization (VSS) Trading Pipeline
 
+> [!NOTE]
+> **Single-System Deployment**: This entire codebase is designed to run self-contained on **one NVIDIA DGX Spark system** (GB10 GPU). All components—including local GPU inference (Cosmos 3 Nano VLM, Nemotron 3.5 Lightning, YOLO-World), deterministic visual grounding, test suite execution, and the interactive web UI—run directly on a single DGX Spark machine.
+
 Implementation of the **NVIDIA AI Blueprint for Video Search and Summarization (VSS)** tailored specifically for extracting actionable trading ideas, market structure rules, and execution plans from technical trading video clips and synchronized subtitles.
 
 Reference architecture based on:  
