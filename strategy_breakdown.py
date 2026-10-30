@@ -4,7 +4,7 @@ Deconstructs long-form trading masterclasses and technical courses into discrete
 actionable trading strategies across different video intervals/chunks.
 
 Features:
-- Segment discovery leveraging Video chapters when available, augmented with transcript content analysis.
+- Segment discovery leveraging video chapters when available, augmented with transcript content analysis.
 - Generic fallback for videos without chapters or single-strategy focus.
 - Deep synthesis of formal algorithmic rules, entry triggers, invalidation stops, and confluences per strategy.
 - Zero hardcoded words, tickers, or pre-canned rules.
@@ -296,7 +296,7 @@ STRATEGY_TEMPLATES: Dict[str, Dict[str, Any]] = {
 }
 
 def clean_rolling_transcript(text: str) -> str:
-    """Removes rolling Video live subtitle duplicate phrases."""
+    """Removes rolling live subtitle duplicate phrases."""
     tokens = text.split()
     out = []
     i = 0
@@ -425,10 +425,10 @@ class MultiStrategyBreakdownEngine:
         sub_mgr: SubtitleSyncManager
     ) -> List[Dict[str, Any]]:
         """
-        Discovers temporal candidate segments using Video chapters (if available)
+        Discovers temporal candidate segments using video chapters (if available)
         combined with transcript validation, or falls back to topic clustering.
         """
-        # A. Check for Video chapters
+        # A. Check for video chapters
         yt_chapters = get_video_chapters(video_id)
         valid_candidates = []
 

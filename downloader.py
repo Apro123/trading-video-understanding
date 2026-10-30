@@ -1,8 +1,8 @@
 """
-Video Video Downloader & Metadata Engine for Trading Video Understanding.
+Video Downloader & Metadata Engine for Trading Video Understanding.
 Follows strict rule:
 - Highest quality video-only format (excluding premium formats).
-- Always downloads subtitles (WebVTT/SRT).
+- Always downloads or aligns subtitles (WebVTT/SRT).
 - Caches and detects locally existing video files and subtitles.
 """
 
@@ -24,7 +24,7 @@ except (ImportError, ValueError):
 VIDEOS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "videos")
 os.makedirs(VIDEOS_DIR, exist_ok=True)
 
-# Pre-registered Video trading videos & local test clips
+# Pre-registered trading videos & local test clips
 KNOWN_VIDEOS: Dict[str, Dict[str, Any]] = {
     "clip_1": {
         "video_id": "clip_1",
@@ -35,7 +35,7 @@ KNOWN_VIDEOS: Dict[str, Dict[str, Any]] = {
         "duration_s": 157.02,
         "duration_str": "2m 37s",
         "clip_ref": "trading_lesson.clip.mp4",
-        "subtitles_ref": "subtitles_clip",
+        "subtitles_ref": "videos/video_1.vtt",
         "output_dir_ref": "outputs_vss_clip_1_grounded",
         "description": "Bullish change of character (CHoCH), pivot level breakout validation at $1927, demand zone retesting, and protected swing stop placement."
     },
@@ -48,13 +48,13 @@ KNOWN_VIDEOS: Dict[str, Dict[str, Any]] = {
         "duration_s": 113.0,
         "duration_str": "1m 53s",
         "clip_ref": "trading_lesson_2.clip.mp4",
-        "subtitles_ref": "subtitles_clip_2",
+        "subtitles_ref": "videos/video_2.vtt",
         "output_dir_ref": "outputs_vss_clip_2_grounded",
         "description": "RSI indicator dynamics: overcoming common overbought/oversold misconceptions, exploiting momentum divergence at key resistance, and candlestick confirmation."
     },
     "video_1": {
         "video_id": "video_1",
-        "title": "Master Technical Charts: Swing Trading & Long-Term Investing with Market Structure",
+        "title": "Market Structure: Swing Trading & Long-Term Investing",
         "url": "local:video_1.mp4",
         "asset": "NVDA",
         "timeframe": "1W (Weekly)",
@@ -65,7 +65,7 @@ KNOWN_VIDEOS: Dict[str, Dict[str, Any]] = {
     },
     "video_2": {
         "video_id": "video_2",
-        "title": "The Only Technical Analysis Video You Will Ever Need... (Full Course: Beginner To Advanced)",
+        "title": "Technical Analysis Course: Indicator & Price Action Dynamics",
         "url": "local:video_2.mp4",
         "asset": "Forex (AUDCAD / EURUSD)",
         "timeframe": "1D (Daily)",
@@ -155,7 +155,7 @@ def get_subtitle_file_path(video_id: str) -> Optional[str]:
 
 
 def get_video_status(video_id: str) -> Dict[str, Any]:
-    """Returns the download and indexing status of a Video video or local clip."""
+    """Returns the download and indexing status of a trading video or local clip."""
     meta = KNOWN_VIDEOS.get(video_id, {
         "video_id": video_id,
         "title": f"Video [{video_id}]",
@@ -214,37 +214,20 @@ def get_video_status(video_id: str) -> Dict[str, Any]:
     }
 
 def get_video_chapters(video_id: str) -> List[Dict[str, Any]]:
-    """Retrieves chapter metadata for a Video video, caching locally."""
+    """Retrieves chapter metadata for a video, caching locally."""
     cache_path = os.path.join(VIDEOS_DIR, f"{video_id}_chapters.json")
     cached = safe_load_json(cache_path)
     if cached is not None:
         return cached
-
-    url = f"https://example.com/watch?v={video_id}"
-    try:
-        cmd = ["yt-dlp", "--dump-json", "--skip-download", url]
-        res = subprocess.run(cmd, capture_output=True, text=True, timeout=25)
-        if res.returncode == 0 and res.stdout:
-            data = json.loads(res.stdout)
-            chapters = data.get("chapters") or []
-            if chapters:
-                with open(cache_path, "w", encoding="utf-8") as f:
-                    json.dump(chapters, f, indent=2)
-                return chapters
-    except Exception as e:
-        logger.warning(f"yt-dlp chapter extraction failed: {e}")
     return []
 
 def list_available_videos() -> List[Dict[str, Any]]:
-    """Lists status for all supported Video trading videos."""
+    """Lists status for all supported trading videos."""
     return [get_video_status(vid) for vid in KNOWN_VIDEOS]
 
 def download_video(video_id: str) -> Dict[str, Any]:
     """
-    Downloads Video video & subtitles using yt-dlp.
-    Rules:
-    - Highest quality possible for video only (excluding premium).
-    - Downloads subtitles.
+    Ensures video and subtitles are available locally.
     """
     if video_id not in KNOWN_VIDEOS:
         raise ValueError(f"Unknown video ID: {video_id}. Allowed: {list(KNOWN_VIDEOS.keys())}")
@@ -255,57 +238,51 @@ def download_video(video_id: str) -> Dict[str, Any]:
     # If both exist and have healthy sizes, reuse
     if os.path.exists(target_video) and os.path.getsize(target_video) > 1024 * 1024 and \
        os.path.exists(target_sub) and os.path.getsize(target_sub) > 500:
-        logger.info(f"Video {video_id} and subtitles already downloaded.")
+        logger.info(f"Video {video_id} and subtitles already available.")
         return get_video_status(video_id)
 
-    url = f"https://example.com/watch?v={video_id}"
+    meta = KNOWN_VIDEOS.get(video_id, {})
+    url = meta.get("url", "")
+    if url.startswith("http"):
+        # Download Subtitles first if missing
+        if not os.path.exists(target_sub) or os.path.getsize(target_sub) < 500:
+            logger.info(f"Downloading subtitles for {video_id}...")
+            sub_cmd = [
+                "yt-dlp",
+                "--write-auto-subs",
+                "--write-subs",
+                "--sub-langs", "en.*,en",
+                "--skip-download",
+                "--no-playlist",
+                "-o", os.path.join(VIDEOS_DIR, f"subtitles_{video_id}.%(ext)s"),
+                url
+            ]
+            subprocess.run(sub_cmd, capture_output=True, text=True)
+            for f in os.listdir(VIDEOS_DIR):
+                if f.startswith(f"subtitles_{video_id}") and f.endswith(".vtt"):
+                    shutil.copyfile(os.path.join(VIDEOS_DIR, f), target_sub)
+                    break
 
-    # 1. Download Subtitles first if missing
-    if not os.path.exists(target_sub) or os.path.getsize(target_sub) < 500:
-        logger.info(f"Downloading subtitles for {video_id}...")
-        sub_cmd = [
-            "yt-dlp",
-            "--write-auto-subs",
-            "--write-subs",
-            "--sub-langs", "en.*,en",
-            "--skip-download",
-            "--extractor-args", "video:player_client=android,web",
-            "--no-playlist",
-            "-o", os.path.join(VIDEOS_DIR, f"subtitles_{video_id}.%(ext)s"),
-            url
-        ]
-        res = subprocess.run(sub_cmd, capture_output=True, text=True)
-        # Check generated files and normalize to target_sub
-        for f in os.listdir(VIDEOS_DIR):
-            if f.startswith(f"subtitles_{video_id}") and f.endswith(".vtt"):
-                shutil.copyfile(os.path.join(VIDEOS_DIR, f), target_sub)
-                break
-
-    # 2. Download Highest Quality Video-Only (Non-Premium)
-    if not os.path.exists(target_video) or os.path.getsize(target_video) < 1024 * 1024:
-        # Prioritize 1080p/highest H.264 (avc1) for universal browser/Safari playback without high CPU
-        format_selector = "bestvideo[vcodec^=avc1][format_note!*=Premium][format_note!*=premium]/299/137/bestvideo[ext=mp4][format_note!*=Premium][format_note!*=premium]/bestvideo"
-        vid_cmd = [
-            "yt-dlp",
-            "-f", format_selector,
-            "--extractor-args", "video:player_client=android,web",
-            "--no-playlist",
-            "-o", target_video,
-            url
-        ]
-        res = subprocess.run(vid_cmd, capture_output=True, text=True)
-        if res.returncode != 0:
-            logger.warning(f"yt-dlp video download returned code {res.returncode}: {res.stderr}")
-        elif os.path.exists(target_video):
-            # Faststart optimization for instant HTML5 web playback and zero CPU overhead
-            try:
-                faststart_temp = f"{target_video}.faststart.mp4"
-                ff_res = subprocess.run([
-                    "ffmpeg", "-i", target_video, "-c", "copy", "-movflags", "+faststart", faststart_temp, "-y"
-                ], capture_output=True, text=True)
-                if ff_res.returncode == 0 and os.path.exists(faststart_temp) and os.path.getsize(faststart_temp) > 1024:
-                    shutil.move(faststart_temp, target_video)
-            except Exception as e:
-                logger.warning(f"Faststart optimization note: {e}")
+        # Download Video
+        if not os.path.exists(target_video) or os.path.getsize(target_video) < 1024 * 1024:
+            format_selector = "bestvideo[vcodec^=avc1][format_note!*=Premium][format_note!*=premium]/bestvideo[ext=mp4]/bestvideo"
+            vid_cmd = [
+                "yt-dlp",
+                "-f", format_selector,
+                "--no-playlist",
+                "-o", target_video,
+                url
+            ]
+            res = subprocess.run(vid_cmd, capture_output=True, text=True)
+            if res.returncode == 0 and os.path.exists(target_video):
+                try:
+                    faststart_temp = f"{target_video}.faststart.mp4"
+                    ff_res = subprocess.run([
+                        "ffmpeg", "-i", target_video, "-c", "copy", "-movflags", "+faststart", faststart_temp, "-y"
+                    ], capture_output=True, text=True)
+                    if ff_res.returncode == 0 and os.path.exists(faststart_temp) and os.path.getsize(faststart_temp) > 1024:
+                        shutil.move(faststart_temp, target_video)
+                except Exception as e:
+                    logger.warning(f"Faststart optimization note: {e}")
 
     return get_video_status(video_id)

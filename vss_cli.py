@@ -97,7 +97,7 @@ def main():
     # Summarize sub-command
     p_sum = subparsers.add_parser("summarize", help="Summarize video clip with subtitles")
     p_sum.add_argument("--video", default="/workspace/trading_lesson.clip.mp4", help="Video file path")
-    p_sum.add_argument("--subtitles", default="/workspace/subtitles_clip", help="Subtitles file path")
+    p_sum.add_argument("--subtitles", default="/workspace/videos/video_1.vtt", help="Subtitles file path")
     p_sum.add_argument("--output_dir", default=DEFAULT_OUTPUT_DIR, help="Output directory")
     p_sum.add_argument("--model_path", default=DEFAULT_COSMOS3_PATH, help="Cosmos 3 Nano snapshot path")
     p_sum.add_argument("--skip_model", action="store_true", help="Deterministic fallback without GPU model")
@@ -120,7 +120,7 @@ def main():
     # Trade-idea sub-command
     p_idea = subparsers.add_parser("trade-idea", help="Extract trade idea and execution rules")
     p_idea.add_argument("--video", default="/workspace/trading_lesson.clip.mp4", help="Video file path")
-    p_idea.add_argument("--subtitles", default="/workspace/subtitles_clip", help="Subtitles file path")
+    p_idea.add_argument("--subtitles", default="/workspace/videos/video_1.vtt", help="Subtitles file path")
     p_idea.add_argument("--output_dir", default=DEFAULT_OUTPUT_DIR, help="Output directory")
     p_idea.add_argument("--model_path", default=DEFAULT_COSMOS3_PATH, help="Cosmos 3 Nano snapshot path")
     p_idea.add_argument("--skip_model", action="store_true", help="Deterministic fallback without GPU model")

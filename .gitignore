@@ -2,6 +2,7 @@
 *.mp4
 sample_frames*/
 frames/
+subtitles*
 outputs/
 outputs_*
 outputs_*/

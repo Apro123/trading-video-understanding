@@ -144,29 +144,29 @@ You can run the end-to-end VSS pipeline directly on the DGX Spark system using e
 # Build the production container (if not already built)
 docker build -t trader-vids:latest .
 
-# Run on Clip 1 (NVDA Market Structure & Demand Retest):
+# Run on Video 1 (NVDA Market Structure & Demand Retest):
 docker run --rm --gpus all \
   -v $(pwd):/workspace \
   -v /mnt/edrive/huggingface:/mnt/edrive/huggingface:ro \
   -e HF_HOME=/mnt/edrive/huggingface \
   -e WANDB_MODE=offline \
   trader-vids:latest pipeline.py \
-  --video /workspace/trading_lesson.clip.mp4 \
-  --subtitles /workspace/subtitles_clip \
-  --output_dir /workspace/outputs_vss_clip_1 \
+  --video /workspace/videos/video_1.mp4 \
+  --subtitles /workspace/videos/video_1.vtt \
+  --output_dir /workspace/outputs_video_1 \
   --chunk_duration 35.0 \
   --chunk_overlap 5.0
 
-# Run on Clip 2 (RSI Momentum Divergence & Resistance Reversal):
+# Run on Video 2 (RSI Momentum Divergence & Resistance Reversal):
 docker run --rm --gpus all \
   -v $(pwd):/workspace \
   -v /mnt/edrive/huggingface:/mnt/edrive/huggingface:ro \
   -e HF_HOME=/mnt/edrive/huggingface \
   -e WANDB_MODE=offline \
   trader-vids:latest pipeline.py \
-  --video /workspace/trading_lesson_2.clip.mp4 \
-  --subtitles /workspace/subtitles_clip_2 \
-  --output_dir /workspace/outputs_vss_clip_2 \
+  --video /workspace/videos/video_2.mp4 \
+  --subtitles /workspace/videos/video_2.vtt \
+  --output_dir /workspace/outputs_video_2 \
   --chunk_duration 35.0 \
   --chunk_overlap 5.0
 
@@ -178,16 +178,16 @@ docker run --rm --gpus all \
   -e WANDB_MODE=offline \
   trader-vids:latest pipeline.py \
   --video /workspace/my_video.mp4 \
-  --subtitles /workspace/my_subtitles \
-  --output_dir /workspace/outputs_vss_my_video
+  --subtitles /workspace/my_subtitles.vtt \
+  --output_dir /workspace/outputs_my_video
 ```
 
 #### Option B: Running Natively
 ```bash
 python3 pipeline.py \
-  --video trading_lesson.clip.mp4 \
-  --subtitles subtitles_clip \
-  --output_dir outputs_vss_clip_1 \
+  --video videos/video_1.mp4 \
+  --subtitles videos/video_1.vtt \
+  --output_dir outputs_video_1 \
   --chunk_duration 35.0 \
   --chunk_overlap 5.0
 ```

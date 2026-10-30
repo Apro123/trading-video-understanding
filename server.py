@@ -4,7 +4,7 @@ Implements the NVIDIA Video Search and Summarization (VSS) REST API specificatio
 https://github.com/NVIDIA-AI-Blueprints/video-search-and-summarization
 
 Endpoints:
-- GET /: Interactive Web UI for Video video selection, playback sync, and semantic search
+- GET /: Interactive Web UI for video selection, playback sync, and semantic search
 - GET /v1/ready: Readiness probe (HTTP 200)
 - GET /v1/live: Liveness probe (HTTP 200)
 - GET /v1/healthz: Health check with GPU VRAM profiling
@@ -14,7 +14,7 @@ Endpoints:
 - POST /v1/trade_idea: Synthesize formal algorithmic trade idea specification
 
 Interactive Web UI Endpoints:
-- GET /api/videos: List available Video trading videos and their statuses
+- GET /api/videos: List available trading videos and their statuses
 - POST /api/videos/download: Download video and subtitles via yt-dlp (highest quality video-only non-premium)
 - POST /api/videos/analyze: Run VSS indexing and strategy synthesis
 - GET /api/videos/status/{video_id}: Retrieve video status, trade spec, and summary
@@ -253,12 +253,12 @@ def get_ui():
 
 @app.get("/api/videos", tags=["Video Management"])
 def list_videos():
-    """Returns available Video trading videos and their download/indexing status."""
+    """Returns available trading videos and their download/indexing status."""
     return list_available_videos()
 
 @app.post("/api/videos/download", tags=["Video Management"])
 def download_video_endpoint(req: VideoActionRequest):
-    """Downloads a Video video and subtitles using yt-dlp according to non-premium rules."""
+    """Downloads or prepares a video and subtitles."""
     try:
         status_info = download_video(req.video_id)
         return status_info

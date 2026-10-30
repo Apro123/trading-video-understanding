@@ -160,7 +160,7 @@ sequenceDiagram
 
 ### 4.2 Temporal Chunking & Subtitle Origin Anchoring
 - **Files**: `chunk_engine.py`, `subtitle_sync.py`
-- **Dynamic Origin Normalization**: Many raw subtitle files from Video contain global video timestamps (e.g., starting at `18:40,000`). `SubtitleSyncManager` detects the earliest cue timestamp and shifts the origin to `00:00.000`, guaranteeing exact alignment with video playback.
+- **Dynamic Origin Normalization**: Many raw subtitle files contain global video timestamps (e.g., starting at `18:40,000`). `SubtitleSyncManager` detects the earliest cue timestamp and shifts the origin to `00:00.000`, guaranteeing exact alignment with video playback.
 - **Overlap-Aware Temporal Chunking**: Splits continuous video streams into discrete analysis windows (default: 20s chunks with 2s overlap), preventing trade entry triggers spanning window boundaries from being cut in half.
 - **Keyframe Extraction**: Extracts representative high-fidelity frames from the center and endpoints of each chunk for visual chart analysis.
 
@@ -398,7 +398,7 @@ In accordance with user requirements for a bare-bones, high-signal workspace, se
    - Serves real-time dynamic overlays via `/api/videos/overlay/{video_id}?t={time}` and the web player `⌗ Grounding` button.
 
 7. **Rolling Auto-Caption De-Duplication & Deictic Frame Sampling**:
-   - Normalized rolling Video auto-captions with word-level `<c>` tag deduplication in `subtitle_sync.py`.
+   - Normalized rolling auto-captions with word-level `<c>` tag deduplication in `subtitle_sync.py`.
    - Enhanced `chunk_engine.py` to prioritize keyframes at deictic speech cues (*"right here"*, *"this level"*, *"boom"*).
 
 8. **Hybrid Local/Cloud Reasoning & Disk Caching**:
@@ -468,10 +468,10 @@ trading-video-understanding/
 ├── templates/
 │   └── index.html            # Single-page interface with live timeline sync, playback, and grounding overlay
 ├── videos/                   # Full-length masterclass video MP4s and WebVTT subtitles
-│   ├── video_1.mp4       # Video 1: NVDA Market Structure Masterclass (39m 29s, 275MB)
-│   ├── video_1.vtt       # Video 1 Subtitles
-│   ├── video_2.mp4       # Video 2: Full Technical Analysis Course (1h 17m 35s, 631MB)
-│   └── video_2.vtt       # Video 2 Subtitles
+│   ├── video_1.mp4           # Video 1: NVDA Market Structure Masterclass (39m 29s, 275MB)
+│   ├── video_1.vtt           # Video 1 Subtitles
+│   ├── video_2.mp4           # Video 2: Full Technical Analysis Course (1h 17m 35s, 631MB)
+│   └── video_2.vtt           # Video 2 Subtitles
 └── tests/                    # Comprehensive unit and integration test suite (41 tests)
     ├── test_api_server.py
     ├── test_chart_grounding.py

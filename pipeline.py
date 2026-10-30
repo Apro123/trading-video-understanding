@@ -75,7 +75,7 @@ except (ImportError, ValueError):
 
 def run_vss_pipeline(
     video_path: str = "/workspace/trading_lesson.clip.mp4",
-    subtitles_path: str = "/workspace/subtitles_clip",
+    subtitles_path: str = "/workspace/videos/video_1.vtt",
     output_dir: str = DEFAULT_OUTPUT_DIR,
     model_path: str = DEFAULT_COSMOS3_PATH,
     skip_model: bool = False,
@@ -319,7 +319,7 @@ def run_vss_pipeline(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="NVIDIA VSS Trading Video Understanding Pipeline")
     parser.add_argument("--video", default="/workspace/trading_lesson.clip.mp4", help="Path to video clip")
-    parser.add_argument("--subtitles", default="/workspace/subtitles_clip", help="Path to subtitle file")
+    parser.add_argument("--subtitles", default="/workspace/videos/video_1.vtt", help="Path to subtitle file")
     parser.add_argument("--output_dir", default=DEFAULT_OUTPUT_DIR, help="Output directory for VSS artifacts")
     parser.add_argument("--model_path", default=DEFAULT_COSMOS3_PATH, help="Path to Cosmos 3 Nano model snapshot")
     parser.add_argument("--skip_model", action="store_true", help="Run with deterministic fallback (no model load)")

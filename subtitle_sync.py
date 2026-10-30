@@ -41,7 +41,7 @@ def seconds_to_time_str(secs: float) -> str:
 class SubtitleSyncManager:
     """
     Manages parsing, timestamp normalization, and temporal chunk synchronization
-    for arbitrary trading clips, full Video videos, WebVTT, and SRT transcripts.
+    for arbitrary trading clips, full masterclass videos, WebVTT, and SRT transcripts.
     """
 
     def __init__(self, subtitle_file: str, clip_duration_s: Optional[float] = None):
@@ -77,7 +77,7 @@ class SubtitleSyncManager:
                 if not body:
                     continue
 
-                # Handle Video rolling duplicate lines with word-level <c> tags
+                # Handle rolling duplicate lines with word-level <c> tags
                 tagged = [l for l in body if "<c>" in l]
                 if tagged:
                     # The active newly spoken line has <c> tags
