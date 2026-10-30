@@ -1,7 +1,7 @@
 # 🎬 NVIDIA Video Search and Summarization (VSS) Trading Pipeline
 
 > [!NOTE]
-> **Single-System Deployment**: This entire codebase is designed to run self-contained on **one NVIDIA DGX Spark system** (GB10 GPU). All components—including local GPU inference (Cosmos 3 Nano VLM, Nemotron 3.5 Lightning, YOLO-World), deterministic visual grounding, test suite execution, and the interactive web UI—run directly on a single DGX Spark machine.
+> **Single-System Deployment**: This entire codebase is designed to run self-contained on **one NVIDIA DGX Spark system** (GB10 GPU). All components—including local GPU inference (Nemotron 3.5 Lightning, Cosmos 3 Nano Reasoner), deterministic pixel visual grounding (OpenCV & NumPy), test suite execution, and the interactive web UI—run directly on a single DGX Spark machine.
 
 Implementation of the **NVIDIA AI Blueprint for Video Search and Summarization (VSS)** tailored specifically for extracting actionable trading ideas, market structure rules, and execution plans from technical trading video clips and synchronized subtitles.
 
@@ -59,11 +59,21 @@ flowchart TD
 ## 📂 Repository Structure
 
 ```
+├── cache.py                 # Resilient DiskCache with SHA-256 stable hashing
+├── chart_grounding.py        # Integration of deterministic pixel grounding with VSS data models
 ├── config.py                 # Dataclasses and environment configurations
+├── grounding/                # Deterministic pixel chart grounding engine (pure OpenCV/NumPy)
+│   ├── __init__.py           # Package exports
+│   ├── layout.py             # Chart pane, price/time axis, and light/dark theme detection
+│   ├── drawings.py           # Horizontal price levels, supply/demand zones, position tools
+│   ├── axis.py               # Price lattice discovery, R^2 >= 0.999 regression calibration
+│   ├── reader.py             # 3x zoomed price axis & 2x ticker header crop preparation
+│   ├── ground.py             # Frame-level coordinate extraction, snapping, and validation
+│   └── viz.py                # Visual bounding box and coordinate overlay generator
 ├── schemas.py                # Pydantic schemas (VSS OpenAPI and data contracts)
 ├── utils.py                  # Shared helpers (safe JSON loading, Markdown cleaning, NLP heuristics)
-├── subtitle_sync.py          # Dynamic subtitle parsing, 0:00 anchoring, and window alignment
-├── chunk_engine.py           # FFmpeg-based video chunking and frame extraction
+├── subtitle_sync.py          # Dynamic subtitle parsing, rolling caption dedup, 0:00 anchor
+├── chunk_engine.py           # FFmpeg-based video chunking, deictic cue sampling, and frame extraction
 ├── downloader.py             # yt-dlp video/subtitle downloader and local metadata cache
 ├── vlm_reasoner.py           # Cosmos 3 Nano multimodal perception and reasoning engine
 ├── nemotron_reasoner.py      # OpenAI-compatible Nemotron 3.5 Lightning reasoning client
@@ -91,29 +101,37 @@ flowchart TD
 
 ## 🚀 Running on NVIDIA DGX Spark GPU System (GB10)
 
-The entire pipeline executes directly on the NVIDIA DGX Spark GPU workstation (GB10 GPU), which hosts both local high-performance inference (Nemotron 3.5 Lightning, NVIDIA Cosmos 3 Nano, YOLO-World) and the interactive web interface.
+The entire pipeline executes directly on the NVIDIA DGX Spark GPU workstation (GB10 GPU), which hosts local high-performance reasoning (Nemotron 3.5 Lightning at `http://localhost:8000` / `http://localhost:8000`, NVIDIA Cosmos 3 Nano Reasoner) and the interactive web interface.
 
 ### ⚡ Setting Up Local Nemotron 3.5 Lightning on the GB10 GPU
 
-To start the local Nemotron 3.5 Lightning reasoning server using `sparkrun`:
+To start the local Nemotron 3.5 Lightning reasoning server via `sparkrun`:
 ```bash
-sparkrun run nemotron3.5-nvfp4.yaml
+cd ~/Desktop/coding/recipes_sparkrun && sparkrun run nemotron3.5-nvfp4.yaml
 ```
-This serves Nemotron 3.5 Lightning in NVFP4 precision at `http://localhost:8000/v1`, providing instant token streaming with zero cloud API cost.
+This serves Nemotron 3.5 Lightning in NVFP4 precision at `http://localhost:8000/v1` (and `http://localhost:8000/v1`), providing instant token streaming with zero cloud API cost.
+
+### 👁️ VLM Perception: Cosmos-3 Nano Reasoner & VRAM Optimization
+Rather than loading the monolithic full-weight Cosmos 3 vision-language model into local VRAM (which competes with Nemotron 30B), this architecture supports:
+- **Dedicated Reasoner Endpoint**: Uses the `cosmos3-nano-reasoner` endpoint (configured via `COSMOS3_REASON_URL`, e.g. `http://localhost:8001/v1` or an isolated container), preserving GPU VRAM on the GB10 for maximum inference throughput.
+- **Deterministic VLM Fallback**: Full support for `--skip_model` mode with deterministic fallback when running on resource-constrained environments.
+- **High-Resolution Cropping**: Instead of passing full 1080p frames to the vision model, `grounding/reader.py` prepares tight 3x zoomed crops of axis labels and 2x crops of symbol headers, minimizing token usage and eliminating OCR hallucinations.
 
 ### 🧠 Hybrid LLM Hierarchy (Local Workhorse + Sparing Ultra Cloud Reasoning)
-1. **Local Workhorse (Default)**: **Nemotron 3.5 Lightning** handles all high-frequency reasoning tasks: per-chunk interpretation, narrative summaries, trade rule extraction, and interactive API requests.
+1. **Local Workhorse (Default)**: **Nemotron 3.5 Lightning** handles all high-frequency reasoning tasks: per-chunk interpretation, narrative summaries, trade rule extraction, multi-strategy deconstruction, and interactive API requests.
 2. **Sparing Cloud High-Reasoning**: When Weights & Biases credentials are configured (via `WANDB_API_KEY` or `~/.wandb_api_key`), **Nemotron 3 Ultra 550B** (`nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B`) is invoked *sparingly*—specifically for heavy whole-video global multi-strategy stitching where viewing the entire 40+ minute video context at once provides superior boundary delineation.
-3. **Resilient Disk Caching**: All VLM and LLM completions are hashed via SHA-256 and cached on disk (`.cache/llm/`, `.cache/crops/`), preventing redundant inference passes or token expenditures.
+3. **Resilient Disk Caching**: All VLM and LLM completions are hashed via SHA-256 and cached on disk (`_cache/llm/`, `_cache/cosmos/`, `_cache/crops/`), preventing redundant inference passes or token expenditures.
 
 ---
 
-### 🎯 Deterministic Pixel Computer Vision Chart Grounding
-Instead of unreliable object detectors (like YOLO, which mistakes charts for "laptops" or "tv screens"), this repository uses a deterministic hybrid visual grounding engine:
+### 🎯 Deterministic Pixel Computer Vision Chart Grounding (Zero YOLO-World)
+Previous iterations explored YOLO-based object detection, but real-world financial trading charts require sub-pixel accuracy and structured geometry that generic bounding-box detectors cannot provide (e.g. YOLO frequently misclassifies charts as "laptops" or "tv screens" and fails on hairline price axes). 
+
+YOLO-World has been completely **removed** and replaced by our pure deterministic OpenCV/NumPy pixel grounding suite (`grounding/`):
 - **Pixel Geometry (`grounding/layout.py`, `drawings.py`)**: OpenCV and NumPy segmentation to locate the chart pane, price axis, time axis, colored demand/supply zones, horizontal price levels, and TradingView long/short position tools across light and dark themes.
 - **Axis Regression Calibration (`grounding/axis.py`)**: Automatically detects arithmetic tick lattices and performs linear or logarithmic least-squares fits ($price = f(y)$) with $R^2 \ge 0.999$, cross-checking colored axis tags against pixel rows and filtering countdown timers (e.g. `08:53`).
 - **3x Zoomed Crop VLM Reading (`grounding/reader.py`)**: Feeds high-resolution 3x zoomed crops of the price axis and 2x crops of the ticker header to the vision model, avoiding full-frame numerical hallucinations.
-- **Interactive UI Overlay (`⌗ Grounding`)**: The web player includes a Grounding Overlay toggle that renders detected price lines, zones, and position tools (with entry, stop, target, and risk-reward ratios) directly on top of the paused video.
+- **Interactive UI Overlay (`⌗ Grounding`)**: The web player includes a Grounding Overlay toggle that renders detected price lines, zones, and position tools (with entry, stop, target, and risk-reward ratios) directly on top of the paused video via `/api/videos/overlay/{video_id}?t={time}`.
 
 ---
 

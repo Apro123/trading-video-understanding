@@ -76,7 +76,7 @@ flowchart TB
         Downloader["Downloader & Path Resolver (downloader.py)"]
         SyncEngine["Subtitle Normalizer & 0:00 Origin Anchor (subtitle_sync.py)"]
         Chunker["FFmpeg Temporal Chunk Engine (chunk_engine.py)"]
-        Grounding["Hybrid Visual Grounder: Cosmos-3 Nano + YOLO-World (chart_grounding.py)"]
+        Grounding["Deterministic Pixel Grounder: OpenCV & NumPy (grounding/) + Zoomed Crop OCR"]
         VLM["Cosmos-3 Nano VLM Multimodal Reasoner (vlm_reasoner.py)"]
         LVS["Long Video Summarizer & Milestone Aggregator (summarizer.py)"]
         StratDecon["Multi-Strategy Breakdown Engine (strategy_breakdown.py)"]
@@ -359,6 +359,7 @@ In accordance with user requirements for a bare-bones, high-signal workspace, se
 
 | Decision | Alternative Considered | Rationale & Trade-Off |
 |---|---|---|
+| **Deterministic Pixel Grounding** | YOLO-World Object Detection | YOLO object detection proved unreliable on financial charts, mistaking price grids for laptops/televisions and failing to measure hairline price tags. Pure OpenCV/NumPy segmentation with tick-lattice regression ($R^2 \ge 0.999$) and 3x zoomed crops gives deterministic, sub-pixel grounding with zero GPU overhead. |
 | **Direct `<video src="...">` Management** | Child `<source>` elements | HTML5 specifies that dynamically modifying child `<source>` tags after DOM load causes undefined browser caching behavior. Direct attribute management on `<video>` enables reliable video flipping and cache busting. |
 | **Reverse Strategy Ordering** | Chronological (top-to-bottom) | In 1+ hour videos with 7+ strategies, chronological ordering pushed newly revealed strategies far below the fold. Reverse ordering keeps the active strategy directly in view at the top of the viewport. |
 | **Client-Side Filtered Revelation** | Backend pagination on every seek | Filtering the full pre-loaded strategy list on `timeupdate` provides instant zero-latency UI updates without server roundtrips, while the keyed DOM updates prevent layout thrashing. |
@@ -391,6 +392,20 @@ In accordance with user requirements for a bare-bones, high-signal workspace, se
 5. **Frequency-Based NLP Heuristics**:
    - Upgraded `extract_ticker_symbol()` in `utils.py` to use `collections.Counter`, eliminating false-positive ticker assignments during strategy synthesis.
 
+6. **Deterministic Classical Pixel Chart Grounding**:
+   - Completely removed legacy `yolo_world_service` in favor of high-precision OpenCV/NumPy suite (`grounding/`).
+   - Achieves $R^2 \ge 0.999$ linear and logarithmic price calibration, horizontal line snapping, colored zone segmentation, and countdown timer filtering (`08:53`).
+   - Serves real-time dynamic overlays via `/api/videos/overlay/{video_id}?t={time}` and the web player `⌗ Grounding` button.
+
+7. **Rolling Auto-Caption De-Duplication & Deictic Frame Sampling**:
+   - Normalized rolling Video auto-captions with word-level `<c>` tag deduplication in `subtitle_sync.py`.
+   - Enhanced `chunk_engine.py` to prioritize keyframes at deictic speech cues (*"right here"*, *"this level"*, *"boom"*).
+
+8. **Hybrid Local/Cloud Reasoning & Disk Caching**:
+   - Local default: **Nemotron 3.5 Lightning** running via Sparkrun on the GB10 GPU (`sparkrun run nemotron3.5-nvfp4.yaml`).
+   - Sparing cloud fallback: **Nemotron 3 Ultra 550B** via Weights & Biases for complex whole-video multi-strategy aggregation.
+   - Resilient `DiskCache` (`cache.py`) with SHA-256 stable hashing for instant cache hits.
+
 ---
 
 ## 8. Deployment & Infrastructure Topology
@@ -411,8 +426,8 @@ In accordance with user requirements for a bare-bones, high-signal workspace, se
 │  │  VSS Pipeline Engine    │         │  Local Inference Tier        │  │
 │  │  - Temporal Chunking    │ <=====> │  - Sparkrun / vLLM (:8000)   │  │
 │  │  - Deterministic CV     │         │    Nemotron 3.5 Lightning    │  │
-│  │  - Hybrid Search Index  │         │  - Cosmos 3 Nano VLM         │  │
-│  │  - SQLite Orchestration │         │  - YOLO-World Service (:8005)│  │
+│  │  - Hybrid Search Index  │         │  - Cosmos 3 Nano Reasoner    │  │
+│  │  - SQLite Orchestration │         │    (COSMOS3_REASON_URL)      │  │
 │  └─────────────────────────┘         └──────────────────────────────┘  │
 └────────────────────────────────────────────────────────────────────────┘
 ```
@@ -426,14 +441,23 @@ trading-video-understanding/
 ├── architecture.md           # This document: comprehensive architectural specification
 ├── README.md                 # Project overview and quickstart instructions
 ├── config.py                 # Dataclasses and environment configuration
+├── cache.py                  # Resilient DiskCache with SHA-256 stable hashing & JSON parsing
 ├── schemas.py                # Pydantic schemas (VSS OpenAPI and data contracts)
 ├── utils.py                  # Shared helpers (NLP heuristics, JSON cleaning, safe loaders)
-├── subtitle_sync.py          # Dynamic subtitle parsing, 0:00 origin anchor, and alignment
-├── chunk_engine.py           # FFmpeg-based temporal slicing and frame extraction
+├── subtitle_sync.py          # Dynamic subtitle parsing, 0:00 origin anchor, and rolling dedup
+├── chunk_engine.py           # FFmpeg-based temporal slicing and deictic cue frame extraction
 ├── downloader.py             # Video/subtitle path resolver and metadata registry
-├── chart_grounding.py        # Cosmos-3 Nano + YOLO-World hybrid visual grounding
+├── chart_grounding.py        # Integration of deterministic pixel grounding with VSS data models
+├── grounding/                # Classical deterministic computer vision suite
+│   ├── __init__.py           # Package exports
+│   ├── layout.py             # Chart pane, price/time axis, and light/dark theme detection
+│   ├── drawings.py           # Horizontal price levels, supply/demand zones, position tools
+│   ├── axis.py               # Price lattice discovery, R^2 >= 0.999 regression calibration
+│   ├── reader.py             # 3x zoomed price axis & 2x ticker header crop preparation
+│   ├── ground.py             # Frame-level coordinate extraction, snapping, and validation
+│   └── viz.py                # Visual bounding box and coordinate overlay generator
 ├── vlm_reasoner.py           # Multimodal chart perception and reasoning engine
-├── nemotron_reasoner.py      # OpenAI-compatible Nemotron 3.5 Lightning client
+├── nemotron_reasoner.py      # OpenAI-compatible Nemotron 3.5 Lightning client (+ W&B Ultra fallback)
 ├── strategy_breakdown.py     # Multi-strategy segment breakdown and rule extraction
 ├── summarizer.py             # Long Video Summarization (LVS) and milestone aggregator
 ├── trade_strategy_agent.py   # Algorithmic trade idea and execution rule synthesizer
@@ -442,17 +466,18 @@ trading-video-understanding/
 ├── pipeline.py               # Master end-to-end VSS pipeline runner
 ├── server.py                 # FastAPI microservice implementing REST and HTTP 206 streaming
 ├── templates/
-│   └── index.html            # Single-page interface with live timeline sync and playback
+│   └── index.html            # Single-page interface with live timeline sync, playback, and grounding overlay
 ├── videos/                   # Full-length masterclass video MP4s and WebVTT subtitles
 │   ├── video_1.mp4       # Video 1: NVDA Market Structure Masterclass (39m 29s, 275MB)
 │   ├── video_1.vtt       # Video 1 Subtitles
 │   ├── video_2.mp4       # Video 2: Full Technical Analysis Course (1h 17m 35s, 631MB)
 │   └── video_2.vtt       # Video 2 Subtitles
-└── tests/                    # Comprehensive unit and integration test suite (32 tests)
+└── tests/                    # Comprehensive unit and integration test suite (41 tests)
     ├── test_api_server.py
     ├── test_chart_grounding.py
     ├── test_chunk_engine.py
     ├── test_orchestrator.py
+    ├── test_pixel_grounding.py
     ├── test_search_engine.py
     ├── test_subtitle_sync.py
     ├── test_trade_strategy.py
