@@ -8,7 +8,7 @@ import os
 from dataclasses import dataclass, field
 from typing import Optional, List
 
-# Default model path on NVIDIA DGX Spark GPU server
+# Default model path on NVIDIA DGX Spark GPU system
 DEFAULT_COSMOS3_PATH = os.environ.get(
     "COSMOS3_MODEL_PATH",
     "/mnt/edrive/huggingface/hub/models--nvidia--Cosmos3-Nano/snapshots/e59a53c25979a090fa8706c9acc0c254a6e89b92"
@@ -16,8 +16,8 @@ DEFAULT_COSMOS3_PATH = os.environ.get(
 
 # Nemotron 3.5 Lightning reasoning endpoint on NVIDIA DGX Spark
 # Can be launched locally on the GB10 GPU with:
-# cd ~/Desktop/coding/recipes_sparkrun && sparkrun run nemotron3.5-nvfp4.yaml
-LOCAL_SPARKRUN_SETUP_CMD = "cd ~/Desktop/coding/recipes_sparkrun && sparkrun run nemotron3.5-nvfp4.yaml"
+# sparkrun run nemotron3.5-nvfp4.yaml
+LOCAL_SPARKRUN_SETUP_CMD = "sparkrun run nemotron3.5-nvfp4.yaml"
 DEFAULT_LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "http://localhost:8000/v1")
 DEFAULT_LLM_MODEL = os.environ.get("LLM_MODEL", "nemotron-3.5-lightning")
 
@@ -27,15 +27,15 @@ NEMOTRON_ULTRA_MODEL = os.environ.get("NEMOTRON_ULTRA_MODEL", "nvidia/NVIDIA-Nem
 
 
 def get_wandb_credentials() -> Optional[str]:
-    """Finds W&B API key from env or wandb_ai_keys.txt if available."""
+    """Finds W&B API key from env or wandb key file if available."""
     if os.environ.get("WANDB_API_KEY"):
         return os.environ["WANDB_API_KEY"].strip()
     
     # Check potential key files
     candidates = [
         os.path.join(os.path.dirname(__file__), "wandb_ai_keys.txt"),
-        os.path.expanduser("~/Desktop/coding/trading-website-detection/wandb_ai_keys.txt"),
-        os.path.expanduser("~/.wandb_api_key")
+        os.path.expanduser("~/.wandb_api_key"),
+        os.path.expanduser("~/.config/wandb/api_key")
     ]
     for p in candidates:
         if os.path.exists(p):

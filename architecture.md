@@ -115,7 +115,7 @@ sequenceDiagram
     participant Svr as FastAPI Server (server.py)
     participant Orch as Workflow Orchestrator
     participant Disc as Local Disk / Cache Store
-    participant GPU as NVIDIA DGX Spark GPU
+    participant GPU as DGX Spark GPU (GB10)
 
     User->>UI: Selects Video (e.g. video_2 - 1h 17m)
     UI->>Svr: GET /api/videos/data/video_2
@@ -149,7 +149,7 @@ sequenceDiagram
 ## 4. Subsystem Deep Dives
 
 ### 4.1 Video Ingestion & HTTP 206 Streaming Engine
-- **Files**: [`downloader.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/downloader.py), [`server.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/server.py)
+- **Files**: `downloader.py`, `server.py`
 - **High-Resolution Asset Storage**: Full masterclass videos (275 MB for `video_1`, 631 MB for `video_2`) are stored in `videos/`.
 - **Candidate Path Prioritization**: `get_video_file_path(video_id)` checks `videos/{video_id}.mp4` first, ensuring that full videos are prioritized over legacy test fixture clips.
 - **HTTP 206 Partial Content Streaming**:
@@ -159,13 +159,13 @@ sequenceDiagram
 - **Web-VTT Subtitle Delivery**: Converts arbitrary subtitle formats (`.srt`, raw transcripts) on the fly into standards-compliant WebVTT via `SubtitleSyncManager`.
 
 ### 4.2 Temporal Chunking & Subtitle Origin Anchoring
-- **Files**: [`chunk_engine.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/chunk_engine.py), [`subtitle_sync.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/subtitle_sync.py)
+- **Files**: `chunk_engine.py`, `subtitle_sync.py`
 - **Dynamic Origin Normalization**: Many raw subtitle files from Video contain global video timestamps (e.g., starting at `18:40,000`). `SubtitleSyncManager` detects the earliest cue timestamp and shifts the origin to `00:00.000`, guaranteeing exact alignment with video playback.
 - **Overlap-Aware Temporal Chunking**: Splits continuous video streams into discrete analysis windows (default: 20s chunks with 2s overlap), preventing trade entry triggers spanning window boundaries from being cut in half.
 - **Keyframe Extraction**: Extracts representative high-fidelity frames from the center and endpoints of each chunk for visual chart analysis.
 
 ### 4.3 Multimodal Perception & Deterministic Pixel Visual Grounding
-- **Files**: [`grounding/`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/grounding/), [`chart_grounding.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/chart_grounding.py), [`vlm_reasoner.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/vlm_reasoner.py)
+- **Files**: `grounding/`, `chart_grounding.py`, `vlm_reasoner.py`
 - **Engine Architecture**: Combines deterministic classical computer vision (OpenCV & NumPy) with high-resolution zoomed-crop reading via **NVIDIA Cosmos 3 Nano**:
   - `grounding/layout.py`: Dynamically locates the chart pane, price axis, time axis, and header symbol box, automatically adapting between light and dark themes.
   - `grounding/drawings.py`: Deterministically detects horizontal price levels, colored green/red supply and demand zones, crosshairs, and TradingView long/short position tool boxes.
@@ -177,8 +177,8 @@ sequenceDiagram
   - Detects trade signals: `BREAKOUT_LEVEL_VALIDATION`, `DEMAND_ZONE_RETEST`, `MOMENTUM_RSI_DIVERGENCE`, `PROTECTED_SWING_STOP`.
 
 ### 4.4 Multi-Strategy Deconstruction & Hybrid Reasoning Engine
-- **Files**: [`strategy_breakdown.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/strategy_breakdown.py), [`nemotron_reasoner.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/nemotron_reasoner.py), [`trade_strategy_agent.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/trade_strategy_agent.py)
-- **Local Workhorse**: **Nemotron 3.5 Lightning** running in NVFP4 on the local GB10 GPU (`cd ~/Desktop/coding/recipes_sparkrun && sparkrun run nemotron3.5-nvfp4.yaml`) provides instant, zero-cost reasoning for per-chunk interpretation and regular rule synthesis.
+- **Files**: `strategy_breakdown.py`, `nemotron_reasoner.py`, `trade_strategy_agent.py`
+- **Local Workhorse**: **Nemotron 3.5 Lightning** running in NVFP4 on the local GB10 GPU (`sparkrun run nemotron3.5-nvfp4.yaml`) provides instant, zero-cost reasoning for per-chunk interpretation and regular rule synthesis.
 - **Sparing Ultra Cloud Reasoning**: When Weights & Biases credentials are configured, **Nemotron 3 Ultra 550B** (`nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B`) is invoked *sparingly* for whole-video global multi-strategy stitching where viewing the entire video timeline in a single prompt provides optimal boundary discovery.
 - **Strategy Validation & Price Sanity**:
   - Automatically verifies directional integrity (stop below entry for Bullish setups, stop above entry for Bearish setups).
@@ -186,7 +186,7 @@ sequenceDiagram
   - Re-prompts or cleanses invalidations and formats execution rules into machine-executable parameters.
 
 ### 4.5 Durable Orchestration & Background Execution
-- **Files**: [`orchestrator.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/orchestrator.py), [`server.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/server.py)
+- **Files**: `orchestrator.py`, `server.py`
 - **SQLite Workflow Store**:
   - Thread-safe, durable state persistence in `workflows.sqlite3`.
   - Checkpoints step-by-step progress: `VIDEO_VALIDATION` -> `SUBTITLE_ALIGNMENT` -> `CHUNKING` -> `VISUAL_GROUNDING` -> `LVS_SUMMARIZATION` -> `STRATEGY_SYNTHESIS`.
@@ -194,7 +194,7 @@ sequenceDiagram
 - **Zero-Friction Disk Caching**: On initial request to `/api/videos/data/{video_id}`, if pre-analyzed artifacts exist in `outputs_{video_id}/`, the orchestrator immediately serves the cached intelligence without re-triggering GPU inference.
 
 ### 4.6 Interactive Timeline & Live Playback Sync
-- **Files**: [`templates/index.html`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/templates/index.html)
+- **Files**: `templates/index.html`
 - **Dynamic Revelation Along Timeline**:
   - Strategies are filtered by `currentTime >= strategy.start_s`.
   - At `00:00`, prior to the first strategy intro, a placeholder explains when the first strategy begins and provides a direct jump button.
@@ -210,7 +210,7 @@ sequenceDiagram
   - Displays a `▶ Resume (MM:SS)` button and renders a bookmark pin (`📌`) on the scrubber track, allowing 1-click resumption.
 
 ### 4.7 Semantic Search & Vector/BM25 Hybrid Retrieval
-- **Files**: [`search_engine.py`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/search_engine.py)
+- **Files**: `search_engine.py`
 - **Hybrid Retrieval**: Combines dense vector cosine similarity (via sentence transformers) with lexical BM25 term weighting over synchronized transcripts and VLM chunk reasoning notes.
 - **Instant Seeking**: Every search result includes an exact timestamp badge (`▶ [14:20 - 14:40]`) that jumps the video player directly to that event.
 
@@ -218,7 +218,7 @@ sequenceDiagram
 
 ## 5. User Interface Architecture & Component Breakdown
 
-The presentation layer is implemented as an ultra-fast, zero-dependency single-page application ([`templates/index.html`](file:///Users/armaankapoor/Desktop/coding/trading-video-understanding/templates/index.html)) using HTML5, modern CSS Grid/Flexbox, and vanilla JavaScript. It is designed around two core principles: **zero cognitive friction** (minimalist, bare-bones UI with no redundant telemetry clutter) and **sub-second timeline interactivity** (keyed DOM updates maintaining 60fps playback without layout thrashing).
+The presentation layer is implemented as an ultra-fast, zero-dependency single-page application (`templates/index.html`) using HTML5, modern CSS Grid/Flexbox, and vanilla JavaScript. It is designed around two core principles: **zero cognitive friction** (minimalist, bare-bones UI with no redundant telemetry clutter) and **sub-second timeline interactivity** (keyed DOM updates maintaining 60fps playback without layout thrashing).
 
 ### 5.1 Visual Layout & Wireframe Schematic
 
@@ -363,7 +363,7 @@ In accordance with user requirements for a bare-bones, high-signal workspace, se
 | **Reverse Strategy Ordering** | Chronological (top-to-bottom) | In 1+ hour videos with 7+ strategies, chronological ordering pushed newly revealed strategies far below the fold. Reverse ordering keeps the active strategy directly in view at the top of the viewport. |
 | **Client-Side Filtered Revelation** | Backend pagination on every seek | Filtering the full pre-loaded strategy list on `timeupdate` provides instant zero-latency UI updates without server roundtrips, while the keyed DOM updates prevent layout thrashing. |
 | **Frequency-Based Ticker Extraction** | First-token regex match | In dense technical tutorials, an LLM narrative may mention comparative assets (e.g., comparing a breakout level at 1927 to Gold `XAU/USD`). Frequency counting (`Counter.most_common`) reliably extracts the primary asset under analysis (e.g., `NVDA`). |
-| **Separate Code & GPU Execution Tiers** | All-in-one local GPU machine | The user's local Mac stores the codebase and runs the UI/dev server, while heavy inference (Cosmos-3 Nano, Nemotron-3.5) runs exclusively on the remote NVIDIA DGX Spark in Docker. |
+| **Unified DGX Spark Architecture** | Distributed multi-host setup | The entire pipeline (FastAPI web service, interactive UI, deterministic visual grounding, and high-performance GPU inference via Cosmos 3 Nano and Nemotron 3.5) runs directly on the NVIDIA DGX Spark system. |
 | **SQLite Durable Orchestration** | Celery / Redis | Avoids heavy infrastructure dependencies. SQLite provides ACID-compliant durable checkpointing, single-file portability, and zero daemon overhead. |
 
 ---
@@ -396,21 +396,25 @@ In accordance with user requirements for a bare-bones, high-signal workspace, se
 ## 8. Deployment & Infrastructure Topology
 
 ```
-┌────────────────────────────────────────────────────────┐
-│                   LOCAL MAC WORKSPACE                  │
-│  - Code Repository: ~/Desktop/coding/trading-video-... │
-│  - FastAPI Web Service: http://localhost:8088          │
-│  - Browser Client UI & Video Playback                  │
-└───────────────────────────┬────────────────────────────┘
-                            │ rsync / SSH
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│              DGX Spark DGX SPARK GPU SERVER                 │
-│  - Remote Path: ~/Desktop/coding/trader-vids           │
-│  - Docker Container: trader-vids:latest                │
-│  - vLLM Service (:8000): Cosmos-3 Nano & Nemotron-3.5  │
-│  - Execution Environment for Pytest & Heavy Pipelines │
-└────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│                   NVIDIA DGX SPARK GPU SYSTEM                          │
+│                                                                        │
+│  ┌─────────────────────────┐         ┌──────────────────────────────┐  │
+│  │  FastAPI Web Service    │ <=====> │  Interactive Browser UI      │  │
+│  │  - Port: :38111         │         │  - Live Timeline Sync        │  │
+│  │  - HTTP 206 Streaming   │         │  - Reverse Strategy Reveal   │  │
+│  │  - REST & SSE Engine    │         │  - Grounding Visualizations  │  │
+│  └───────────┬─────────────┘         └──────────────────────────────┘  │
+│              │                                                         │
+│              ▼                                                         │
+│  ┌─────────────────────────┐         ┌──────────────────────────────┐  │
+│  │  VSS Pipeline Engine    │         │  Local Inference Tier        │  │
+│  │  - Temporal Chunking    │ <=====> │  - Sparkrun / vLLM (:8000)   │  │
+│  │  - Deterministic CV     │         │    Nemotron 3.5 Lightning    │  │
+│  │  - Hybrid Search Index  │         │  - Cosmos 3 Nano VLM         │  │
+│  │  - SQLite Orchestration │         │  - YOLO-World Service (:8005)│  │
+│  └─────────────────────────┘         └──────────────────────────────┘  │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---

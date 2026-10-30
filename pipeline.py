@@ -10,7 +10,7 @@ workflow extended for financial trading clips and subtitles:
 - In-memory vector and keyword semantic search indexing
 - Long Video Summarization (LVS) with chronological milestone extraction
 - Algorithmic trade idea and strategy specification synthesis
-- Peak GPU VRAM tracking on NVIDIA DGX Spark (NVIDIA GB10 GPU)
+- Peak GPU VRAM tracking on NVIDIA DGX Spark (GB10 GPU)
 """
 
 import os

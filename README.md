@@ -72,9 +72,12 @@ flowchart TD
 ├── vss_cli.py                # Unified CLI (summarize, search, trade-idea, serve)
 ├── server.py                 # FastAPI microservice implementing VSS REST endpoints
 ├── README.md                 # Complete documentation and usage instructions
-└── tests/                    # Comprehensive unit test suite (19 tests)
+└── tests/                    # Comprehensive unit & integration test suite (41 tests)
     ├── test_api_server.py
+    ├── test_chart_grounding.py
     ├── test_chunk_engine.py
+    ├── test_orchestrator.py
+    ├── test_pixel_grounding.py
     ├── test_search_engine.py
     ├── test_subtitle_sync.py
     ├── test_trade_strategy.py
@@ -83,21 +86,21 @@ flowchart TD
 
 ---
 
-## 🚀 Running on NVIDIA DGX Spark GPU Server (GB10)
+## 🚀 Running on NVIDIA DGX Spark GPU System (GB10)
 
-The pipeline executes locally on macOS for UI / lightweight dev, and leverages the NVIDIA DGX Spark GPU system (GB10 GPU) for high-performance inference.
+The entire pipeline executes directly on the NVIDIA DGX Spark GPU workstation (GB10 GPU), which hosts both local high-performance inference (Nemotron 3.5 Lightning, NVIDIA Cosmos 3 Nano, YOLO-World) and the interactive web interface.
 
 ### ⚡ Setting Up Local Nemotron 3.5 Lightning on the GB10 GPU
 
 To start the local Nemotron 3.5 Lightning reasoning server using `sparkrun`:
 ```bash
-cd ~/Desktop/coding/recipes_sparkrun && sparkrun run nemotron3.5-nvfp4.yaml
+sparkrun run nemotron3.5-nvfp4.yaml
 ```
-This serves Nemotron 3.5 Lightning in NVFP4 precision at `http://localhost:8000/v1` (or `http://localhost:8000/v1`), providing instant token streaming with zero cloud API cost.
+This serves Nemotron 3.5 Lightning in NVFP4 precision at `http://localhost:8000/v1`, providing instant token streaming with zero cloud API cost.
 
 ### 🧠 Hybrid LLM Hierarchy (Local Workhorse + Sparing Ultra Cloud Reasoning)
 1. **Local Workhorse (Default)**: **Nemotron 3.5 Lightning** handles all high-frequency reasoning tasks: per-chunk interpretation, narrative summaries, trade rule extraction, and interactive API requests.
-2. **Sparing Cloud High-Reasoning**: When Weights & Biases credentials are present (via `WANDB_API_KEY` or `wandb_ai_keys.txt`), **Nemotron 3 Ultra 550B** (`nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B`) is invoked *sparingly*—specifically for heavy whole-video global multi-strategy stitching where viewing the entire 40+ minute video context at once provides superior boundary delineation.
+2. **Sparing Cloud High-Reasoning**: When Weights & Biases credentials are configured (via `WANDB_API_KEY` or `~/.wandb_api_key`), **Nemotron 3 Ultra 550B** (`nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B`) is invoked *sparingly*—specifically for heavy whole-video global multi-strategy stitching where viewing the entire 40+ minute video context at once provides superior boundary delineation.
 3. **Resilient Disk Caching**: All VLM and LLM completions are hashed via SHA-256 and cached on disk (`.cache/llm/`, `.cache/crops/`), preventing redundant inference passes or token expenditures.
 
 ---
@@ -111,10 +114,18 @@ Instead of unreliable object detectors (like YOLO, which mistakes charts for "la
 
 ---
 
-### 1. Run on Clip 1 (NVDA Market Structure & Demand Retest):
+### 🏃 Running the Pipeline
+
+You can run the end-to-end VSS pipeline directly on the DGX Spark system using either Docker or the local Python environment.
+
+#### Option A: Running with Docker (Recommended)
 ```bash
-ssh user@dgx-spark "docker run --rm --gpus all \
-  -v /workspace:/workspace \
+# Build the production container (if not already built)
+docker build -t trader-vids:latest .
+
+# Run on Clip 1 (NVDA Market Structure & Demand Retest):
+docker run --rm --gpus all \
+  -v $(pwd):/workspace \
   -v /mnt/edrive/huggingface:/mnt/edrive/huggingface:ro \
   -e HF_HOME=/mnt/edrive/huggingface \
   -e WANDB_MODE=offline \
@@ -123,13 +134,11 @@ ssh user@dgx-spark "docker run --rm --gpus all \
   --subtitles /workspace/subtitles_clip \
   --output_dir /workspace/outputs_vss_clip_1 \
   --chunk_duration 35.0 \
-  --chunk_overlap 5.0"
-```
+  --chunk_overlap 5.0
 
-### 2. Run on Clip 2 (RSI Momentum Divergence & Resistance Reversal):
-```bash
-ssh user@dgx-spark "docker run --rm --gpus all \
-  -v /workspace:/workspace \
+# Run on Clip 2 (RSI Momentum Divergence & Resistance Reversal):
+docker run --rm --gpus all \
+  -v $(pwd):/workspace \
   -v /mnt/edrive/huggingface:/mnt/edrive/huggingface:ro \
   -e HF_HOME=/mnt/edrive/huggingface \
   -e WANDB_MODE=offline \
@@ -138,125 +147,82 @@ ssh user@dgx-spark "docker run --rm --gpus all \
   --subtitles /workspace/subtitles_clip_2 \
   --output_dir /workspace/outputs_vss_clip_2 \
   --chunk_duration 35.0 \
-  --chunk_overlap 5.0"
-```
+  --chunk_overlap 5.0
 
-### 3. Run on Any New Video:
-```bash
-ssh user@dgx-spark "docker run --rm --gpus all \
-  -v /workspace:/workspace \
+# Run on Any Arbitrary Video:
+docker run --rm --gpus all \
+  -v $(pwd):/workspace \
   -v /mnt/edrive/huggingface:/mnt/edrive/huggingface:ro \
   -e HF_HOME=/mnt/edrive/huggingface \
   -e WANDB_MODE=offline \
   trader-vids:latest pipeline.py \
   --video /workspace/my_video.mp4 \
   --subtitles /workspace/my_subtitles \
-  --output_dir /workspace/outputs_vss_my_video"
+  --output_dir /workspace/outputs_vss_my_video
 ```
 
-## 🔄 Dual Repository Architecture: Local (Mac) vs Remote (DGX Spark GPU)
-
-This project operates across **two distinct development environments**:
-1. **Local Machine (macOS)**: Where lightweight development, local testing, yt-dlp downloading, and the interactive web interface execute.
-2. **Remote GPU Server (NVIDIA DGX Spark)**: Where heavy GPU multimodal perception (NVIDIA Cosmos 3 Nano) and LLM reasoning (Nemotron 3.5 on port 8000) take place.
-
-### Environment Matrix
-
-| Property | Local Environment (macOS) | Remote Environment (NVIDIA DGX Spark) |
-|---|---|---|
-| **Host / User** | Local workstation (`mac`) | `user@dgx-spark` (passwordless SSH) |
-| **Path** | `/Users/armaankapoor/Desktop/coding/trading-video-understanding` | `/workspace` |
-| **Git Branch** | `master` (independent clone) | `master` (independent clone) |
-| **Primary Role** | Fast UI dashboard, video remuxing, API server, rapid test execution | High-VRAM GPU inference, Cosmos 3 Nano VLM, Nemotron 3.5 Reasoner |
-| **Python Env** | `./.venv/bin/python` (Python 3.14) | Docker container `trader-vids:latest` (Linux aarch64, Python 3.12) |
-| **Inference Services** | Connects to remote services or local mocks | Cosmos 3 Nano GPU + Nemotron 3.5 Lightning on port 8000 (`http://localhost:8000/v1`) |
-
----
-
-### 🤖 LLM & Developer Protocol: Dual Git Commit & Synchronization
-
-> [!IMPORTANT]
-> **Strict Synchronization Rule**: The local workspace and the remote repository are **separate Git clones**. Changes made locally are **not** automatically reflected on DGX Spark, and vice versa. Whenever any developer or LLM modifies code files, you **MUST** follow this exact 4-step synchronization and dual-commit procedure:
-
-#### Step 1: Stage and Commit Locally
-Verify changes and commit them cleanly on local `master`:
+#### Option B: Running Natively
 ```bash
-git status
-git add <modified_files>
-git commit -m "Descriptive commit message"
-```
-
-#### Step 2: Sync Code Files to DGX Spark via Rsync
-Push modified code files, templates, and tests to DGX Spark (carefully excluding local `.git`, virtual environments, video binaries, and model checkpoints):
-```bash
-rsync -avz \
-  --exclude='.git' \
-  --exclude='.venv' \
-  --exclude='videos' \
-  --exclude='outputs_*' \
-  *.py README.md templates tests \
-  user@dgx-spark:/workspace/
-```
-
-#### Step 3: Run Remote Tests & Commit on DGX Spark
-Execute the test suite inside the Docker container on DGX Spark, then commit the synchronized changes to the remote Git tree:
-```bash
-# 1. Run Docker test suite on DGX Spark
-ssh user@dgx-spark "docker run --rm -e PYTHONPATH=/workspace --entrypoint pytest -v /workspace:/workspace -w /workspace trader-vids:latest tests/ -v"
-
-# 2. Stage and commit on DGX Spark
-ssh user@dgx-spark "cd /workspace && \
-  git add -A && \
-  git commit -m 'Descriptive commit message'"
-```
-
-#### Step 4: Verify Both Repositories are Clean
-Ensure both repositories report a clean working directory:
-```bash
-git status
-ssh user@dgx-spark "cd /workspace && git status"
+python3 pipeline.py \
+  --video trading_lesson.clip.mp4 \
+  --subtitles subtitles_clip \
+  --output_dir outputs_vss_clip_1 \
+  --chunk_duration 35.0 \
+  --chunk_overlap 5.0
 ```
 
 ---
 
-### 🧪 Testing Strategy: What Tests to Run on Each
+## 🖥️ Interactive Web UI & Video Player
 
-#### 1. Local Tests (macOS)
-Run the full 19-test suite using the local virtual environment:
+The repository includes a modern, zero-dependency single-page application with live timeline synchronization, dynamic strategy revelation, and interactive visual chart grounding overlays.
+
+### Launching the Web Server
 ```bash
-./.venv/bin/pytest tests/ -v
+python3 server.py --host 0.0.0.0 --port 38111
 ```
-**What this validates**:
-- FastAPI REST probes (`/v1/ready`, `/v1/live`, `/v1/healthz`).
-- Model listings (`/models`).
-- Web UI template rendering (validates clean 2-tab layout: `Strategy Breakdown` and `Semantic Video Search`, verifying obsolete tabs are absent).
-- Video streaming HTTP Range (`HTTP 206 Partial Content`) and `HEAD` request handling.
-- Video video metadata, download tracking, and status retrieval.
-- Hybrid semantic search index query matching and score thresholds.
-- Multi-strategy breakdown extraction and JSON schema compliance.
-- Subtitle parsing, 0:00 temporal anchoring, and chunk boundary normalization.
+Open `http://localhost:38111` in your browser.
 
-#### 2. Remote Docker Tests (NVIDIA DGX Spark)
-Run the test suite inside the production `trader-vids:latest` container:
+---
+
+## 🧪 Testing Strategy
+
+Run the complete 41-test suite directly on the DGX Spark system:
+
+#### 1. Running Tests Natively
 ```bash
-ssh user@dgx-spark "docker run --rm -e PYTHONPATH=/workspace --entrypoint pytest -v /workspace:/workspace -w /workspace trader-vids:latest tests/ -v"
+pytest tests/ -v
 ```
-**What this validates**:
-- Linux aarch64 runtime and dependency compatibility.
-- Seamless container filesystem mounts and environment variables (`PYTHONPATH=/workspace`).
-- Live GPU reasoning integration with Nemotron 3.5 Lightning (`http://localhost:8000/v1`).
 
-#### 3. Local API & Streaming Smoke Tests
-Quickly verify live HTTP responses from the local uvicorn server (`http://127.0.0.1:8088`):
+#### 2. Running Tests with Docker
+```bash
+docker run --rm --gpus all \
+  -v $(pwd):/workspace \
+  -w /workspace \
+  -e PYTHONPATH=/workspace \
+  trader-vids:latest pytest tests/ -v
+```
+
+**What the test suite validates**:
+- **API & Probes (`test_api_server.py`)**: Readiness (`/v1/ready`), liveness (`/v1/live`), health diagnostics (`/v1/healthz`), models catalog, and UI endpoints.
+- **Media Streaming**: HTTP 206 Partial Content byte-range seeking and `HEAD` metadata parsing.
+- **Deterministic Grounding (`test_chart_grounding.py`, `test_pixel_grounding.py`)**: OpenCV layout segmentation, price coordinate regression ($R^2 \ge 0.999$), TradingView position tool parsing, and bounding box drawing.
+- **Temporal Slicing (`test_chunk_engine.py`)**: FFmpeg chunk boundary generation, duration integrity, and keyframe extraction.
+- **Durable Orchestration (`test_orchestrator.py`)**: SQLite state persistence, workflow checkpoints, SSE progress emission, and cancellation.
+- **Semantic Search (`test_search_engine.py`)**: Dense vector embeddings + lexical BM25 indexing and instant timestamp seek queries.
+- **Subtitle Alignment (`test_subtitle_sync.py`)**: Auto-detection of cue offsets and normalized 00:00 temporal anchoring.
+- **Algorithmic Strategy Agent (`test_trade_strategy.py`, `test_utils.py`)**: Trade idea synthesis, frequency-based asset identification, directional bias validation, and rule formatting.
+
+#### 3. API & Streaming Smoke Tests
 ```bash
 # Verify UI root
-curl -s -o /dev/null -w "UI Root: %{http_code}\n" http://127.0.0.1:8088/
+curl -s -o /dev/null -w "UI Root: %{http_code}\n" http://127.0.0.1:38111/
 
 # Verify HTTP Range streaming (206)
-curl -s -D - -o /dev/null -H "Range: bytes=0-100" http://127.0.0.1:8088/api/videos/stream/video_1
+curl -s -D - -o /dev/null -H "Range: bytes=0-100" http://127.0.0.1:38111/api/videos/stream/video_1
 
 # Verify Multi-Strategy API response
-curl -s -o /dev/null -w "Strategy API: %{http_code}\n" http://127.0.0.1:8088/api/videos/strategies/video_2
+curl -s -o /dev/null -w "Strategy API: %{http_code}\n" http://127.0.0.1:38111/api/videos/strategies/video_2
 ```
 
 ---

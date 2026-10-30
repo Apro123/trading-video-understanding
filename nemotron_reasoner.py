@@ -93,10 +93,9 @@ class NemotronReasoner:
         # Candidate endpoints to check:
         candidates = [
             DEFAULT_LLM_BASE_URL.rstrip("/"),
-            "http://localhost:8000/v1",        # NVIDIA DGX Spark GPU server
-            "http://172.17.0.1:8000/v1",  # Docker standard bridge to Linux host
-            "http://127.0.0.1:8000/v1",  # Localhost / --network host
-            "http://localhost:8000/v1"
+            "http://127.0.0.1:8000/v1",  # Localhost on DGX Spark
+            "http://localhost:8000/v1",
+            "http://172.17.0.1:8000/v1",  # Docker standard bridge to host
         ]
 
         if httpx:
