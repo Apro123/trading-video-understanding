@@ -3,6 +3,8 @@
 sample_frames*/
 frames/
 outputs/
+outputs_*
+outputs_*/
 *.log
 
 # Python
@@ -11,9 +13,6 @@ __pycache__/
 .env
 .venv/
 .DS_Store
-outputs_clip_*/
-outputs_vss*/
-outputs_*/
 *.sqlite3*
 .cache/
 _cache/
