@@ -101,15 +101,15 @@ flowchart TD
 
 ## 🚀 Running on NVIDIA DGX Spark GPU System (GB10)
 
-The entire pipeline executes directly on the NVIDIA DGX Spark GPU workstation (GB10 GPU), which hosts local high-performance reasoning (Nemotron 3.5 Lightning at `http://localhost:8000` / `http://localhost:8000`, NVIDIA Cosmos 3 Nano Reasoner) and the interactive web interface.
+The entire pipeline executes directly on the NVIDIA DGX Spark GPU workstation (GB10 GPU), which hosts local high-performance reasoning (Nemotron 3.5 Lightning at `http://localhost:8000`, NVIDIA Cosmos 3 Nano Reasoner) and the interactive web interface.
 
 ### ⚡ Setting Up Local Nemotron 3.5 Lightning on the GB10 GPU
 
 To start the local Nemotron 3.5 Lightning reasoning server via `sparkrun`:
 ```bash
-cd ~/Desktop/coding/recipes_sparkrun && sparkrun run nemotron3.5-nvfp4.yaml
+sparkrun run nemotron3.5-nvfp4.yaml
 ```
-This serves Nemotron 3.5 Lightning in NVFP4 precision at `http://localhost:8000/v1` (and `http://localhost:8000/v1`), providing instant token streaming with zero cloud API cost.
+This serves Nemotron 3.5 Lightning in NVFP4 precision at `http://localhost:8000/v1`, providing instant token streaming with zero cloud API cost.
 
 ### 👁️ VLM Perception: Cosmos-3 Nano Reasoner & VRAM Optimization
 Rather than loading the monolithic full-weight Cosmos 3 vision-language model into local VRAM (which competes with Nemotron 30B), this architecture supports:
